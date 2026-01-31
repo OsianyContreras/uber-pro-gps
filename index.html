@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Uber Pro GPS</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700;900&display=swap');
+
+:root {
+  --neon-blue: #00d2ff;
+  --deep-blue: #0072ff;
+}
+
+body {
+  background:#050505;
+  color:#fff;
+  font-family:'Inter',sans-serif;
+  margin:0;
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.neon-container {
+  width:100%;
+  max-width:400px;
+  height:90vh;
+  background:#0a0a0a;
+  border-radius:40px;
+  padding:3px;
+  box-shadow:0 0 40px rgba(0,114,255,.3);
+}
+
+.glass-panel {
+  background:rgba(10,10,10,.95);
+  height:100%;
+  border-radius:37px;
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+}
+
+.brand-title {
+  font-family:'Orbitron',sans-serif;
+  font-weight:900;
+  font-size:2.4rem;
+  letter-spacing:4px;
+  color:#000;
+  -webkit-text-stroke:1.5px var(--neon-blue);
+  text-align:center;
+}
+
+.ios-card {
+  background:rgba(255,255,255,.04);
+  border-radius:24px;
+  border:1px solid rgba(255,255,255,.08);
+  padding:20px;
+}
+
+#dropzone {
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.preview-img {
+  max-width:100%;
+  border-radius:18px;
+  display:none;
+}
+
+.btn-analyze {
+  margin-top:20px;
+  padding:18px;
+  width:100%;
+  font-weight:900;
+  border-radius:18px;
+  background:linear-gradient(135deg,#fff,#e0e0e0);
+  color:#000;
+  opacity:.3;
+}
+
+.btn-analyze.active {
+  opacity:1;
+  cursor:pointer;
+}
+
+code {
+  color:#00d2ff;
+  font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="neon-container">
+<div class="glass-panel">
+
+<h1 class="brand-title mb-6">UBER PRO</h1>
+
+<div id="ui-main" class="flex flex-col flex-1">
+  <div id="dropzone" class="ios-card" onclick="fileInput.click()">
+    <span id="uploadText">Cargar captura</span>
+    <img id="preview" class="preview-img">
+    <input id="fileInput" type="file" accept="image/*" hidden>
+  </div>
+
+  <button id="analyzeBtn" class="btn-analyze">Analizar Trayecto ✨</button>
+</div>
+
+<div id="results" class="hidden space-y-4 mt-4">
+  <div class="ios-card">
+    <strong>Recogida</strong>
+    <p id="pickupAddr"></p>
+    <code id="pickupGPS"></code>
+  </div>
+  <div class="ios-card">
+    <strong>Destino</strong>
+    <p id="dropAddr"></p>
+    <code id="dropGPS"></code>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+const apiKey = "AQUI_VA_TU_API_KEY_REAL";
+
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const results = document.getElementById("results");
+
+let imageBase64 = "";
+
+fileInput.addEventListener("change", () => {
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = "block";
+    imageBase64 = e.target.result.split(",")[1];
+    analyzeBtn.classList.add("active");
+  };
+  reader.readAsDataURL(file);
+});
+
+analyzeBtn.onclick = async () => {
+  if (!imageBase64) return;
+
+  const prompt = `
+Extrae direcciones exactas de origen y destino
+y devuelve coordenadas GPS EXACTAS (6 decimales)
+en este JSON:
+{
+ "recogida":"",
+ "destino":"",
+ "gps_recogida":"lat,long",
+ "gps_destino"_
+
