@@ -1,67 +1,77 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Uber Pro GPS – Fix</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Uber Pro GPS Edition</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700;900&display=swap');
+:root { --neon-blue: #00d2ff; --deep-blue: #0072ff; }
+body { background-color:#050505;color:#fff;font-family:'Inter',sans-serif;margin:0;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden; }
+.brand-title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:2.5rem;text-transform:uppercase;letter-spacing:4px;color:#000;-webkit-text-stroke:1.5px var(--neon-blue);text-shadow:0 0 10px rgba(0,210,255,.7),0 0 20px rgba(0,210,255,.3)}
+.neon-container{position:relative;width:100%;max-width:400px;height:90vh;background:#0a0a0a;border-radius:40px;padding:3px;overflow:hidden;box-shadow:0 0 40px rgba(0,114,255,.3)}
+.neon-container::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(transparent,var(--neon-blue),var(--deep-blue),transparent 40%);animation:rotate 6s linear infinite}
+@keyframes rotate{100%{transform:rotate(360deg)}}
+.glass-panel{position:relative;z-index:1;background:rgba(10,10,10,.95);width:100%;height:100%;border-radius:37px;display:flex;flex-direction:column;padding:24px}
+.ios-card{background:rgba(255,255,255,.03);backdrop-filter:blur(10px);border-radius:24px;border:1px solid rgba(255,255,255,.08);padding:20px}
+#dropzone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;max-height:50vh;margin-bottom:20px}
+.btn-analyze{background:linear-gradient(135deg,#fff 0%,#e0e0e0 100%);color:#000;font-weight:900;border-radius:18px;box-shadow:0 10px 20px rgba(0,0,0,.4);transition:.3s;flex-shrink:0;border:none;width:100%}
+.btn-analyze:not(.active){opacity:.2;transform:scale(.95);pointer-events:none}
+.btn-analyze.active{opacity:1;transform:scale(1)}
+.btn-copy{background:rgba(0,210,255,.15);color:var(--neon-blue);font-size:10px;font-weight:900;padding:8px 14px;border-radius:10px;border:1px solid rgba(0,210,255,.3)}
+#toast{position:fixed;top:40px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--deep-blue);color:white;padding:12px 24px;border-radius:50px;font-weight:800;font-size:12px;z-index:9999;transition:.5s}
+#toast.visible{transform:translateX(-50%) translateY(0)}
+.loader-ring{width:50px;height:50px;border:4px solid rgba(0,210,255,.1);border-top:4px solid var(--neon-blue);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{100%{transform:rotate(360deg)}}
+.preview-img{max-width:100%;max-height:100%;object-fit:contain;border-radius:20px;display:none}
+</style>
 </head>
-<body class="bg-black text-white flex items-center justify-center min-h-screen">
-
-<div class="w-full max-w-md p-6 rounded-3xl bg-neutral-900 shadow-xl">
-  <h1 class="text-center text-2xl font-extrabold mb-4">Uber Pro GPS</h1>
-
-  <div class="space-y-4">
-    <input id="pickup" placeholder="Lat,Lng RECOGIDA" class="w-full p-3 rounded-xl text-black" />
-    <input id="dropoff" placeholder="Lat,Lng DESTINO" class="w-full p-3 rounded-xl text-black" />
-
-    <button id="analyzeBtn" class="w-full p-4 rounded-xl bg-white text-black font-bold">
-      ANALIZAR
-    </button>
-
-    <p id="status" class="text-center text-sm opacity-70"></p>
-  </div>
+<body>
+<div id="toast">COORDENADAS COPIADAS</div>
+<div class="neon-container"><div class="glass-panel">
+<div class="text-center mb-6"><h1 class="brand-title">UBER PRO</h1></div>
+<div id="ui-main" class="flex-1 flex flex-col">
+<div id="dropzone" class="ios-card" onclick="fileInput.click()">
+<input type="file" id="file-input" class="hidden" accept="image/*">
+<div id="upload-icon"><p class="text-xs">Cargar Captura</p></div>
+<img id="image-preview" class="preview-img">
 </div>
-
+<button id="analyze-trigger" class="btn-analyze py-5 text-xs uppercase">Analizar Trayecto ✨</button>
+</div>
+<div id="ui-results" class="hidden flex-1 flex flex-col space-y-4">
+<div class="ios-card"><p class="text-[9px]">Origen</p><p id="res-pickup-addr"></p><code id="res-pickup-gps"></code></div>
+<div class="ios-card"><p class="text-[9px]">Destino</p><p id="res-dropoff-addr"></p><code id="res-dropoff-gps"></code></div>
+<button id="btn-restart">Nueva Captura</button>
+</div>
+</div></div>
+<div id="global-loader" class="hidden fixed inset-0 bg-black flex items-center justify-center"><div class="loader-ring"></div></div>
 <script>
-/**
- * FIX PRINCIPAL:
- * El error "analyze error" ocurría porque la función analyze() no existía
- * o estaba siendo llamada antes de definirse.
- */
-
-function analyze() {
-  const pickup = document.getElementById('pickup').value.trim();
-
-  if (!pickup) {
-    setStatus('Falta coordenada de recogida');
-    return;
-  }
-
-  copyToClipboard(pickup);
-  setStatus('📋 Coordenadas de RECOGIDA copiadas automáticamente');
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).catch(() => {
-    setStatus('No se pudo copiar al portapapeles');
-  });
-}
-
-function setStatus(msg) {
-  document.getElementById('status').textContent = msg;
-}
-
-// Listener seguro (evita errores de undefined)
-document.getElementById('analyzeBtn').addEventListener('click', analyze);
-
-/**
- * TESTS BÁSICOS (manuales)
- * 1. Click sin coordenadas → muestra error
- * 2. Con "21.1619,-86.8515" → copia al portapapeles
- * 3. No debe lanzar errores en consola
- */
+const fileInput=document.getElementById('file-input');
+const imgPreview=document.getElementById('image-preview');
+const btnAnalyze=document.getElementById('analyze-trigger');
+const loader=document.getElementById('global-loader');
+let extracted={};
+fileInput.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{imgPreview.src=ev.target.result;imgPreview.style.display='block';btnAnalyze.classList.add('active')};r.readAsDataURL(f)});
+async function analyzeImage(){loader.classList.remove('hidden');
+// SIMULACIÓN OCR — AQUÍ VA TU MOTOR REAL
+// Se respeta orden: primera dirección = recogida, segunda = destino
+extracted={recogida:'DIRECCIÓN 1 EXACTA DE LA IMAGEN',destino:'DIRECCIÓN 2 EXACTA DE LA IMAGEN'};
+await geocode();
+loader.classList.add('hidden');}
+async function geocode(){
+const r1=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(extracted.recogida)}`);
+const r2=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(extracted.destino)}`);
+const j1=await r1.json();const j2=await r2.json();
+document.getElementById('res-pickup-addr').innerText=extracted.recogida;
+document.getElementById('res-dropoff-addr').innerText=extracted.destino;
+document.getElementById('res-pickup-gps').innerText=`${j1[0].lat},${j1[0].lon}`;
+document.getElementById('res-dropoff-gps').innerText=`${j2[0].lat},${j2[0].lon}`;
+copyAuto();
+document.getElementById('ui-main').classList.add('hidden');document.getElementById('ui-results').classList.remove('hidden');}
+function copyAuto(){navigator.clipboard.writeText(document.getElementById('res-pickup-gps').innerText);
+const t=document.getElementById('toast');t.classList.add('visible');setTimeout(()=>t.classList.remove('visible'),2000)}
+btnAnalyze.addEventListener('click',analyzeImage);
 </script>
-
 </body>
 </html>
