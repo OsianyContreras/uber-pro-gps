@@ -1,1 +1,155 @@
 
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Uber Pro GPS</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700;900&display=swap');
+
+body {
+    background:#050505;
+    color:#fff;
+    font-family:'Inter',sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    margin:0;
+}
+
+.neon-container {
+    width:400px;
+    height:90vh;
+    background:#0a0a0a;
+    border-radius:40px;
+    padding:20px;
+    overflow:hidden;
+}
+
+.brand-title {
+    font-family:'Orbitron';
+    font-size:2.2rem;
+    font-weight:900;
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.ios-card {
+    background:rgba(255,255,255,0.05);
+    border-radius:20px;
+    padding:16px;
+}
+
+.btn {
+    background:#fff;
+    color:#000;
+    font-weight:900;
+    border-radius:16px;
+    padding:16px;
+    width:100%;
+    margin-top:16px;
+}
+
+.hidden { display:none; }
+code { color:#38bdf8; }
+</style>
+</head>
+
+<body>
+
+<div class="neon-container">
+    <h1 class="brand-title">UBER PRO</h1>
+
+    <!-- MAIN -->
+    <div id="ui-main">
+        <div class="ios-card text-center">
+            <input type="file" id="file" accept="image/*" class="w-full text-xs">
+        </div>
+        <button id="analyze" class="btn">Analizar Trayecto</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="ui-results" class="hidden space-y-3 mt-4">
+        <div class="ios-card">
+            <b>Recogida</b>
+            <p id="pickupAddr"></p>
+            <code id="pickupGps"></code>
+        </div>
+        <div class="ios-card">
+            <b>Destino</b>
+            <p id="dropAddr"></p>
+            <code id="dropGps"></code>
+        </div>
+        <button id="restart" class="btn">Nueva Consulta</button>
+    </div>
+</div>
+
+<script>
+const fileInput = document.getElementById("file");
+const analyzeBtn = document.getElementById("analyze");
+const restartBtn = document.getElementById("restart");
+
+const uiMain = document.getElementById("ui-main");
+const uiResults = document.getElementById("ui-results");
+
+const pickupAddr = document.getElementById("pickupAddr");
+const dropAddr = document.getElementById("dropAddr");
+const pickupGps = document.getElementById("pickupGps");
+const dropGps = document.getElementById("dropGps");
+
+async function geocode(address) {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+    const res = await fetch(url, { headers:{'User-Agent':'UberProGPS'}});
+    const data = await res.json();
+    if (!data[0]) return "No encontrado";
+    return `${Number(data[0].lat).toFixed(6)},${Number(data[0].lon).toFixed(6)}`;
+}
+
+analyzeBtn.onclick = async () => {
+    if (!fileInput.files[0]) {
+        alert("Sube una imagen");
+        return;
+    }
+
+    analyzeBtn.innerText = "Analizando...";
+    analyzeBtn.disabled = true;
+
+    const { data:{ text } } = await Tesseract.recognize(
+        fileInput.files[0],
+        "spa+eng"
+    );
+
+    const lines = text.split("\n").map(l=>l.trim()).filter(l=>l.length>5);
+
+    const recogida = lines[0] || "Dirección no detectada";
+    const destino = lines[1] || "Dirección no detectada";
+
+    pickupAddr.innerText = recogida;
+    dropAddr.innerText = destino;
+
+    pickupGps.innerText = await geocode(recogida);
+    dropGps.innerText = await geocode(destino);
+
+    uiMain.classList.add("hidden");
+    uiResults.classList.remove("hidden");
+
+    analyzeBtn.innerText = "Analizar Trayecto";
+    analyzeBtn.disabled = false;
+};
+
+restartBtn.onclick = () => {
+    fileInput.value = "";
+    uiResults.classList.add("hidden");
+    uiMain.classList.remove("hidden");
+};
+</script>
+
+</body>
+</html>
