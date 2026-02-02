@@ -1,204 +1,62 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Uber Pro GPS</title>
+  <meta charset="UTF-8" />
+  <title>Uber Pro GPS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- Tesseract OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700;900&display=swap');
-
-:root {
-  --neon-blue:#00d2ff;
-  --deep-blue:#0072ff;
-}
-
-body{
-  background:#050505;
-  color:#fff;
-  font-family:'Inter',sans-serif;
-  margin:0;
-  height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.neon-container{
-  width:100%;
-  max-width:420px;
-  height:92vh;
-  background:#0a0a0a;
-  border-radius:40px;
-  padding:3px;
-  box-shadow:0 0 40px rgba(0,114,255,.3);
-}
-
-.glass-panel{
-  background:rgba(10,10,10,.96);
-  width:100%;
-  height:100%;
-  border-radius:37px;
-  padding:24px;
-  display:flex;
-  flex-direction:column;
-}
-
-.brand-title{
-  font-family:'Orbitron';
-  font-size:2.2rem;
-  letter-spacing:4px;
-  color:#000;
-  -webkit-text-stroke:1.5px var(--neon-blue);
-  text-align:center;
-}
-
-.ios-card{
-  background:rgba(255,255,255,.04);
-  border-radius:22px;
-  border:1px solid rgba(255,255,255,.08);
-  padding:16px;
-}
-
-.btn{
-  width:100%;
-  padding:18px;
-  border-radius:18px;
-  font-weight:900;
-  letter-spacing:.2em;
-  text-transform:uppercase;
-}
-
-.btn-main{
-  background:#fff;
-  color:#000;
-  margin-top:14px;
-}
-
-.btn-nav{
-  background:linear-gradient(135deg,var(--neon-blue),var(--deep-blue));
-  color:#000;
-  margin-top:10px;
-}
-
-#preview{
-  max-width:100%;
-  border-radius:18px;
-  margin-top:12px;
-}
-
-#log{
-  margin-top:14px;
-  font-size:11px;
-  color:#7dd3fc;
-  white-space:pre-line;
-}
-</style>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #fff;
+      padding: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      background: #22c55e;
+      color: #000;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      margin-top: 10px;
+    }
+    #status {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #38bdf8;
+    }
+    pre {
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="neon-container">
-  <div class="glass-panel">
+<h2>📍 Uber Pro GPS</h2>
 
-    <h1 class="brand-title mb-4">UBER PRO</h1>
+<input type="file" id="imageInput" accept="image/*" />
 
-    <div class="ios-card">
-      <input id="fileInput" type="file" accept="image/*" class="w-full text-xs">
-      <img id="preview">
-    </div>
+<button onclick="analyzeImage()">Analizar imagen</button>
+<button onclick="navigatePro()">Navegar PRO (Sygic)</button>
 
-    <button class="btn btn-main" onclick="analyzeImage()">ANALIZAR TRAYECTO</button>
-    <button class="btn btn-nav" onclick="navigatePro()">NAVEGAR PRO</button>
+<div id="status"></div>
+<pre id="output"></pre>
 
-    <div id="log"></div>
-
-  </div>
-</div>
-
-<script>
-let currentCoords = null;
-
-const fileInput = document.getElementById('fileInput');
-const preview   = document.getElementById('preview');
-const logBox    = document.getElementById('log');
-
-fileInput.onchange = e=>{
-  const f = e.target.files[0];
-  if(!f) return;
-  preview.src = URL.createObjectURL(f);
-  log('Imagen cargada correctamente');
-};
-
-function log(t){
-  logBox.innerText += t + "\n";
-}
-
-async function analyzeImage(){
-  if(!fileInput.files[0]){
-    log('❌ Selecciona una imagen primero');
-    return;
-  }
-
-  log('⏳ Iniciando OCR (iPhone estable)…');
-
-  try{
-    const worker = await Tesseract.createWorker({
-      logger:m=>log(`OCR: ${m.status}`)
-    });
-
-    await worker.loadLanguage('eng');
-    await worker.initialize('eng');
-
-    const { data:{ text } } = await worker.recognize(fileInput.files[0]);
-    await worker.terminate();
-
-    log('OCR completado');
-
-    const match = text.match(/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
-
-    if(!match){
-      log('❌ No se encontraron coordenadas en la imagen');
-      return;
-    }
-
-    currentCoords = `${match[1]},${match[2]}`;
-
-    await navigator.clipboard.writeText(currentCoords);
-    log(`✅ Coordenadas copiadas:\n${currentCoords}`);
-
-  }catch(err){
-    console.error(err);
-    log('❌ Error OCR. Ver consola remota');
-  }
-}
-
-function navigatePro(){
-  if(!currentCoords){
-    log('❌ Primero analiza la imagen');
-    return;
-  }
-
-  log('🚗 Abriendo navegación…');
-
-  const sygic = `com.sygic.aura://coordinate|${currentCoords}`;
-  const google = `https://maps.google.com/?q=${currentCoords}`;
-
-  // Intento Sygic
-  const iframe = document.createElement('iframe');
-  iframe.style.display='none';
-  iframe.src=sygic;
-  document.body.appendChild(iframe);
-
-  // Fallback Google Maps
-  setTimeout(()=>{
-    window.location.href = google;
-  },1200);
-}
-</script>
+<script src="js/ocr.js"></script>
+<script src="js/geocode.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/history.js"></script>
 
 </body>
 </html>
