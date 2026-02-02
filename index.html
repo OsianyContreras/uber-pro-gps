@@ -3,153 +3,54 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Uber Pro GPS</title>
+<title>Uber Pro GPS — OCR estable</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
-  /* Diseño base (mantengo tu estilo y look) */
-  :root { --neon-blue:#00d2ff; --deep-blue:#0072ff; }
-
-  html,body{
-    height:100%;
-    margin:0;
-    background:#050505;
-    color:#fff;
-    font-family:Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    -webkit-font-smoothing:antialiased;
-    -webkit-text-size-adjust:100%;
-  }
-
-  .page {
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:12px;
-    box-sizing:border-box;
-  }
-
-  .neon-container{
-    width:100%;
-    max-width:420px;
-    /* change height to auto so content can scroll on small screens */
-    height:auto;
-    background:#0a0a0a;
-    border-radius:20px;
-    padding:8px;
-    box-shadow:0 10px 30px rgba(0,114,255,0.18);
-  }
-
-  .glass-panel{
-    background:rgba(10,10,10,0.96);
-    border-radius:16px;
-    padding:16px;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-    max-height:85vh;            /* limit overall panel height on small screens */
-    overflow:auto;              /* allow scrolling inside the panel */
-    box-sizing:border-box;
-  }
-
-  .brand-title{
-    font-family: 'Orbitron', sans-serif;
-    font-size:20px;
-    letter-spacing:3px;
-    color:#000;
-    -webkit-text-stroke:1.4px var(--neon-blue);
-    text-align:center;
-    margin:0;
-  }
-
-  .ios-card{
-    background:rgba(255,255,255,0.03);
-    border-radius:12px;
-    padding:10px;
-    border:1px solid rgba(255,255,255,0.06);
-  }
-
-  input[type=file]{ width:100%; color:#fff; }
-
-  /* IMPORTANT: limit preview height so buttons remain visible */
-  #preview{
-    display:block;
-    width:100%;
-    max-height:40vh;       /* <-- key: the image will never exceed 40% of viewport height */
-    object-fit:contain;    /* keep aspect ratio and avoid overflow */
-    border-radius:12px;
-    margin-top:8px;
-  }
-
-  .controls{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-
-  .btn{
-    padding:14px;
-    border-radius:12px;
-    border:none;
-    font-weight:800;
-    cursor:pointer;
-    width:100%;
-  }
-  .btn.analyze{ background: linear-gradient(135deg,#fff,#e6e6e6); color:#000; }
-  .btn.navigate{ background: linear-gradient(135deg,var(--neon-blue),var(--deep-blue)); color:#000; }
-
-  #log{
-    font-size:13px;
-    color:#9ed7ff;
-    white-space:pre-line;
-    min-height:44px;
-    margin-top:6px;
-  }
-
-  /* On very small screens, make the panel full-height minus safe area and show scroll */
-  @media (max-height:700px){
-    .glass-panel{ max-height:92vh; }
-    #preview{ max-height:36vh; }
-  }
-
-  /* Make buttons sticky at the bottom of the panel (optional subtle help) */
-  .sticky-footer{
-    position:sticky;
-    bottom:0;
-    background:linear-gradient(180deg, rgba(10,10,10,0), rgba(10,10,10,0.8));
-    padding-top:8px;
-    padding-bottom:6px;
-    margin-top:auto;
-  }
+:root { --neon-blue:#00d2ff; --deep-blue:#0072ff; }
+html,body{height:100%;margin:0;background:#050505;color:#fff;font-family:Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+.page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;}
+.container{width:100%;max-width:420px;background:#0a0a0a;border-radius:20px;padding:10px;box-shadow:0 18px 40px rgba(0,0,0,.5);}
+.panel{background:rgba(10,10,10,.96);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto;box-sizing:border-box;}
+.title{font-family:Orbitron, sans-serif;font-size:22px;letter-spacing:3px;color:#000;-webkit-text-stroke:1.4px var(--neon-blue);text-align:center;margin:0;}
+.card{background:rgba(255,255,255,.03);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.06);}
+input[type=file]{width:100%;color:#fff}
+#preview{display:block;width:100%;max-height:40vh;object-fit:contain;border-radius:12px;margin-top:8px;}
+.controls{display:flex;flex-direction:column;gap:10px;position:sticky;bottom:0;margin-top:auto;padding-top:8px;background:linear-gradient(180deg, rgba(10,10,10,0), rgba(10,10,10,0.85));}
+.btn{padding:14px;border-radius:12px;border:none;font-weight:900;cursor:pointer}
+.btn-main{background:linear-gradient(135deg,#fff,#e6e6e6);color:#000}
+.btn-nav{background:linear-gradient(135deg,var(--neon-blue),var(--deep-blue));color:#000}
+#log{font-size:13px;color:#9ed7ff;white-space:pre-line;min-height:48px}
+.smallnote{font-size:12px;color:#cde6ff}
 </style>
 </head>
 <body>
   <div class="page">
-    <div class="neon-container">
-      <div class="glass-panel">
+    <div class="container">
+      <div class="panel">
+        <h1 class="title">UBER PRO</h1>
 
-        <h1 class="brand-title">UBER PRO</h1>
-
-        <div class="ios-card">
-          <label for="fileInput" style="display:block; font-size:12px; color:#bcd;">Cargar captura</label>
-          <input id="fileInput" type="file" accept="image/*" />
+        <div class="card">
+          <label class="smallnote">Cargar captura</label>
+          <input id="fileInput" type="file" accept="image/*">
           <img id="preview" alt="preview imagen">
         </div>
 
-        <div class="controls sticky-footer">
-          <button id="btnAnalyze" class="btn analyze">Analizar trayecto ✨</button>
-          <button id="btnNavigate" class="btn navigate">Navegar PRO</button>
+        <div class="controls">
+          <button id="btnAnalyze" class="btn btn-main">Analizar Trayecto ✨</button>
+          <button id="btnNavigate" class="btn btn-nav">Navegar PRO</button>
         </div>
 
         <div id="log">Estado: esperando imagen...</div>
-
       </div>
     </div>
   </div>
 
 <script>
-/* --- DOM --- */
+/* ---------------------------
+   Util / DOM
+--------------------------- */
 const fileInput = document.getElementById('fileInput');
 const preview = document.getElementById('preview');
 const btnAnalyze = document.getElementById('btnAnalyze');
@@ -158,131 +59,149 @@ const logBox = document.getElementById('log');
 
 let currentCoords = null;
 
-/* show preview and ensure it fits */
-fileInput.addEventListener('change', (e)=>{
-  const f = e.target.files[0];
-  if(!f) return;
-  preview.src = URL.createObjectURL(f);
-  preview.style.display = 'block';
-  log('Imagen cargada, lista para analizar.');
-});
-
-/* logger */
+/* Logger visible + console */
 function log(msg){
   console.log('[UberPro]', msg);
-  // prepend new lines for clarity
+  // replace text (clear previous short status)
   logBox.innerText = msg;
 }
 
-/* helper to extract coords from text */
-function extractCoordsFromText(text){
-  if(!text) return null;
-  const re = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/g;
+/* ---------------------------
+   Resize helper -> returns dataURL (safer for Tesseract)
+--------------------------- */
+function resizeImageToDataURL(file, maxWidth = 1200) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        if (img.width <= maxWidth) {
+          // return original dataURL from reader
+          resolve(reader.result);
+          return;
+        }
+        const scale = maxWidth / img.width;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        // dataURL for reliable Tesseract input
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        resolve(dataUrl);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------------------------
+   Extract coords from OCR text
+--------------------------- */
+function extractCoordsFromText(text) {
+  if(!text || typeof text !== 'string') return null;
+  // match patterns like 21.165380, -86.844216
+  const regex = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/g;
   let m;
-  while((m = re.exec(text)) !== null){
+  while((m = regex.exec(text)) !== null) {
     const la = Number(m[1]), lo = Number(m[2]);
-    if(!Number.isNaN(la) && !Number.isNaN(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180){
+    if(!Number.isNaN(la) && !Number.isNaN(lo) && la >= -90 && la <= 90 && lo >= -180 && lo <= 180) {
       return { lat: la.toFixed(6), lon: lo.toFixed(6) };
     }
   }
   return null;
 }
 
-/* OCR worker + timeout + termination (robust) */
-async function analyzeImage(){
-  const f = fileInput.files[0];
-  if(!f){ log('Selecciona una imagen primero'); return; }
+/* ---------------------------
+   OCR: definitive robust flow
+--------------------------- */
+async function analyzeImage() {
+  const file = fileInput.files[0];
+  if(!file) { log('❌ Selecciona una imagen primero'); return; }
 
-  log('Iniciando OCR (optimizado)...');
+  log('⏳ Preparando imagen y creando OCR worker...');
+
   btnAnalyze.disabled = true;
   btnNavigate.disabled = true;
   currentCoords = null;
 
   let worker = null;
-  let usedImageSrc = null;
+  let dataUrl = null;
 
-  try{
-    // small resize helper (use object URL if needed) to speed OCR on huge photos
-    const resizeIfLarge = (file, maxWidth=1200) => new Promise((resolve, reject)=>{
-      const img = new Image();
-      const reader = new FileReader();
-      reader.onload = e => { img.src = e.target.result; };
-      reader.onerror = reject;
-      img.onerror = reject;
-      img.onload = () => {
-        if(img.width <= maxWidth){ resolve(img.src); return; }
-        const scale = maxWidth / img.width;
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img,0,0,canvas.width,canvas.height);
-        canvas.toBlob(blob => {
-          if(!blob) resolve(img.src);
-          else resolve(URL.createObjectURL(blob));
-        }, 'image/jpeg', 0.85);
-      };
-      reader.readAsDataURL(file);
-    });
+  try {
+    // prepare image (resize if large) -> dataURL
+    dataUrl = await resizeImageToDataURL(file, 1200);
+    preview.src = dataUrl;
+    preview.style.display = 'block';
+    log('Imagen preparada para OCR');
 
-    usedImageSrc = await resizeIfLarge(f, 1200);
-    log('Imagen preparada para OCR.');
-
-    if(typeof Tesseract === 'undefined' || !Tesseract.createWorker){
-      throw new Error('Motor OCR no disponible en este navegador.');
+    // create worker (await ensures proper initialization)
+    if(typeof Tesseract === 'undefined' || !Tesseract.createWorker) {
+      throw new Error('Motor OCR no disponible en este entorno');
     }
 
-    worker = Tesseract.createWorker({
+    worker = await Tesseract.createWorker({
       logger: m => {
-        // show high-level statuses (optional)
-        if(m && m.status) log('OCR: ' + m.status);
+        // show important statuses to user
+        if(m && m.status) log('OCR: ' + m.status + (m.progress ? ` (${Math.round(m.progress*100)}%)` : ''));
       }
     });
 
     await worker.load();
-    await worker.loadLanguage('eng');
+    await worker.loadLanguage('eng'); // 'eng' is enough for numbers; switch to 'spa' if needed
     await worker.initialize('eng');
     await worker.setParameters({ tessedit_char_whitelist: '0123456789.,- ' });
 
     // recognize with timeout
-    const recognizePromise = worker.recognize(usedImageSrc);
+    const recognizePromise = worker.recognize(dataUrl);
+
     const res = await Promise.race([
       recognizePromise,
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('OCR timeout')),25000))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout')), 30000))
     ]);
 
     const text = (res && res.data && res.data.text) ? res.data.text : (res && res.text) ? res.text : '';
     console.log('[OCR TEXT]', text);
 
     const coords = extractCoordsFromText(text);
-    if(!coords){
-      log('OCR finalizado: no se encontraron coordenadas visibles.');
+    if(!coords) {
+      log('❌ OCR finalizado: no se encontraron coordenadas visibles. Prueba recortar la zona donde estan lat/lon.');
       return;
     }
 
     currentCoords = `${coords.lat},${coords.lon}`;
-    try{ await navigator.clipboard.writeText(currentCoords); log('Coordenadas detectadas y copiadas: ' + currentCoords); }
-    catch(e){ log('Coordenadas detectadas: ' + currentCoords + ' (no se pudo copiar automáticamente)'); }
 
-  }catch(err){
-    console.error('analyze error', err);
-    if(err && err.message && err.message.includes('OCR timeout')){
-      log('OCR tardó demasiado. Intenta una imagen más pequeña o recorta la zona de coordenadas.');
-    } else {
-      log('Error al procesar la imagen. Revisa la consola remota.');
+    try {
+      await navigator.clipboard.writeText(currentCoords);
+      log(`✅ Coordenadas detectadas y copiadas:\n${currentCoords}`);
+    } catch(e) {
+      log(`✅ Coordenadas detectadas:\n${currentCoords}\n(pero no se pudo copiar automáticamente al portapapeles)`);
     }
-  }finally{
-    try{ if(worker) await worker.terminate(); }catch(e){}
-    try{ if(usedImageSrc && usedImageSrc.startsWith('blob:')) URL.revokeObjectURL(usedImageSrc); }catch(e){}
+
+  } catch(err) {
+    console.error('analyze error', err);
+    if(err && err.message && err.message.includes('OCR timeout')) {
+      log('❌ El OCR tardó demasiado. Intenta una imagen más pequeña o recorta la zona con coordenadas.');
+    } else {
+      log('❌ Error al procesar la imagen. Revisa la consola remota (Mac) para detalles.');
+    }
+  } finally {
+    try { if(worker) await worker.terminate(); } catch(e) { /* ignore */ }
     btnAnalyze.disabled = false;
     btnNavigate.disabled = false;
   }
 }
 
-/* Navigate PRO: try Sygic schemes, fallback to Google Maps */
+/* ---------------------------
+   Navigate PRO (Sygic / Google fallback)
+--------------------------- */
 function navigatePro(){
-  if(!currentCoords){ log('Analiza la imagen primero.'); return; }
-  log('Intentando abrir Sygic (o fallback Google)...');
+  if(!currentCoords){ log('❌ Primero analiza la imagen para obtener coordenadas'); return; }
+
+  log('🚗 Intentando abrir Sygic (si no está, se abre Google Maps)...');
 
   const sygicSchemes = [
     `sygic://coordinate|${currentCoords}`,
@@ -290,40 +209,49 @@ function navigatePro(){
   ];
   const googleUrl = `https://www.google.com/maps/search/?api=1&query=${currentCoords}`;
 
-  // Try anchor click method for web
-  try{
+  // 1) Anchor click method (works in many mobile browsers)
+  try {
     const a = document.createElement('a');
     a.href = sygicSchemes[0];
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(()=>{ log('Si Sygic no respondió, abriendo Google Maps...'); window.location.href = googleUrl; }, 1200);
+    setTimeout(()=>{ log('Si Sygic no respondió, se abrirá Google Maps...'); window.location.href = googleUrl; }, 1200);
     return;
-  }catch(e){
+  } catch(e) {
     console.warn('anchor method failed', e);
   }
 
-  // fallback iframe
-  try{
+  // 2) iframe fallback
+  try {
     const iframe = document.createElement('iframe');
-    iframe.style.display='none';
+    iframe.style.display = 'none';
     iframe.src = sygicSchemes[0];
     document.body.appendChild(iframe);
     setTimeout(()=>{ try{ document.body.removeChild(iframe);}catch(_){}; window.location.href = googleUrl; }, 1200);
     return;
-  }catch(e){
+  } catch(e) {
     console.warn('iframe method failed', e);
   }
 
-  // final fallback
+  // 3) final fallback: Google Maps
   window.location.href = googleUrl;
 }
 
-/* wire events */
+/* ---------------------------
+   Wire events
+--------------------------- */
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  // show quick preview (will be replaced by resized preview)
+  preview.src = URL.createObjectURL(f);
+  preview.style.display = 'block';
+  log('Imagen cargada, lista para analizar.');
+});
 btnAnalyze.addEventListener('click', analyzeImage);
 btnNavigate.addEventListener('click', navigatePro);
 </script>
-
 </body>
 </html>
