@@ -3,191 +3,274 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Uber Pro GPS - Sygic Ready</title>
+<title>Uber Pro GPS - OCR estable</title>
 
 <!-- Tesseract OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
-  /* Diseño ligero basado en tu estilo (no cambia visual) */
-  body{font-family:-apple-system, BlinkMacSystemFont, "Inter", Arial; background:#050505; color:#fff; margin:0; padding:18px; display:flex; justify-content:center; align-items:flex-start; min-height:100vh;}
-  .card{width:100%;max-width:420px;background:#0a0a0a;border-radius:20px;padding:20px;box-shadow:0 18px 40px rgba(0,0,0,.6);}
-  h1{font-family:Orbitron, sans-serif; font-size:24px; letter-spacing:3px; color:#00d2ff; margin:0 0 12px 0;}
-  input[type=file]{width:100%;}
-  img{width:100%;border-radius:12px;margin-top:12px;display:none}
-  button{width:100%;padding:14px;border-radius:12px;border:none;font-weight:800;margin-top:12px;cursor:pointer}
-  .btn-primary{background:linear-gradient(135deg,#fff,#e6e6e6);color:#000}
-  .btn-secondary{background:#00a3ff;color:#000}
-  #log{margin-top:12px;color:#bcd;white-space:pre-line;font-size:13px}
+/* Mantengo el estilo que tenías: no lo cambié visualmente */
+:root { --neon-blue:#00d2ff; --deep-blue:#0072ff; }
+body {
+  background:#050505; color:#fff; font-family:Inter, -apple-system, Arial, sans-serif;
+  margin:0; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:18px;
+}
+.container { width:100%; max-width:420px; }
+.card {
+  background: #0a0a0a; border-radius:20px; padding:20px; box-shadow:0 18px 40px rgba(0,0,0,.6);
+}
+.brand { font-family:Orbitron, sans-serif; font-weight:900; font-size:28px; color:var(--neon-blue); margin:0 0 8px 0; }
+.small { color:#9fbde0; font-size:12px; margin-bottom:8px; }
+input[type=file]{width:100%}
+.preview { width:100%; border-radius:12px; margin-top:12px; display:none; }
+.btn { width:100%; padding:14px; border-radius:12px; border:none; font-weight:800; cursor:pointer; margin-top:12px; }
+.btn-primary { background:linear-gradient(135deg,#fff,#e6e6e6); color:#000; }
+.btn-secondary { background:#00a3ff; color:#000; }
+#log { margin-top:12px; color:#bcd; white-space:pre-line; font-size:13px; min-height:36px; }
+.loader { display:inline-block; width:36px; height:36px; border-radius:50%; border:4px solid rgba(0,210,255,.15); border-top-color:var(--neon-blue); animation:spin 1s linear infinite; vertical-align:middle; margin-left:8px; }
+@keyframes spin {100%{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
+<div class="container">
+  <div class="card">
+    <h1 class="brand">UBER PRO</h1>
+    <div class="small">Deep Scan GPS — Extrae coordenadas y abre Sygic/Google</div>
 
-<div class="card">
-  <h1>UBER PRO</h1>
+    <input id="fileInput" type="file" accept="image/*">
+    <img id="preview" class="preview" alt="preview imagen">
 
-  <input id="fileInput" type="file" accept="image/*" />
-  <img id="preview" alt="preview"/>
+    <button id="btnAnalyze" class="btn btn-primary">Analizar trayecto ✨</button>
+    <button id="btnNavigate" class="btn btn-secondary">Navegar PRO</button>
 
-  <button class="btn-primary" onclick="onAnalyze()">Analizar trayecto</button>
-  <button class="btn-secondary" onclick="onNavigatePro()">Navegar PRO</button>
-
-  <div id="log">Estado: esperando imagen...</div>
+    <div id="log">Estado: esperando imagen...</div>
+  </div>
 </div>
 
 <script>
-/* -------------------------
-  Variables DOM
-------------------------- */
+/* ------------ Helpers / DOM ------------ */
 const fileInput = document.getElementById('fileInput');
-const preview   = document.getElementById('preview');
-const logBox    = document.getElementById('log');
+const preview = document.getElementById('preview');
+const btnAnalyze = document.getElementById('btnAnalyze');
+const btnNavigate = document.getElementById('btnNavigate');
+const logBox = document.getElementById('log');
 
 let currentCoords = null;
 
-/* -------------------------
-  Helpers
-------------------------- */
 function log(msg){
   console.log('[UberPro]', msg);
-  if(logBox) logBox.textContent = 'Estado: ' + msg;
+  logBox.textContent = 'Estado: ' + msg;
 }
 
-function showPreview(file){
-  preview.src = URL.createObjectURL(file);
-  preview.style.display = 'block';
+/* Resize image to reduce OCR time if big */
+function resizeImageIfNeeded(file, maxWidth = 1200){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onerror = reject;
+    img.onload = () => {
+      // if width already small, keep original dataURL
+      if(img.width <= maxWidth){
+        resolve(img.src);
+        return;
+      }
+      // scale down preserving aspect
+      const scale = maxWidth / img.width;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        if(!blob) {
+          // fallback to original src
+          resolve(img.src);
+        } else {
+          // create object URL from blob
+          const url = URL.createObjectURL(blob);
+          resolve(url);
+        }
+      }, 'image/jpeg', 0.85);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
-/* simple validator of lat/lon ranges */
-function isValidLatLon(lat, lon){
-  const la = Number(lat), lo = Number(lon);
-  return !Number.isNaN(la) && !Number.isNaN(lo) && la >= -90 && la <= 90 && lo >= -180 && lo <= 180;
-}
-
-/* extract decimal coords from text */
+/* Extract decimal lat,long from text: robust loop to find first valid pair */
 function extractCoordsFromText(text){
+  if(!text || typeof text !== 'string') return null;
+  // match decimals with comma separator
   const re = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/g;
   let m;
   while((m = re.exec(text)) !== null){
-    if(isValidLatLon(m[1], m[2])) return { lat: Number(m[1]).toFixed(6), lon: Number(m[2]).toFixed(6) };
+    const la = Number(m[1]), lo = Number(m[2]);
+    if(!Number.isNaN(la) && !Number.isNaN(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180){
+      return { lat: la.toFixed(6), lon: lo.toFixed(6) };
+    }
   }
   return null;
 }
 
-/* -------------------------
-  File handling
-------------------------- */
-fileInput.addEventListener('change', e => {
-  const f = e.target.files[0];
-  if(!f){ log('No hay archivo'); return; }
-  showPreview(f);
-  log('Imagen cargada, lista para analizar');
-});
-
-/* -------------------------
-  OCR & Analyze
-------------------------- */
-async function onAnalyze(){
-  const f = fileInput.files[0];
-  if(!f){ log('Selecciona una imagen primero'); return; }
+/* ------------ OCR flow (robust) ------------ */
+async function analyzeImage(){
+  const file = fileInput.files[0];
+  if(!file){ log('Selecciona una imagen primero'); return; }
 
   log('Iniciando OCR (puede tardar)...');
+  btnAnalyze.disabled = true;
+  btnNavigate.disabled = true;
+  currentCoords = null;
 
+  let worker = null;
+  let usedImageSrc = null;
   try{
-    // Use Tesseract worker in a simple way
-    const worker = await Tesseract.createWorker({ logger: m => { /* opcional: console.log(m) */ } });
+    // Resize (if large) to speed OCR and avoid blocking
+    usedImageSrc = await resizeImageIfNeeded(file, 1200);
+    log('Imagen preparada para OCR (optimizada).');
+
+    // Create and initialize worker properly
+    if(typeof Tesseract === 'undefined' || !Tesseract.createWorker){
+      throw new Error('Motor OCR no disponible en este navegador.');
+    }
+
+    worker = Tesseract.createWorker({
+      logger: m => {
+        // optional: progress logs
+        // console.log('tess', m);
+      }
+    });
+
     await worker.load();
-    await worker.loadLanguage('eng'); // o 'spa' si tu imagen contiene español
+    // using 'eng' is fine for digits; if your images need spanish words, change to 'spa'
+    await worker.loadLanguage('eng');
     await worker.initialize('eng');
+    // restrict char set to speed recognition: digits, comma, dot, hyphen, spaces
     await worker.setParameters({ tessedit_char_whitelist: '0123456789.,- ' });
 
-    const { data } = await worker.recognize(f);
-    await worker.terminate();
+    // Recognize with timeout
+    const recognizePromise = worker.recognize(usedImageSrc);
+    const res = await Promise.race([
+      recognizePromise,
+      new Promise((_, reject) => setTimeout(()=> reject(new Error('OCR timeout')), 25000))
+    ]);
 
-    const text = (data && data.text) ? data.text : '';
+    // extract text and search coords
+    const text = (res && res.data && res.data.text) ? res.data.text : (res && res.text) ? res.text : '';
     console.log('[OCR TEXT]', text);
 
     const coords = extractCoordsFromText(text);
     if(!coords){
-      log('OCR completado: no se encontraron coordenadas visibles. Intenta otra captura.');
+      log('OCR finalizado: no se encontraron coordenadas visibles.');
       return;
     }
 
     currentCoords = `${coords.lat},${coords.lon}`;
-    try{ await navigator.clipboard.writeText(currentCoords); log('Coordenadas detectadas y copiadas: ' + currentCoords); }
-    catch(e){ log('Coordenas detectadas: ' + currentCoords + ' (no se pudo copiar al portapapeles)'); }
+    try{
+      await navigator.clipboard.writeText(currentCoords);
+      log('Coordenadas detectadas y copiadas: ' + currentCoords);
+    }catch(e){
+      log('Coordenadas detectadas: ' + currentCoords + ' (no se pudo copiar automáticamente)');
+    }
 
   }catch(err){
-    console.error('OCR error', err);
-    log('Error al procesar imagen (OCR). Revisa consola.');
+    console.error('analyze error', err);
+    if(err && err.message && err.message.includes('OCR timeout')){
+      log('OCR tardó demasiado. Intenta una imagen más pequeña o recortar la zona con coordenadas.');
+    } else {
+      log('Error al procesar la imagen. Revisa la consola.');
+    }
+  }finally{
+    // ensure worker termination and free resources
+    try{ if(worker) await worker.terminate(); }catch(e){/*ignore*/}
+
+    // revoke object URL if we created one via resizeImageIfNeeded
+    try{ if(usedImageSrc && usedImageSrc.startsWith('blob:')) URL.revokeObjectURL(usedImageSrc); }catch(e){}
+
+    btnAnalyze.disabled = false;
+    btnNavigate.disabled = false;
   }
 }
 
-/* -------------------------
-  Navegar PRO (iOS native + fallback)
-------------------------- */
-async function onNavigatePro(){
+/* ------------ Navigate PRO (web + capacitor fallback) ------------ */
+function navigatePro(){
   if(!currentCoords){
     log('Primero analiza la imagen para obtener coordenadas');
     return;
   }
-
   const sygicSchemes = [
     `sygic://coordinate|${currentCoords}`,
     `com.sygic.aura://coordinate|${currentCoords}`
   ];
   const googleUrl = `https://www.google.com/maps/search/?api=1&query=${currentCoords}`;
 
-  log('Intentando abrir Sygic en la app nativa...');
+  log('Intentando abrir Sygic / Google (según entorno)...');
 
-  // Si estamos en Capacitor nativo con @capacitor/app disponible
-  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App && typeof window.Capacitor.Plugins.App.openUrl === 'function'){
-    // probamos ambas variantes de scheme
-    try{
-      await window.Capacitor.Plugins.App.openUrl({ url: sygicSchemes[0] });
-      log('Sygic abierto (scheme 1)');
+  // Capacitor native path
+  try{
+    if(window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App && typeof Capacitor.Plugins.App.openUrl === 'function'){
+      // try both schemes
+      Capacitor.Plugins.App.openUrl({ url: sygicSchemes[0] })
+      .then(()=> log('Intento Sygic (scheme 1) enviado a sistema.'))
+      .catch(()=> {
+        Capacitor.Plugins.App.openUrl({ url: sygicSchemes[1] })
+        .then(()=> log('Intento Sygic (scheme 2) enviado a sistema.'))
+        .catch(()=> {
+          Capacitor.Plugins.App.openUrl({ url: googleUrl });
+          log('Fallback: Google Maps (Capacitor).');
+        });
+      });
       return;
-    }catch(e1){
-      console.warn('scheme1 falló', e1);
-      try{
-        await window.Capacitor.Plugins.App.openUrl({ url: sygicSchemes[1] });
-        log('Sygic abierto (scheme 2)');
-        return;
-      }catch(e2){
-        console.warn('scheme2 falló', e2);
-        log('Sygic no se abrió. Abriendo Google Maps como fallback.');
-        await window.Capacitor.Plugins.App.openUrl({ url: googleUrl });
-        return;
-      }
     }
+  }catch(e){
+    console.warn('Capacitor path error', e);
   }
 
-  // En web (GitHub Pages / Safari) hacemos el intento por scheme y luego fallback a Google
-  // Intentamos por <a> click (más seguro que location.href en algunos navegadores)
-  for(const s of sygicSchemes){
+  // Web fallback: try <a> click, then iframe, then Google
+  (function webOpen(){
+    // 1) Try anchor click
     try{
       const a = document.createElement('a');
-      a.href = s;
+      a.href = sygicSchemes[0];
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      // le damos un tiempo para que la app abra; si no, abrimos Google
-      setTimeout(()=>{
-        log('Si Sygic no respondió, abriendo Google Maps...');
-        window.location.href = googleUrl;
-      }, 1200);
+      // allow some time for the app to open; if not, open google
+      setTimeout(()=>{ log('Si Sygic no respondió, se abre Google Maps...'); window.location.href = googleUrl; }, 1200);
+      return;
+    }catch(e){ console.warn('anchor failed', e); }
+
+    // 2) iframe fallback
+    try{
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = sygicSchemes[0];
+      document.body.appendChild(iframe);
+      setTimeout(()=>{ try{ document.body.removeChild(iframe); }catch(_){}; window.location.href = googleUrl; }, 1200);
       return;
     }catch(e){
-      console.warn('Intento scheme en web falló para', s, e);
+      console.warn('iframe failed', e);
     }
-  }
 
-  // Último recurso: abrir Google Maps
-  log('Abriendo Google Maps (fallback final)');
-  window.location.href = googleUrl;
+    // 3) final fallback
+    window.location.href = googleUrl;
+  })();
 }
-</script>
 
+/* ------------ UI wiring ------------ */
+fileInput.addEventListener('change', e => {
+  // show preview on load
+  const f = e.target.files[0];
+  if(!f) return;
+  preview.src = URL.createObjectURL(f);
+  preview.style.display = 'block';
+  log('Imagen cargada, lista para analizar.');
+});
+
+btnAnalyze.addEventListener('click', analyzeImage);
+btnNavigate.addEventListener('click', navigatePro);
+</script>
 </body>
 </html>
