@@ -152,12 +152,26 @@ async function analyzeImage(){
   btnAnalyze.disabled = true;
 
   try{
-    const worker = Tesseract.createWorker({ logger: m=>{} });
-    await worker.load();
-    await worker.loadLanguage('spa');
-    await worker.initialize('spa');
-    const { data:{ text } } = await worker.recognize(imgPreview);
-    await worker.terminate();
+    let worker = null;
+let text = '';
+try{
+  if(!Tesseract || !Tesseract.createWorker) throw new Error('Motor OCR no disponible');
+  worker = Tesseract.createWorker();
+  await worker.load();
+  await worker.loadLanguage('spa');
+  await worker.initialize('spa');
+  const recognizePromise = worker.recognize(imgPreview.src || imgPreview);
+  const res = await Promise.race([
+    recognizePromise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('OCR timeout')),25000))
+  ]);
+  text = res && res.data && res.data.text ? res.data.text : (res && res.text) ? res.text : '';
+}catch(e){
+  // rethrow to be caught by outer try
+  throw e;
+}finally{
+  try{ if(worker) await worker.terminate(); }catch(e){}
+}
 
     // 1) Buscar primer par lat,lon en el texto (ej: 21.165380,-86.844216)
     const coordRegex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/g;
