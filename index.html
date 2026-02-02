@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Uber Pro GPS — OCR estable</title>
 
+<!-- Tesseract OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
@@ -21,8 +22,8 @@ input[type=file]{width:100%;color:#fff}
 .btn{padding:14px;border-radius:12px;border:none;font-weight:900;cursor:pointer}
 .btn-main{background:linear-gradient(135deg,#fff,#e6e6e6);color:#000}
 .btn-nav{background:linear-gradient(135deg,var(--neon-blue),var(--deep-blue));color:#000}
-#log{font-size:13px;color:#9ed7ff;white-space:pre-line;min-height:48px}
-.smallnote{font-size:12px;color:#cde6ff}
+#log{font-size:13px;color:#9ed7ff;white-space:pre-line;min-height:64px}
+.small{font-size:12px;color:#bcd}
 </style>
 </head>
 <body>
@@ -32,14 +33,14 @@ input[type=file]{width:100%;color:#fff}
         <h1 class="title">UBER PRO</h1>
 
         <div class="card">
-          <label class="smallnote">Cargar captura</label>
+          <label class="small">Cargar captura</label>
           <input id="fileInput" type="file" accept="image/*">
           <img id="preview" alt="preview imagen">
         </div>
 
         <div class="controls">
           <button id="btnAnalyze" class="btn btn-main">Analizar Trayecto ✨</button>
-          <button id="btnNavigate" class="btn btn-nav">Navegar PRO</button>
+          <button id="btnNavigate" class="btn btn-nav" disabled>Navegar PRO</button>
         </div>
 
         <div id="log">Estado: esperando imagen...</div>
@@ -49,7 +50,7 @@ input[type=file]{width:100%;color:#fff}
 
 <script>
 /* ---------------------------
-   Util / DOM
+   DOM
 --------------------------- */
 const fileInput = document.getElementById('fileInput');
 const preview = document.getElementById('preview');
@@ -59,15 +60,16 @@ const logBox = document.getElementById('log');
 
 let currentCoords = null;
 
-/* Logger visible + console */
+/* ---------------------------
+   Logger
+--------------------------- */
 function log(msg){
   console.log('[UberPro]', msg);
-  // replace text (clear previous short status)
   logBox.innerText = msg;
 }
 
 /* ---------------------------
-   Resize helper -> returns dataURL (safer for Tesseract)
+   Resize helper -> returns dataURL (reliable for Tesseract)
 --------------------------- */
 function resizeImageToDataURL(file, maxWidth = 1200) {
   return new Promise((resolve, reject) => {
@@ -78,8 +80,7 @@ function resizeImageToDataURL(file, maxWidth = 1200) {
       img.onerror = reject;
       img.onload = () => {
         if (img.width <= maxWidth) {
-          // return original dataURL from reader
-          resolve(reader.result);
+          resolve(reader.result); // original dataURL
           return;
         }
         const scale = maxWidth / img.width;
@@ -88,7 +89,6 @@ function resizeImageToDataURL(file, maxWidth = 1200) {
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        // dataURL for reliable Tesseract input
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         resolve(dataUrl);
       };
@@ -99,31 +99,45 @@ function resizeImageToDataURL(file, maxWidth = 1200) {
 }
 
 /* ---------------------------
-   Extract coords from OCR text
+   Multiple regex attempts to extract coords robustly
 --------------------------- */
 function extractCoordsFromText(text) {
   if(!text || typeof text !== 'string') return null;
-  // match patterns like 21.165380, -86.844216
-  const regex = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/g;
+
+  // 1) standard decimal with comma: 21.165380, -86.844216
+  let re1 = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/g;
   let m;
-  while((m = regex.exec(text)) !== null) {
+  while((m = re1.exec(text)) !== null){
     const la = Number(m[1]), lo = Number(m[2]);
-    if(!Number.isNaN(la) && !Number.isNaN(lo) && la >= -90 && la <= 90 && lo >= -180 && lo <= 180) {
-      return { lat: la.toFixed(6), lon: lo.toFixed(6) };
-    }
+    if(isFinite(la) && isFinite(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180) return {lat:la.toFixed(6), lon:lo.toFixed(6)};
   }
+
+  // 2) space separated decimals: 21.165380 -86.844216
+  let re2 = /(-?\d{1,2}\.\d+)\s+(-?\d{1,3}\.\d+)/g;
+  while((m = re2.exec(text)) !== null){
+    const la = Number(m[1]), lo = Number(m[2]);
+    if(isFinite(la) && isFinite(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180) return {lat:la.toFixed(6), lon:lo.toFixed(6)};
+  }
+
+  // 3) labeled like "Lat: 21.165380 Lon: -86.844216" or "Latitude 21.165380 Longitude -86.844216"
+  let re3 = /lat(?:itude)?[:\s]*(-?\d{1,2}\.\d+)[^\d\-]+lon(?:gitude|):?\s*(-?\d{1,3}\.\d+)/i;
+  m = re3.exec(text);
+  if(m){
+    const la = Number(m[1]), lo = Number(m[2]);
+    if(isFinite(la) && isFinite(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180) return {lat:la.toFixed(6), lon:lo.toFixed(6)};
+  }
+
   return null;
 }
 
 /* ---------------------------
-   OCR: definitive robust flow
+   OCR robust flow (definitive)
 --------------------------- */
 async function analyzeImage() {
   const file = fileInput.files[0];
-  if(!file) { log('❌ Selecciona una imagen primero'); return; }
+  if(!file){ log('❌ Selecciona una imagen primero'); return; }
 
-  log('⏳ Preparando imagen y creando OCR worker...');
-
+  log('⏳ Preparando imagen para OCR...');
   btnAnalyze.disabled = true;
   btnNavigate.disabled = true;
   currentCoords = null;
@@ -132,66 +146,76 @@ async function analyzeImage() {
   let dataUrl = null;
 
   try {
-    // prepare image (resize if large) -> dataURL
+    // 1) Prepare image and show preview (resized dataURL)
     dataUrl = await resizeImageToDataURL(file, 1200);
     preview.src = dataUrl;
     preview.style.display = 'block';
     log('Imagen preparada para OCR');
 
-    // create worker (await ensures proper initialization)
+    // 2) Create worker (use await for compatibility)
     if(typeof Tesseract === 'undefined' || !Tesseract.createWorker) {
-      throw new Error('Motor OCR no disponible en este entorno');
+      throw new Error('Motor Tesseract no disponible en este navegador.');
     }
 
     worker = await Tesseract.createWorker({
       logger: m => {
-        // show important statuses to user
-        if(m && m.status) log('OCR: ' + m.status + (m.progress ? ` (${Math.round(m.progress*100)}%)` : ''));
+        // Useful statuses: 'loading tesseract core', 'loading language traineddata', 'recognizing text', etc.
+        if(m && m.status) {
+          log('OCR: ' + m.status + (m.progress ? ` (${Math.round(m.progress*100)}%)` : ''));
+        }
       }
     });
 
     await worker.load();
-    await worker.loadLanguage('eng'); // 'eng' is enough for numbers; switch to 'spa' if needed
-    await worker.initialize('eng');
-    await worker.setParameters({ tessedit_char_whitelist: '0123456789.,- ' });
+    await worker.loadLanguage('eng+spa'); // load both to improve chances
+    await worker.initialize('eng+spa');
+    await worker.setParameters({ tessedit_char_whitelist: '0123456789.,-: LatLonlatlonABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ' });
 
-    // recognize with timeout
+    // 3) Recognize with timeout
+    log('OCR: Reconociendo texto (esto puede tardar unos segundos)...');
     const recognizePromise = worker.recognize(dataUrl);
 
     const res = await Promise.race([
       recognizePromise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout')), 30000))
+      new Promise((_, reject) => setTimeout(()=> reject(new Error('OCR timeout')), 30000))
     ]);
 
+    // 4) Extract text and parse coordinates
     const text = (res && res.data && res.data.text) ? res.data.text : (res && res.text) ? res.text : '';
     console.log('[OCR TEXT]', text);
+    log('OCR completado. Buscando coordenadas en texto...');
 
     const coords = extractCoordsFromText(text);
-    if(!coords) {
-      log('❌ OCR finalizado: no se encontraron coordenadas visibles. Prueba recortar la zona donde estan lat/lon.');
+    if(!coords){
+      // For debugging, show partial text (first 300 chars) in log
+      const snippet = text ? text.trim().slice(0,300).replace(/\n/g,' ') : '(sin texto)';
+      log('❌ No se encontraron coordenadas. Texto OCR (preview):\n' + snippet + (text && text.length>300 ? '...' : ''));
       return;
     }
 
     currentCoords = `${coords.lat},${coords.lon}`;
 
-    try {
+    // copy to clipboard if possible
+    try{
       await navigator.clipboard.writeText(currentCoords);
       log(`✅ Coordenadas detectadas y copiadas:\n${currentCoords}`);
-    } catch(e) {
-      log(`✅ Coordenadas detectadas:\n${currentCoords}\n(pero no se pudo copiar automáticamente al portapapeles)`);
+    }catch(e){
+      log(`✅ Coordenadas detectadas:\n${currentCoords}\n(pero no se pudo copiar automáticamente)`);
     }
+
+    // enable navigate button
+    btnNavigate.disabled = false;
 
   } catch(err) {
     console.error('analyze error', err);
-    if(err && err.message && err.message.includes('OCR timeout')) {
-      log('❌ El OCR tardó demasiado. Intenta una imagen más pequeña o recorta la zona con coordenadas.');
+    if(err && err.message && err.message.includes('OCR timeout')){
+      log('❌ El OCR tardó demasiado. Intenta recortar la imagen a la zona con las coordenadas o usar una imagen más pequeña.');
     } else {
-      log('❌ Error al procesar la imagen. Revisa la consola remota (Mac) para detalles.');
+      log('❌ Error al procesar la imagen. Revisa la consola remota para detalles.');
     }
   } finally {
-    try { if(worker) await worker.terminate(); } catch(e) { /* ignore */ }
+    try{ if(worker) await worker.terminate(); }catch(e){/* ignore */ }
     btnAnalyze.disabled = false;
-    btnNavigate.disabled = false;
   }
 }
 
@@ -200,8 +224,7 @@ async function analyzeImage() {
 --------------------------- */
 function navigatePro(){
   if(!currentCoords){ log('❌ Primero analiza la imagen para obtener coordenadas'); return; }
-
-  log('🚗 Intentando abrir Sygic (si no está, se abre Google Maps)...');
+  log('🚗 Intentando abrir Sygic (si no está, se abrirá Google Maps)');
 
   const sygicSchemes = [
     `sygic://coordinate|${currentCoords}`,
@@ -209,7 +232,7 @@ function navigatePro(){
   ];
   const googleUrl = `https://www.google.com/maps/search/?api=1&query=${currentCoords}`;
 
-  // 1) Anchor click method (works in many mobile browsers)
+  // 1) Try anchor click
   try {
     const a = document.createElement('a');
     a.href = sygicSchemes[0];
@@ -217,7 +240,7 @@ function navigatePro(){
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(()=>{ log('Si Sygic no respondió, se abrirá Google Maps...'); window.location.href = googleUrl; }, 1200);
+    setTimeout(()=>{ log('Si Sygic no respondió, abriendo Google Maps...'); window.location.href = googleUrl; }, 1200);
     return;
   } catch(e) {
     console.warn('anchor method failed', e);
@@ -235,7 +258,7 @@ function navigatePro(){
     console.warn('iframe method failed', e);
   }
 
-  // 3) final fallback: Google Maps
+  // 3) final fallback
   window.location.href = googleUrl;
 }
 
@@ -245,11 +268,12 @@ function navigatePro(){
 fileInput.addEventListener('change', e => {
   const f = e.target.files[0];
   if(!f) return;
-  // show quick preview (will be replaced by resized preview)
+  // quick preview (will be replaced by resized preview inside analyze)
   preview.src = URL.createObjectURL(f);
   preview.style.display = 'block';
   log('Imagen cargada, lista para analizar.');
 });
+
 btnAnalyze.addEventListener('click', analyzeImage);
 btnNavigate.addEventListener('click', navigatePro);
 </script>
