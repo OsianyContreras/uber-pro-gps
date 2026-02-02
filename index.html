@@ -13,7 +13,7 @@
     button{width:100%;padding:16px;border-radius:14px;border:none;background:#22c55e;color:#000;font-size:17px;font-weight:600;margin-top:14px}
     button.secondary{background:#38bdf8}
     button.gray{background:#64748b;color:#fff}
-    #log{margin-top:16px;font-size:14px;color:#94a3b8}
+    #log{margin-top:16px;font-size:14px;color:#94a3b8;white-space:pre-line}
     img{width:100%;border-radius:12px;margin-top:12px}
   </style>
 </head>
@@ -33,32 +33,66 @@
 <script>
 let currentCoords = null;
 
+const fileInput = document.getElementById('fileInput');
+const preview = document.getElementById('preview');
+const logBox = document.getElementById('log');
+
 fileInput.onchange = e => {
   const file = e.target.files[0];
+  if(!file) return;
   preview.src = URL.createObjectURL(file);
-}
+  log('Imagen cargada, lista para analizar');
+};
 
 async function analyzeImage(){
+  if(!fileInput.files[0]){ log('Primero selecciona una imagen'); return; }
   log('Analizando imagen…');
   try{
     const { data:{ text } } = await Tesseract.recognize(fileInput.files[0],'eng');
-    const match = text.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
-    if(!match) throw 'No se detectaron coordenadas';
+    const match = text.match(/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
+    if(!match) throw new Error('No se detectaron coordenadas');
     currentCoords = `${match[1]},${match[2]}`;
     await navigator.clipboard.writeText(currentCoords);
-    log('Coordenadas copiadas: '+currentCoords);
-  }catch(e){ log('Error al analizar imagen'); }
+    log('Coordenadas detectadas y copiadas:\n'+currentCoords);
+  }catch(e){
+    console.error(e);
+    log('Error al analizar imagen');
+  }
 }
 
-function navigate(){
+async function navigate(){
   if(!currentCoords){ log('Primero analiza una imagen'); return; }
-  const sygic = `com.sygic.aura://coordinate|${currentCoords}`;
-  const google = `https://maps.google.com/?q=${currentCoords}`;
-  window.location.href = sygic;
-  setTimeout(()=>window.location.href=google,1200);
+
+  const sygicUrl = `com.sygic.aura://coordinate|${currentCoords}`;
+  const googleUrl = `https://maps.google.com/?q=${currentCoords}`;
+
+  log('Intentando abrir Sygic…');
+
+  // Si estamos dentro de Capacitor (iOS real)
+  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App){
+    try{
+      await window.Capacitor.Plugins.App.openUrl({ url: sygicUrl });
+      return;
+    }catch(e){
+      log('Sygic no disponible, abriendo Google Maps');
+      await window.Capacitor.Plugins.App.openUrl({ url: googleUrl });
+      return;
+    }
+  }
+
+  // Fallback navegador (Safari / PWA)
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = sygicUrl;
+  document.body.appendChild(iframe);
+
+  setTimeout(()=>{
+    document.body.removeChild(iframe);
+    window.location.href = googleUrl;
+  },1200);
 }
 
-function log(t){ document.getElementById('log').innerText=t; }
+function log(t){ logBox.innerText = t; }
 </script>
 </body>
 </html>
