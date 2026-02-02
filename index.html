@@ -176,11 +176,24 @@ analyzeBtn.onclick=async()=>{
 
     lat=m[1]; lng=m[2];
 
+    // Mostrar coordenadas
     coords.innerHTML=`
       Latitud: <b>${lat}</b><br>
       Longitud: <b>${lng}</b><br>
       App: <b>${appDetectada}</b>
     `;
+
+    // ###########################
+    // CAMBIO SOLICITADO: copiar automáticamente "lat,lng" al portapapeles
+    // ###########################
+    const coordsToCopy = `${lat},${lng}`; // formato EXACTO con una sola coma, sin espacios
+    try{
+      await navigator.clipboard.writeText(coordsToCopy);
+      debug("Coordenadas copiadas al portapapeles: " + coordsToCopy);
+    }catch(err){
+      debug("Fallo al copiar al portapapeles: " + (err && err.message ? err.message : err));
+    }
+    // ###########################
 
     guardarHistorial();
     navigateBtn.disabled=false;
