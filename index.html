@@ -1,288 +1,101 @@
+<!-- ============================= -->
+<!-- index.html (LISTO PARA GITHUB) -->
+<!-- ============================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Uber Pro GPS - Nivel Pro</title>
-<!-- Tailwind CDN for styles (keeps original look) -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- Tesseract OCR -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<style>
-/* Mantener el diseño original: neón, glass, tipografías */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700;900&display=swap');
-:root{--neon-blue:#00d2ff;--deep-blue:#0072ff}
-body{background:#050505;color:#fff;font-family:'Inter',sans-serif;margin:0;height:100vh;display:flex;align-items:center;justify-content:center}
-.brand-title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:2.5rem;text-transform:uppercase;letter-spacing:4px;color:#000;-webkit-text-stroke:1.5px var(--neon-blue);text-shadow:0 0 10px rgba(0,210,255,.7),0 0 20px rgba(0,210,255,.3)}
-.container{width:100%;max-width:420px}
-.neon-container{position:relative;background:#0a0a0a;border-radius:40px;padding:3px;box-shadow:0 0 40px rgba(0,114,255,.3)}
-.neon-container::before{content:'';position:absolute;inset:-50%;background:conic-gradient(transparent,var(--neon-blue),var(--deep-blue),transparent 40%);animation:rotate 6s linear infinite}
-@keyframes rotate{100%{transform:rotate(360deg)}}
-.glass{background:rgba(10,10,10,.95);border-radius:37px;padding:24px;min-height:680px}
-.ios-card{background:rgba(255,255,255,.03);backdrop-filter:blur(10px);border-radius:24px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06)}
-.preview-img{max-width:100%;border-radius:16px;display:none}
-.btn{background:linear-gradient(135deg,#fff,#e0e0e0);color:#000;font-weight:900;border-radius:18px;padding:14px;width:100%;border:none}
-.small-btn{background:rgba(0,210,255,.15);color:var(--neon-blue);padding:8px 12px;border-radius:10px;border:1px solid rgba(0,210,255,.25)}
-.hidden{display:none}
-.history-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,.02);margin-bottom:6px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uber Pro GPS</title>
+  <style>
+    body{font-family:-apple-system,Helvetica,Arial;background:#0f172a;color:#fff;margin:0;padding:20px}
+    .card{background:#020617;border-radius:16px;padding:20px;box-shadow:0 20px 40px rgba(0,0,0,.4)}
+    button{width:100%;padding:16px;border-radius:14px;border:none;background:#22c55e;color:#000;font-size:17px;font-weight:600;margin-top:14px}
+    button.secondary{background:#38bdf8}
+    button.gray{background:#64748b;color:#fff}
+    #log{margin-top:16px;font-size:14px;color:#94a3b8}
+    img{width:100%;border-radius:12px;margin-top:12px}
+  </style>
 </head>
 <body>
-<div class="container">
-  <div class="neon-container">
-    <div class="glass">
-      <div class="text-center mb-4">
-        <h1 class="brand-title">UBER PRO</h1>
-        <div class="text-xs text-white/60 uppercase tracking-widest">Deep Scan GPS · Nivel Pro</div>
-      </div>
+  <div class="card">
+    <h2>Uber Pro GPS</h2>
+    <input type="file" id="fileInput" accept="image/*" />
+    <img id="preview" />
 
-      <!-- Upload / Preview -->
-      <div class="ios-card" id="uploader">
-        <input id="file-input" type="file" accept="image/*" class="hidden">
-        <div id="dropzone" class="flex flex-col items-center justify-center cursor-pointer">
-          <div class="w-20 h-20 rounded-full border border-blue-500/20 flex items-center justify-center mb-3">📷</div>
-          <div class="text-xs font-black text-white/40 uppercase tracking-widest">Cargar captura</div>
-          <img id="image-preview" class="preview-img mt-4" alt="preview">
-        </div>
-        <div class="mt-4 grid grid-cols-2 gap-2">
-          <button id="analyze-btn" class="btn disabled:opacity-50" disabled>Analizar Trayecto ✨</button>
-          <button id="clear-btn" class="small-btn">Limpiar</button>
-        </div>
-        <div class="mt-3 text-[11px] text-white/60">Estado OCR: <span id="ocr-status">—</span></div>
-      </div>
+    <button onclick="analyzeImage()">Analizar trayecto</button>
+    <button class="secondary" onclick="navigate()">Navegar</button>
 
-      <!-- Results + Actions -->
-      <div id="results" class="ios-card hidden">
-        <div class="flex items-center justify-between mb-2">
-          <div>
-            <div class="text-[9px] font-black text-blue-400 uppercase">Detección</div>
-            <div id="detected-app" class="text-[12px] font-bold">—</div>
-          </div>
-          <div>
-            <div class="text-[9px] font-black text-blue-400 uppercase">Coordenadas</div>
-            <div id="coords" class="text-[13px] font-mono text-blue-300">0.000000, 0.000000</div>
-          </div>
-        </div>
-
-        <div class="flex gap-2 mt-3">
-          <button id="navigate-btn" class="btn">Navegar (Sygic / Google)</button>
-          <button id="save-btn" class="small-btn">Guardar</button>
-        </div>
-
-        <div class="mt-3 text-[11px] text-white/60">Editar (si deseas ajustar antes de navegar):</div>
-        <input id="manual-input" class="mt-2 p-2 rounded bg-black/40 w-full text-sm" placeholder="19.432608, -99.133209" />
-      </div>
-
-      <!-- History -->
-      <div class="ios-card mt-4">
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-[9px] font-black text-blue-400 uppercase">Historial de viajes</div>
-          <div><button id="clear-history" class="small-btn">Borrar todo</button></div>
-        </div>
-        <div id="history-list" style="max-height:180px;overflow:auto"></div>
-      </div>
-
-      <!-- Tips / Capacitor instructions -->
-      <div class="ios-card mt-4">
-        <div class="text-[9px] font-black text-blue-400 uppercase">Deploy / Capacitor</div>
-        <ol class="text-[12px] text-white/70 list-decimal pl-5 mt-2">
-          <li>Sube este archivo a tu repo y publique en GitHub Pages (HTTPS).</li>
-          <li>Instala Capacitor en un proyecto Node: <code>npm init</code>, <code>npm i @capacitor/core @capacitor/cli</code>.</li>
-          <li>Agrega Android/iOS: <code>npx cap add ios</code>.</li>
-          <li>En Xcode configura entitlements y permisos (Camera, Photo Library, Clipboard, Location si usas geoloc).</li>
-          <li>Build y Archive en Xcode para App Store.</li>
-        </ol>
-      </div>
-
-    </div>
+    <div id="log"></div>
   </div>
-</div>
 
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
-/* --- Utilidades y variables --- */
-const fileInput = document.getElementById('file-input');
-const dropzone = document.getElementById('dropzone');
-const imgPreview = document.getElementById('image-preview');
-const analyzeBtn = document.getElementById('analyze-btn');
-const clearBtn = document.getElementById('clear-btn');
-const ocrStatus = document.getElementById('ocr-status');
-const results = document.getElementById('results');
-const detectedAppEl = document.getElementById('detected-app');
-const coordsEl = document.getElementById('coords');
-const navigateBtn = document.getElementById('navigate-btn');
-const saveBtn = document.getElementById('save-btn');
-const manualInput = document.getElementById('manual-input');
-const historyList = document.getElementById('history-list');
-const clearHistoryBtn = document.getElementById('clear-history');
+let currentCoords = null;
 
-let lastDetected = null; // {lat,lon,source,text}
-
-/* --- Helpers --- */
-function isValidLatLon(lat, lon){
-  const la = Number(lat); const lo = Number(lon);
-  return !Number.isNaN(la) && !Number.isNaN(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180;
+fileInput.onchange = e => {
+  const file = e.target.files[0];
+  preview.src = URL.createObjectURL(file);
 }
 
-function parseLatLonFromText(text){
-  // Prioriza formato con coma
-  const regex = /(-?\d{1,2}\.\d{4,})\s*,\s*(-?\d{1,3}\.\d{4,})/g;
-  let m = regex.exec(text);
-  if(m && isValidLatLon(m[1], m[2])) return {lat: Number(m[1]).toFixed(6), lon: Number(m[2]).toFixed(6)};
-  // fallback: space-separated
-  const regex2 = /(-?\d{1,2}\.\d{4,})\s+(-?\d{1,3}\.\d{4,})/g;
-  m = regex2.exec(text);
-  if(m && isValidLatLon(m[1], m[2])) return {lat: Number(m[1]).toFixed(6), lon: Number(m[2]).toFixed(6)};
-  return null;
-}
-
-function detectAppFromText(text){
-  const t = (text||'').toLowerCase();
-  if(t.includes('uber')) return 'Uber';
-  if(t.includes('didi')) return 'Didi';
-  // heuristics: map/delivery words
-  if(t.includes('tarifa') || t.includes('viaje') || t.includes('recogida') || t.includes('destino')) return 'Posible app de ridesharing';
-  return 'Desconocido';
-}
-
-/* --- History --- */
-function loadHistory(){
-  try{ const s = localStorage.getItem('uberpro_history'); return s?JSON.parse(s):[] }catch(e){return []}
-}
-function saveHistory(arr){ localStorage.setItem('uberpro_history', JSON.stringify(arr)); }
-function addHistory(entry){ const hist = loadHistory(); hist.unshift(entry); saveHistory(hist); renderHistory(); }
-function clearHistory(){ localStorage.removeItem('uberpro_history'); renderHistory(); }
-function renderHistory(){ const hist = loadHistory(); historyList.innerHTML = ''; if(hist.length===0){ historyList.innerHTML = '<div class="text-[12px] text-white/50">Sin historial</div>'; return; }
-  hist.forEach((h, i)=>{
-    const el = document.createElement('div'); el.className='history-item';
-    el.innerHTML = `<div><div class="text-sm font-bold">${h.title||h.source||'Viaje'}</div><div class="text-xs text-white/60">${h.subtitle}</div></div><div><button class='small-btn' data-i='${i}'>Abrir</button></div>`;
-    historyList.appendChild(el);
-  });
-  // bind open
-  historyList.querySelectorAll('.small-btn').forEach(b=>b.addEventListener('click', (ev)=>{
-    const idx = Number(ev.currentTarget.dataset.i); const h = loadHistory()[idx]; if(!h) return; navigateTo(h.lat,h.lon);
-  }));
-}
-
-/* --- Navigation helpers --- */
-function openSygic(lat, lon){
-  const sygic = `sygic://coordinate|${lat}|${lon}`;
-  window.location.href = sygic;
-  // fallback to google after short delay
-  setTimeout(()=>{ window.location.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`; },1200);
-}
-function openAppleMaps(lat, lon){ window.location.href = `https://maps.apple.com/?ll=${lat},${lon}`; }
-
-function navigateTo(lat, lon){
-  // prefer Sygic on devices that support it (iOS/Android)
-  openSygic(lat, lon);
-}
-
-/* --- OCR Flow --- */
-async function analyzeImage(file){
-  ocrStatus.innerText = 'Iniciando OCR...';
+async function analyzeImage(){
+  log('Analizando imagen…');
   try{
-    // create worker
-    const worker = await Tesseract.createWorker({ logger: m => { /* optional: console.log(m) */ } });
-    await worker.load();
-    await worker.loadLanguage('spa');
-    await worker.initialize('spa');
-    await worker.setParameters({ tessedit_char_whitelist: '0123456789.,-:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ' });
-
-    ocrStatus.innerText = 'Reconociendo texto (esto puede tardar)...';
-    // run recognition with timeout
-    const recognize = worker.recognize(imgPreview.src || imgPreview);
-    const res = await Promise.race([recognize, new Promise((_,rej)=>setTimeout(()=>rej(new Error('OCR timeout')),35000))]);
-
-    let text = '';
-    if(res && res.data && res.data.text) text = res.data.text;
-    else if(res && res.text) text = res.text;
-
-    await worker.terminate();
-    ocrStatus.innerText = 'OCR finalizado';
-
-    // detect coordinates
-    const coords = parseLatLonFromText(text) || parseLatLonFromText(text.replace(/o/g,'0')); // small heuristic
-    const source = detectAppFromText(text);
-
-    if(coords){
-      lastDetected = { lat: coords.lat, lon: coords.lon, source, text };
-      detectedAppEl.innerText = source + ' (coordenada encontrada)';
-      coordsEl.innerText = `${coords.lat}, ${coords.lon}`;
-      manualInput.value = `${coords.lat}, ${coords.lon}`;
-      results.classList.remove('hidden');
-      // auto copy and auto navigate to Sygic (user asked)
-      try{ await navigator.clipboard.writeText(`${coords.lat}, ${coords.lon}`); }catch(e){}
-      // show result and let user click navegar
-    } else {
-      // Try to extract address-like lines
-      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>6);
-      const recogida = lines[0]||''; const destino = lines[1]||'';
-      const detected = detectAppFromText(text);
-      detectedAppEl.innerText = detected + (recogida?` · "${recogida}"`:"");
-      coordsEl.innerText = 'No detectadas (se intentará geocoding)';
-      manualInput.value = '';
-      results.classList.remove('hidden');
-      // Try progressive geocode if needed — here we keep simple: user can save and then navigate
-    }
-
-    renderHistory();
-
-  }catch(err){
-    console.error('OCR error',err);
-    ocrStatus.innerText = 'Error OCR';
-    alert('Error al procesar la imagen. Intenta con otra captura o mejora la iluminación.');
-  }
+    const { data:{ text } } = await Tesseract.recognize(fileInput.files[0],'eng');
+    const match = text.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+    if(!match) throw 'No se detectaron coordenadas';
+    currentCoords = `${match[1]},${match[2]}`;
+    await navigator.clipboard.writeText(currentCoords);
+    log('Coordenadas copiadas: '+currentCoords);
+  }catch(e){ log('Error al analizar imagen'); }
 }
 
-/* --- UI interactions --- */
-dropzone.addEventListener('click', ()=> fileInput.click());
-fileInput.addEventListener('change', (e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  const reader = new FileReader();
-  reader.onload = (ev)=>{
-    imgPreview.src = ev.target.result; imgPreview.style.display = 'block'; analyzeBtn.disabled = false; analyzeBtn.classList.add('active');
-    ocrStatus.innerText = 'Imagen cargada';
-  };
-  reader.readAsDataURL(f);
-});
+function navigate(){
+  if(!currentCoords){ log('Primero analiza una imagen'); return; }
+  const sygic = `com.sygic.aura://coordinate|${currentCoords}`;
+  const google = `https://maps.google.com/?q=${currentCoords}`;
+  window.location.href = sygic;
+  setTimeout(()=>window.location.href=google,1200);
+}
 
-analyzeBtn.addEventListener('click', async ()=>{
-  analyzeBtn.disabled = true;
-  await analyzeImage();
-  analyzeBtn.disabled = false;
-});
-
-clearBtn.addEventListener('click', ()=>{
-  imgPreview.src = ''; imgPreview.style.display = 'none'; analyzeBtn.classList.remove('active'); results.classList.add('hidden'); manualInput.value=''; ocrStatus.innerText='—';
-});
-
-navigateBtn.addEventListener('click', ()=>{
-  const raw = manualInput.value.trim() || coordsEl.innerText.trim();
-  const m = raw.match(/(-?\d+\.\d+)\s*,?\s*(-?\d+\.\d+)/);
-  if(!m){ alert('Coordenadas inválidas. Escribe en el formato: LAT, LON'); return; }
-  const lat = Number(m[1]).toFixed(6); const lon = Number(m[2]).toFixed(6);
-  // copy once and navigate
-  try{ navigator.clipboard.writeText(`${lat}, ${lon}`); }catch(e){}
-  navigateTo(lat,lon);
-  // save to history automatically
-  const entry = { title: `Destino ${new Date().toLocaleString()}`, subtitle: `${lat}, ${lon}`, lat, lon, source: lastDetected?lastDetected.source:'Manual', timestamp: Date.now() };
-  addHistory(entry);
-});
-
-saveBtn.addEventListener('click', ()=>{
-  const raw = manualInput.value.trim() || coordsEl.innerText.trim();
-  const m = raw.match(/(-?\d+\.\d+)\s*,?\s*(-?\d+\.\d+)/);
-  if(!m){ alert('Coordenadas inválidas.'); return; }
-  const lat = Number(m[1]).toFixed(6); const lon = Number(m[2]).toFixed(6);
-  const entry = { title: `Destino ${new Date().toLocaleString()}`, subtitle: `${lat}, ${lon}`, lat, lon, source: lastDetected?lastDetected.source:'Manual', timestamp: Date.now() };
-  addHistory(entry); alert('Guardado en historial');
-});
-
-clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Borrar todo el historial?')){ clearHistory(); } });
-
-// initial render
-renderHistory();
-
+function log(t){ document.getElementById('log').innerText=t; }
 </script>
 </body>
 </html>
+
+
+<!-- ============================= -->
+<!-- package.json -->
+<!-- ============================= -->
+{
+  "name": "uber-pro-gps",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "",
+    "ios": "npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "latest",
+    "@capacitor/ios": "latest"
+  }
+}
+
+
+<!-- ============================= -->
+<!-- capacitor.config.json -->
+<!-- ============================= -->
+{
+  "appId": "com.uberprogps.app",
+  "appName": "Uber Pro GPS",
+  "webDir": "./",
+  "bundledWebRuntime": false
+}
+
+
+<!-- ============================= -->
+<!-- COMANDOS iOS -->
+<!-- ============================= -->
+# npm install
+# npx cap add ios
+# npx cap open ios
