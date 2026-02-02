@@ -4,161 +4,208 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Uber Pro GPS Edition</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700;900&display=swap');
-:root { --neon-blue: #00d2ff; --deep-blue: #0072ff; }
-body { background-color:#050505;color:#fff;font-family:'Inter',sans-serif;margin:0;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden; }
-.brand-title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:2.5rem;text-transform:uppercase;letter-spacing:4px;color:#000;-webkit-text-stroke:1.5px var(--neon-blue);text-shadow:0 0 10px rgba(0,210,255,.7),0 0 20px rgba(0,210,255,.3)}
-.neon-container{position:relative;width:100%;max-width:400px;height:90vh;background:#0a0a0a;border-radius:40px;padding:3px;overflow:hidden;box-shadow:0 0 40px rgba(0,114,255,.3)}
-.neon-container::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(transparent,var(--neon-blue),var(--deep-blue),transparent 40%);animation:rotate 6s linear infinite}
-@keyframes rotate{100%{transform:rotate(360deg)}}
-.glass-panel{position:relative;z-index:1;background:rgba(10,10,10,.95);width:100%;height:100%;border-radius:37px;display:flex;flex-direction:column;padding:24px}
-.ios-card{background:rgba(255,255,255,.03);backdrop-filter:blur(10px);border-radius:24px;border:1px solid rgba(255,255,255,.08);padding:20px}
-#dropzone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;max-height:50vh;margin-bottom:20px}
-.btn-analyze{background:linear-gradient(135deg,#fff 0%,#e0e0e0 100%);color:#000;font-weight:900;border-radius:18px;box-shadow:0 10px 20px rgba(0,0,0,.4);transition:.3s;flex-shrink:0;border:none;width:100%}
-.btn-analyze:not(.active){opacity:.2;transform:scale(.95);pointer-events:none}
-.btn-analyze.active{opacity:1;transform:scale(1)}
-.btn-copy{background:rgba(0,210,255,.15);color:var(--neon-blue);font-size:10px;font-weight:900;padding:8px 14px;border-radius:10px;border:1px solid rgba(0,210,255,.3)}
-#toast{position:fixed;top:40px;left:50%;transform:translateX(-50%) translateY(-100px);background:var(--deep-blue);color:white;padding:12px 24px;border-radius:50px;font-weight:800;font-size:12px;z-index:9999;transition:.5s}
-#toast.visible{transform:translateX(-50%) translateY(0)}
-.loader-ring{width:50px;height:50px;border:4px solid rgba(0,210,255,.1);border-top:4px solid var(--neon-blue);border-radius:50%;animation:spin 1s linear infinite}
+
+:root { --neon-blue:#00d2ff; --deep-blue:#0072ff; }
+
+body{
+  background:#050505;
+  color:#fff;
+  font-family:'Inter',sans-serif;
+  margin:0;
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.brand-title{
+  font-family:'Orbitron',sans-serif;
+  font-weight:900;
+  font-size:2.5rem;
+  letter-spacing:4px;
+  color:#000;
+  -webkit-text-stroke:1.5px var(--neon-blue);
+  text-shadow:0 0 10px rgba(0,210,255,.7);
+}
+
+.neon-container{
+  width:100%;
+  max-width:400px;
+  height:90vh;
+  background:#0a0a0a;
+  border-radius:40px;
+  padding:3px;
+  box-shadow:0 0 40px rgba(0,114,255,.3);
+}
+
+.glass-panel{
+  background:rgba(10,10,10,.95);
+  width:100%;
+  height:100%;
+  border-radius:37px;
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+}
+
+.ios-card{
+  background:rgba(255,255,255,.03);
+  border-radius:24px;
+  border:1px solid rgba(255,255,255,.08);
+  padding:20px;
+}
+
+.preview-img{
+  max-width:100%;
+  max-height:100%;
+  border-radius:20px;
+  display:none;
+}
+
+.btn-analyze{
+  background:#fff;
+  color:#000;
+  font-weight:900;
+  border-radius:18px;
+  padding:20px;
+  margin-top:16px;
+  opacity:.2;
+  pointer-events:none;
+}
+
+.btn-analyze.active{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.loader{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  z-index:9999;
+}
+.loader.show{display:flex}
+
+.spinner{
+  width:50px;
+  height:50px;
+  border:4px solid rgba(0,210,255,.2);
+  border-top:4px solid var(--neon-blue);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
 @keyframes spin{100%{transform:rotate(360deg)}}
-.preview-img{max-width:100%;max-height:100%;object-fit:contain;border-radius:20px;display:none}
 </style>
 </head>
+
 <body>
-<div id="toast">COORDENADAS COPIADAS</div>
-<div class="neon-container"><div class="glass-panel">
-<div class="text-center mb-6"><h1 class="brand-title">UBER PRO</h1></div>
-<div id="ui-main" class="flex-1 flex flex-col min-h-0">
-  <div id="dropzone" class="ios-card" title="Toca para seleccionar imagen">
-    <input type="file" id="file-input" class="hidden" accept="image/*">
-    <div id="upload-icon" class="text-center">
-      <div class="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
-        <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      </div>
-      <p class="text-xs font-black text-white/40 uppercase tracking-widest">Cargar Captura</p>
-    </div>
-    <img id="image-preview" class="preview-img" alt="preview">
+
+<div class="neon-container">
+<div class="glass-panel">
+
+<h1 class="brand-title text-center mb-6">UBER PRO</h1>
+
+<div id="ui-main" class="flex flex-col flex-1">
+  <div id="dropzone" class="ios-card flex flex-col items-center justify-center cursor-pointer">
+    <input type="file" id="file-input" hidden accept="image/*">
+    <p class="text-xs uppercase text-white/40">Cargar captura</p>
+    <img id="image-preview" class="preview-img mt-4">
   </div>
-  <button id="analyze-trigger" class="btn-analyze py-5 text-xs uppercase tracking-[0.2em] mt-auto">Analizar Trayecto ✨</button>
+
+  <button id="analyze-trigger" class="btn-analyze">
+    Analizar Trayecto ✨
+  </button>
 </div>
-<div id="ui-results" class="hidden flex-1 flex flex-col space-y-4 overflow-y-auto pr-1">
-  <div class="ios-card">
-    <div class="flex justify-between items-start mb-2">
-      <div class="flex-1 pr-4">
-        <span class="text-[9px] font-black text-blue-500 uppercase">Resultado</span>
-        <p id="res-pickup-addr" class="text-[11px] font-bold text-white/90 mt-1"></p>
-      </div>
-      <button id="copy-origin" class="btn-copy">Copiar</button>
-    </div>
-    <div class="bg-black/50 p-2 rounded-xl border border-white/5 text-center">
-      <code id="res-pickup-gps" class="text-[11px] text-blue-400 font-mono tracking-tighter">0.000000, 0.000000</code>
-    </div>
-  </div>
-  <button id="btn-restart" class="w-full py-4 text-[10px] font-bold text-white/20 uppercase tracking-widest hover:text-white transition-colors">Nueva Captura</button>
-</div>
-</div></div>
-<div id="global-loader" class="hidden fixed inset-0 bg-black/98 z-[9999] flex flex-col items-center justify-center">
-  <div class="loader-ring mb-6"></div>
-  <div class="text-center px-6">
-    <p id="loader-text" class="text-sm font-black text-white uppercase tracking-[0.3em] mb-2">Analizando imagen</p>
-    <p class="text-[10px] text-blue-400/60 font-bold uppercase tracking-widest">Extrayendo coordenadas…</p>
+
+<div id="ui-results" class="hidden">
+  <div class="ios-card text-center">
+    <p class="text-xs text-blue-400 font-bold mb-2">COORDENADAS</p>
+    <code id="result" class="text-blue-300 font-mono text-sm"></code>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</div>
+</div>
+
+<div id="loader" class="loader">
+  <div class="spinner mb-4"></div>
+  <p class="text-xs uppercase tracking-widest">Analizando imagen…</p>
+</div>
 
 <script>
 const fileInput = document.getElementById('file-input');
 const imgPreview = document.getElementById('image-preview');
 const btnAnalyze = document.getElementById('analyze-trigger');
-const loader = document.getElementById('global-loader');
-const resPickupAddr = document.getElementById('res-pickup-addr');
-const resPickupGps = document.getElementById('res-pickup-gps');
-const copyOriginBtn = document.getElementById('copy-origin');
+const dropzone = document.getElementById('dropzone');
+const loader = document.getElementById('loader');
+const result = document.getElementById('result');
 const uiMain = document.getElementById('ui-main');
 const uiResults = document.getElementById('ui-results');
 
-function showLoader(show=true){ loader.classList.toggle('hidden',!show); }
+dropzone.onclick = () => fileInput.click();
 
-async function writeClipboard(text){
-  await navigator.clipboard.writeText(text);
-  const toast=document.getElementById('toast');
-  toast.classList.add('visible');
-  setTimeout(()=>toast.classList.remove('visible'),1800);
+fileInput.onchange = e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = ev=>{
+    imgPreview.src = ev.target.result;
+    imgPreview.style.display = 'block';
+    btnAnalyze.classList.add('active');
+  };
+  r.readAsDataURL(file);
+};
+
+function extractCoords(text){
+  const re = /(-?\d{1,2}\.\d{4,})\s*,\s*(-?\d{1,3}\.\d{4,})/;
+  const m = text.match(re);
+  if(!m) return null;
+  return {lat:m[1], lon:m[2]};
 }
 
-function isValidLatLon(lat,lon){ return !isNaN(lat)&&!isNaN(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180; }
+btnAnalyze.onclick = async ()=>{
+  loader.classList.add('show');
 
-function openSygicOrGoogle(lat,lon){
-  const sygic = `sygic://coordinate|${lat}|${lon}`;
-  const google = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-  window.location.href = sygic;
-  setTimeout(()=>{ window.location.href = google; },1200);
-}
-
-function extractCoordsFromText(text){
-  const cleaned = text.replace(/[^0-9.,\- ]/g,' ');
-  const patterns = [
-    /(-?\d{1,2}\.\d{4,})\s*,\s*(-?\d{1,3}\.\d{4,})/g,
-    /(-?\d{1,2}\.\d{4,})\s+(-?\d{1,3}\.\d{4,})/g
-  ];
-  for(const p of patterns){
-    let m; while((m=p.exec(cleaned))!==null){
-      const lat=Number(m[1]); const lon=Number(m[2]);
-      if(isValidLatLon(lat,lon)) return {lat,lon};
-    }
-  }
-  return null;
-}
-
-async function analyzeImage(){
+  let worker;
   try{
-    showLoader(true);
-    const worker = await Tesseract.createWorker({ logger:()=>{} });
+    worker = await Tesseract.createWorker();
+    await worker.load();
     await worker.loadLanguage('spa');
     await worker.initialize('spa');
-    await worker.setParameters({ tessedit_char_whitelist: '0123456789.-, ' });
-    const { data } = await worker.recognize(imgPreview);
-    await worker.terminate();
 
-    const text = data.text || '';
-    const coords = extractCoordsFromText(text);
-    if(!coords) throw new Error('NO_COORDS');
+    const res = await Promise.race([
+      worker.recognize(imgPreview.src),
+      new Promise((_,rej)=>setTimeout(()=>rej('timeout'),25000))
+    ]);
 
-    const lat = coords.lat.toFixed(6);
-    const lon = coords.lon.toFixed(6);
-    const coord = `${lat}, ${lon}`;
+    const coords = extractCoords(res.data.text);
+    if(!coords) throw 'NO_COORDS';
 
-    resPickupAddr.innerText = 'Coordenadas detectadas desde la captura';
-    resPickupGps.innerText = coord;
-
-    await writeClipboard(coord);
-    openSygicOrGoogle(lat,lon);
-
+    result.textContent = `${coords.lat}, ${coords.lon}`;
     uiMain.classList.add('hidden');
     uiResults.classList.remove('hidden');
+
+    navigator.clipboard.writeText(result.textContent);
+
   }catch(e){
+    alert('No se detectaron coordenadas visibles en la imagen.');
     console.error(e);
-    alert('No se pudieron detectar coordenadas visibles en la imagen. Usa una captura donde se vean LAT y LON claramente.');
   }finally{
-    showLoader(false);
+    if(worker) await worker.terminate();
+    loader.classList.remove('show');
   }
-}
-
-const dropzone = document.getElementById('dropzone');
-dropzone.addEventListener('click',()=>fileInput.click());
-fileInput.addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=ev=>{ imgPreview.src=ev.target.result; imgPreview.style.display='block'; btnAnalyze.classList.add('active'); };
-  r.readAsDataURL(f);
-});
-
-btnAnalyze.addEventListener('click',analyzeImage);
-copyOriginBtn.addEventListener('click',()=>writeClipboard(resPickupGps.innerText));
+};
 </script>
+
 </body>
 </html>
