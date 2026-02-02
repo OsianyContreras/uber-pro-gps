@@ -1,130 +1,133 @@
-<!-- ============================= -->
-<!-- index.html (LISTO PARA GITHUB) -->
-<!-- ============================= -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Uber Pro GPS</title>
-  <style>
-    body{font-family:-apple-system,Helvetica,Arial;background:#0f172a;color:#fff;margin:0;padding:20px}
-    .card{background:#020617;border-radius:16px;padding:20px;box-shadow:0 20px 40px rgba(0,0,0,.4)}
-    button{width:100%;padding:16px;border-radius:14px;border:none;background:#22c55e;color:#000;font-size:17px;font-weight:600;margin-top:14px}
-    button.secondary{background:#38bdf8}
-    button.gray{background:#64748b;color:#fff}
-    #log{margin-top:16px;font-size:14px;color:#94a3b8;white-space:pre-line}
-    img{width:100%;border-radius:12px;margin-top:12px}
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>Uber Pro GPS</h2>
-    <input type="file" id="fileInput" accept="image/*" />
-    <img id="preview" />
-
-    <button onclick="analyzeImage()">Analizar trayecto</button>
-    <button class="secondary" onclick="navigatePro()">Navegar PRO</button>
-
-    <div id="log"></div>
-  </div>
-
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
-let currentCoords = null;
-
+/* --- Variables DOM --- */
 const fileInput = document.getElementById('fileInput');
 const preview = document.getElementById('preview');
 const logBox = document.getElementById('log');
+const navChooser = document.getElementById('nav-chooser');
+const btnSygic = document.getElementById('btn-sygic');
+const btnGoogle = document.getElementById('btn-google');
 
-fileInput.onchange = e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  preview.src = URL.createObjectURL(file);
-  log('Imagen cargada, lista para analizar');
-};
+let currentCoords = null;
 
+function log(msg){
+  console.log('[UberPro]', msg);
+  if(logBox) logBox.innerText = msg;
+}
+
+/* --- File input / preview --- */
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if(!f) { log('No hay archivo seleccionado'); return; }
+  preview.src = URL.createObjectURL(f);
+  log('Imagen cargada. Listo para analizar.');
+});
+
+/* --- OCR y detección simple de coords --- */
 async function analyzeImage(){
-  if(!fileInput.files[0]){ log('Primero selecciona una imagen'); return; }
-  log('Analizando imagen…');
+  if(!fileInput.files[0]) { log('Selecciona una imagen antes de analizar'); return; }
+  log('Iniciando OCR...');
   try{
-    const { data:{ text } } = await Tesseract.recognize(fileInput.files[0],'eng');
+    // Tesseract.recognize acepta File directamente
+    const res = await Tesseract.recognize(fileInput.files[0], 'eng');
+    const text = (res && res.data && res.data.text) ? res.data.text : (res && res.text) ? res.text : '';
+    console.log('[OCR TEXT]', text);
+    // búsqueda robusta de lat,lon
     const match = text.match(/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
-    if(!match) throw new Error('No se detectaron coordenadas');
+    if(!match){
+      log('OCR terminó: no se encontraron coordenadas en el texto.');
+      return;
+    }
     currentCoords = `${match[1]},${match[2]}`;
-    await navigator.clipboard.writeText(currentCoords);
-    log('Coordenadas detectadas y copiadas:\n'+currentCoords);
-  }catch(e){
-    console.error(e);
-    log('Error al analizar imagen');
+    try { await navigator.clipboard.writeText(currentCoords); log('Coordenadas detectadas y copiadas: ' + currentCoords); }
+    catch(e){ log('Coordenas detectadas: ' + currentCoords + ' (pero no se pudo copiar al portapapeles)'); }
+    console.log('[coords]', currentCoords);
+  }catch(err){
+    console.error('[OCR error]', err);
+    log('Error al procesar imagen (OCR). Revisa consola.');
   }
 }
 
-async function navigatePro(){
-  if(!currentCoords){ log('Primero analiza una imagen'); return; }
+/* --- Mostrar / ocultar chooser --- */
+function showNavChooser(){
+  if(!currentCoords){ log('Primero analiza la imagen para obtener coordenadas'); return; }
+  if(navChooser) navChooser.style.display = 'flex';
+}
+function hideNavChooser(){ if(navChooser) navChooser.style.display = 'none'; }
 
+/* --- Abrir Sygic con varios intentos --- */
+function openSygicWithFallback(sygicUrl, googleUrl){
+  log('Intentando abrir Sygic...');
+  console.log('[try] sygicUrl=', sygicUrl);
+
+  // 1) Capacitor App plugin (recomendado en app nativa)
+  try{
+    if(window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App && typeof Capacitor.Plugins.App.openUrl === 'function'){
+      console.log('[Capacitor] usando App.openUrl');
+      Capacitor.Plugins.App.openUrl({ url: sygicUrl }).catch((err)=>{
+        console.warn('[Capacitor] openUrl falló, fallback a Google', err);
+        window.location.href = googleUrl;
+      });
+      return;
+    }
+  }catch(e){ console.warn('Capacitor openUrl attempt threw', e); }
+
+  // 2) Intentar crear <a> y click (funciona en muchos navegadores para schemes)
+  try{
+    const a = document.createElement('a');
+    a.href = sygicUrl;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // Si la app no abre, redirigimos a Google después de corto timeout
+    setTimeout(()=>{ log('Si Sygic no abrió, redirigiendo a Google Maps'); window.location.href = googleUrl; }, 1200);
+    return;
+  }catch(e){
+    console.warn('Anchor method failed', e);
+  }
+
+  // 3) iframe fallback (último recurso)
+  try{
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = sygicUrl;
+    document.body.appendChild(iframe);
+    setTimeout(()=>{ try{ document.body.removeChild(iframe); }catch(e){}; window.location.href = googleUrl; }, 1200);
+    return;
+  }catch(e){
+    console.warn('Iframe method failed', e);
+  }
+
+  // 4) Fallback final: abrir Google
+  log('No fue posible abrir Sygic desde el navegador. Abriendo Google Maps...');
+  window.location.href = googleUrl;
+}
+
+/* --- Abrir Google directamente --- */
+function openGoogle(googleUrl){
+  log('Abriendo Google Maps...');
+  try{ window.open(googleUrl, '_blank'); }
+  catch(e){ window.location.href = googleUrl; }
+}
+
+/* --- Botones del chooser --- */
+if(btnSygic) btnSygic.addEventListener('click', ()=>{
+  hideNavChooser();
+  if(!currentCoords){ log('No hay coordenadas para navegar'); return; }
   const sygicUrl = `com.sygic.aura://coordinate|${currentCoords}`;
   const googleUrl = `https://maps.google.com/?q=${currentCoords}`;
+  openSygicWithFallback(sygicUrl, googleUrl);
+});
 
-  log('Elige app de navegación…');
+if(btnGoogle) btnGoogle.addEventListener('click', ()=>{
+  hideNavChooser();
+  if(!currentCoords){ log('No hay coordenadas para navegar'); return; }
+  const googleUrl = `https://maps.google.com/?q=${currentCoords}`;
+  openGoogle(googleUrl);
+});
 
-  // Capacitor iOS (app real)
-  if(window.Capacitor && Capacitor.Plugins?.App){
-    Capacitor.Plugins.App.openUrl({ url: sygicUrl })
-      .catch(() => Capacitor.Plugins.App.openUrl({ url: googleUrl }));
-    return;
-  }
-
-  // Web / PWA fallback
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = sygicUrl;
-  document.body.appendChild(iframe);
-
-  setTimeout(() => {
-    window.location.href = googleUrl;
-  }, 1200);
-}
-
-
-function log(t){ logBox.innerText = t; }
+/* --- Expose functions to inline handlers (if used in HTML) --- */
+window.analyzeImage = analyzeImage;
+window.showNavChooser = showNavChooser;
+window.hideNavChooser = hideNavChooser;
 </script>
-</body>
-</html>
-
-
-<!-- ============================= -->
-<!-- package.json -->
-<!-- ============================= -->
-{
-  "name": "uber-pro-gps",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "build": "",
-    "ios": "npx cap sync ios"
-  },
-  "dependencies": {
-    "@capacitor/core": "latest",
-    "@capacitor/ios": "latest"
-  }
-}
-
-
-<!-- ============================= -->
-<!-- capacitor.config.json -->
-<!-- ============================= -->
-{
-  "appId": "com.uberprogps.app",
-  "appName": "Uber Pro GPS",
-  "webDir": "./",
-  "bundledWebRuntime": false
-}
-
-
-<!-- ============================= -->
-<!-- COMANDOS iOS -->
-<!-- ============================= -->
-# npm install
-# npx cap add ios
-# npx cap open ios
