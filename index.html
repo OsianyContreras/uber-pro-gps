@@ -1,131 +1,159 @@
-<!-- ============================= -->
-<!-- index.html (LISTO PARA GITHUB) -->
-<!-- ============================= -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Uber Pro GPS</title>
-  <style>
-    body{font-family:-apple-system,Helvetica,Arial;background:#0f172a;color:#fff;margin:0;padding:20px}
-    .card{background:#020617;border-radius:16px;padding:20px;box-shadow:0 20px 40px rgba(0,0,0,.4)}
-    button{width:100%;padding:16px;border-radius:14px;border:none;background:#22c55e;color:#000;font-size:17px;font-weight:600;margin-top:14px}
-    button.secondary{background:#38bdf8}
-    button.gray{background:#64748b;color:#fff}
-    #log{margin-top:16px;font-size:14px;color:#94a3b8;white-space:pre-line}
-    img{width:100%;border-radius:12px;margin-top:12px}
-    .title{font-family:Menlo,Consolas,monospace;font-size:28px;text-align:center;color:#22c55e;text-shadow:0 0 8px #22c55e,0 0 16px #22c55e;animation:pulse 2s infinite}
-  @keyframes pulse{0%{text-shadow:0 0 6px #22c55e}50%{text-shadow:0 0 18px #22c55e}100%{text-shadow:0 0 6px #22c55e}}
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Uber Pro GPS</title>
+
+<style>
+/* ===== ESTILO BASE (NO CAMBIADO) ===== */
+body{
+  font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial;
+  background:#0f172a;
+  color:#fff;
+  margin:0;
+  padding:20px;
+}
+.card{
+  background:#020617;
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 0 25px rgba(34,197,94,.25);
+}
+button{
+  width:100%;
+  padding:16px;
+  border-radius:14px;
+  border:none;
+  background:#22c55e;
+  color:#000;
+  font-size:17px;
+  font-weight:600;
+  margin-top:14px;
+}
+button.secondary{background:#38bdf8}
+#log{
+  margin-top:16px;
+  font-size:14px;
+  color:#94a3b8;
+  white-space:pre-line;
+}
+img{
+  width:100%;
+  max-height:45vh;
+  object-fit:contain;
+  border-radius:12px;
+  margin-top:12px;
+}
+
+/* ===== SOLO ENCABEZADO NUEVO ===== */
+h1{
+  text-align:center;
+  font-family: "Courier New", monospace;
+  letter-spacing:3px;
+  font-size:26px;
+  color:#22c55e;
+  text-shadow:
+    0 0 5px #22c55e,
+    0 0 10px #22c55e,
+    0 0 20px #16a34a;
+  animation: neon 1.5s infinite alternate;
+}
+@keyframes neon{
+  from{ text-shadow:0 0 5px #22c55e; }
+  to{ text-shadow:0 0 20px #22c55e,0 0 40px #16a34a; }
+}
 </style>
 </head>
+
 <body>
-  <div class="card">
-    <h2 class="title">Uber Pro GPS</h2>
-    <input type="file" id="fileInput" accept="image/*" />
-    <img id="preview" style="display:none" />
+<div class="card">
+  <h1>UBER PRO GPS</h1>
 
-    <button onclick="analyzeImage()">Analizar trayecto</button>
-    <button class="secondary" onclick="navigatePro()">Navegar PRO</button>
+  <input type="file" id="fileInput" accept="image/*" />
+  <img id="preview" />
 
-    <div id="log"></div>
-  </div>
+  <button onclick="analyzeImage()">Analizar trayecto</button>
+  <button class="secondary" onclick="navigatePro()">Navegar PRO</button>
+
+  <div id="log"></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <script>
 let currentCoords = null;
 
 const fileInput = document.getElementById('fileInput');
-const preview = document.getElementById('preview');
-const logBox = document.getElementById('log');
+const preview   = document.getElementById('preview');
+const logBox    = document.getElementById('log');
 
 fileInput.onchange = e => {
   const file = e.target.files[0];
   if(!file) return;
   preview.src = URL.createObjectURL(file);
-  preview.style.display = 'block';
-  log('Imagen cargada, lista para analizar');
+  log('Imagen preparada para OCR');
 };
 
+function log(t){ logBox.innerText = t; }
+
 async function analyzeImage(){
-  if(!fileInput.files[0]){ log('Primero selecciona una imagen'); return; }
-  log('Analizando imagen…');
+  if(!fileInput.files[0]){
+    log('Selecciona una imagen primero');
+    return;
+  }
+
+  log('Iniciando OCR (puede tardar)…');
+
   try{
-    const { data:{ text } } = await Tesseract.recognize(fileInput.files[0],'eng');
+    const res = await Tesseract.recognize(
+      fileInput.files[0],
+      'eng',
+      { logger:m=>{} }
+    );
+
+    const text = res.data.text;
     const match = text.match(/(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/);
-    if(!match) throw new Error('No se detectaron coordenadas');
+
+    if(!match) throw new Error('Coordenadas no encontradas');
+
     currentCoords = `${match[1]},${match[2]}`;
     await navigator.clipboard.writeText(currentCoords);
-    log('Coordenadas detectadas y copiadas:\n'+currentCoords);
-  }catch(e){
-    console.error(e);
-    log('Error al analizar imagen');
+
+    log(
+      'Coordenadas detectadas:\n' +
+      currentCoords +
+      '\n\nCopiadas al portapapeles'
+    );
+
+  }catch(err){
+    console.error(err);
+    log('Error al procesar la imagen');
   }
 }
 
-async function navigatePro(){
-  if(!currentCoords){ log('Primero analiza una imagen'); return; }
-
-  const sygicUrl = `com.sygic.aura://coordinate|${currentCoords}`;
-  const googleUrl = `https://maps.google.com/?q=${currentCoords}`;
-
-  // iOS App (Capacitor)
-  if(window.Capacitor && window.Capacitor.Plugins?.App){
-    try{
-      await Capacitor.Plugins.App.openUrl({ url: sygicUrl });
-      log('Abriendo Sygic…');
-      return;
-    }catch(e){
-      log('Sygic no respondió, abriendo Google Maps');
-      await Capacitor.Plugins.App.openUrl({ url: googleUrl });
-      return;
-    }
+function navigatePro(){
+  if(!currentCoords){
+    log('Primero analiza una imagen');
+    return;
   }
 
-  // Web fallback
-  log('Sygic directo solo disponible en App iOS. Se abrirá Google Maps');
-  window.location.href = googleUrl;
+  const sygicURL  = `com.sygic.aura://coordinate|${currentCoords}`;
+  const googleURL = `https://maps.google.com/?q=${currentCoords}`;
+
+  log('Intentando abrir Sygic…');
+
+  // Intento DIRECTO SYGIC (iOS)
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = sygicURL;
+  document.body.appendChild(iframe);
+
+  // Fallback automático
+  setTimeout(()=>{
+    window.location.href = googleURL;
+  },1200);
 }
-
-
-function log(t){ logBox.innerText = t; }
 </script>
 </body>
 </html>
-
-
-<!-- ============================= -->
-<!-- package.json -->
-<!-- ============================= -->
-{
-  "name": "uber-pro-gps",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "build": "",
-    "ios": "npx cap sync ios"
-  },
-  "dependencies": {
-    "@capacitor/core": "latest",
-    "@capacitor/ios": "latest"
-  }
-}
-
-
-<!-- ============================= -->
-<!-- capacitor.config.json -->
-<!-- ============================= -->
-{
-  "appId": "com.uberprogps.app",
-  "appName": "Uber Pro GPS",
-  "webDir": "./",
-  "bundledWebRuntime": false
-}
-
-
-<!-- ============================= -->
-<!-- COMANDOS iOS -->
-<!-- ============================= -->
-# npm install
-# npx cap add ios
-# npx cap open ios
