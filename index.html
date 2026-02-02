@@ -84,6 +84,7 @@ button{
 }
 
 button.secondary{background:#38bdf8}
+button.gray{background:#64748b;color:#fff}
 button:disabled{opacity:.4}
 
 .status{
@@ -98,6 +99,17 @@ button:disabled{opacity:.4}
   border-radius:12px;
   background:#020617;
   border:1px solid rgba(148,163,184,.15);
+}
+
+.coords b{
+  color:#22c55e;
+  text-shadow:0 0 8px rgba(34,197,94,.6);
+}
+
+.highlight{
+  background:rgba(34,197,94,.15);
+  padding:2px 6px;
+  border-radius:6px;
 }
 
 .history{
@@ -156,6 +168,8 @@ button:disabled{opacity:.4}
 Latitud: —<br>Longitud: —<br>App: —
 </div>
 
+<button id="copyBtn" class="gray" disabled>📋 Copiar de nuevo</button>
+
 <button id="navigateBtn" class="secondary" disabled>Navegar PRO</button>
 
 <div class="history" id="history"></div>
@@ -174,10 +188,11 @@ const debug = msg=>{
 /* ================= VARS ================= */
 let lat=null,lng=null,appDetectada="—";
 
-/* ================= TOAST ================= */
-function showToast(){
+/* ================= TOAST + VIBRATION ================= */
+function copiedFeedback(){
   const t=document.getElementById("toast");
   t.classList.add("show");
+  if(navigator.vibrate) navigator.vibrate(40); // vibración ligera iPhone
   setTimeout(()=>t.classList.remove("show"),2000);
 }
 
@@ -208,24 +223,32 @@ analyzeBtn.onclick=async()=>{
     lng=m[2];
 
     coords.innerHTML=`
-      Latitud: <b>${lat}</b><br>
-      Longitud: <b>${lng}</b><br>
+      Latitud: <span class="highlight"><b>${lat}</b></span><br>
+      Longitud: <span class="highlight"><b>${lng}</b></span><br>
       App: <b>${appDetectada}</b>
     `;
 
-    const coordsToCopy = `${lat},${lng}`;
-    await navigator.clipboard.writeText(coordsToCopy);
-    debug("Coordenadas copiadas: "+coordsToCopy);
-    showToast();
-
+    copiarCoordenadas();
     guardarHistorial();
+
     navigateBtn.disabled=false;
+    copyBtn.disabled=false;
     status.textContent="Estado: Coordenadas detectadas";
   }catch(e){
     debug("ERROR OCR");
     status.textContent="Error al analizar imagen";
   }
 };
+
+/* ================= COPIAR ================= */
+function copiarCoordenadas(){
+  const txt=`${lat},${lng}`;
+  navigator.clipboard.writeText(txt);
+  debug("Copiado: "+txt);
+  copiedFeedback();
+}
+
+copyBtn.onclick=copiarCoordenadas;
 
 /* ================= HISTORIAL ================= */
 function guardarHistorial(){
