@@ -48,7 +48,7 @@ body { background-color:#050505;color:#fff;font-family:'Inter',sans-serif;margin
   <div class="ios-card">
     <div class="flex justify-between items-start mb-2">
       <div class="flex-1 pr-4">
-        <span class="text-[9px] font-black text-blue-500 uppercase">Origen</span>
+        <span class="text-[9px] font-black text-blue-500 uppercase">Resultado</span>
         <p id="res-pickup-addr" class="text-[11px] font-bold text-white/90 mt-1"></p>
       </div>
       <button id="copy-origin" class="btn-copy">Copiar</button>
@@ -57,209 +57,108 @@ body { background-color:#050505;color:#fff;font-family:'Inter',sans-serif;margin
       <code id="res-pickup-gps" class="text-[11px] text-blue-400 font-mono tracking-tighter">0.000000, 0.000000</code>
     </div>
   </div>
-  <div class="ios-card">
-    <div class="flex justify-between items-start mb-2">
-      <div class="flex-1 pr-4">
-        <span class="text-[9px] font-black text-blue-500 uppercase">Destino</span>
-        <p id="res-dropoff-addr" class="text-[11px] font-bold text-white/90 mt-1"></p>
-      </div>
-      <button id="copy-dest" class="btn-copy">Copiar</button>
-    </div>
-    <div class="bg-black/50 p-2 rounded-xl border border-white/5 text-center">
-      <code id="res-dropoff-gps" class="text-[11px] text-blue-400 font-mono tracking-tighter">0.000000, 0.000000</code>
-    </div>
-  </div>
   <button id="btn-restart" class="w-full py-4 text-[10px] font-bold text-white/20 uppercase tracking-widest hover:text-white transition-colors">Nueva Captura</button>
 </div>
 </div></div>
 <div id="global-loader" class="hidden fixed inset-0 bg-black/98 z-[9999] flex flex-col items-center justify-center">
   <div class="loader-ring mb-6"></div>
   <div class="text-center px-6">
-    <p id="loader-text" class="text-sm font-black text-white uppercase tracking-[0.3em] mb-2">Sincronizando GPS</p>
-    <p class="text-[10px] text-blue-400/60 font-bold uppercase tracking-widest">Calculando coordenadas de alta precisión...</p>
+    <p id="loader-text" class="text-sm font-black text-white uppercase tracking-[0.3em] mb-2">Analizando imagen</p>
+    <p class="text-[10px] text-blue-400/60 font-bold uppercase tracking-widest">Extrayendo coordenadas…</p>
   </div>
 </div>
 
-<!-- Tesseract.js -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
-// DOM elements
 const fileInput = document.getElementById('file-input');
-window.fileInput = fileInput; // expose for inline onclicks if any
 const imgPreview = document.getElementById('image-preview');
 const btnAnalyze = document.getElementById('analyze-trigger');
 const loader = document.getElementById('global-loader');
 const resPickupAddr = document.getElementById('res-pickup-addr');
-const resDropAddr = document.getElementById('res-dropoff-addr');
 const resPickupGps = document.getElementById('res-pickup-gps');
-const resDropGps = document.getElementById('res-dropoff-gps');
 const copyOriginBtn = document.getElementById('copy-origin');
-const copyDestBtn = document.getElementById('copy-dest');
 const uiMain = document.getElementById('ui-main');
 const uiResults = document.getElementById('ui-results');
 
-const dropzone = document.getElementById('dropzone');
-let base64String = '';
-
-// Helpers
-function showLoader(show=true,text='Sincronizando GPS'){
-  const t=document.getElementById('loader-text'); if(t) t.innerText = text;
-  loader.classList.toggle('hidden',!show);
-}
+function showLoader(show=true){ loader.classList.toggle('hidden',!show); }
 
 async function writeClipboard(text){
-  try{ await navigator.clipboard.writeText(text); const toast=document.getElementById('toast'); toast.classList.add('visible'); setTimeout(()=>toast.classList.remove('visible'),1800); return true; }catch(e){console.warn('clipboard failed',e); return false}
+  await navigator.clipboard.writeText(text);
+  const toast=document.getElementById('toast');
+  toast.classList.add('visible');
+  setTimeout(()=>toast.classList.remove('visible'),1800);
 }
 
-function isValidLatLon(lat,lon){
-  const la=Number(lat), lo=Number(lon);
-  return !Number.isNaN(la) && !Number.isNaN(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180;
-}
+function isValidLatLon(lat,lon){ return !isNaN(lat)&&!isNaN(lon)&&lat>=-90&&lat<=90&&lon>=-180&&lon<=180; }
 
-async function safeGeocode(address){
-  try{
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`);
-    const json = await res.json();
-    if(!Array.isArray(json) || json.length===0) return null;
-    return json[0];
-  }catch(e){ console.warn('geocode failed',e); return null }
-}
-
-// Open Sygic on iOS if available, otherwise fallback to Google Maps
 function openSygicOrGoogle(lat,lon){
-  if(!isValidLatLon(lat,lon)) return;
-  const sygicSchemes = [
-    `sygic://coordinate|${lat}|${lon}`,
-    `com.sygic.aura://coordinate|${lat}|${lon}`
+  const sygic = `sygic://coordinate|${lat}|${lon}`;
+  const google = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+  window.location.href = sygic;
+  setTimeout(()=>{ window.location.href = google; },1200);
+}
+
+function extractCoordsFromText(text){
+  const cleaned = text.replace(/[^0-9.,\- ]/g,' ');
+  const patterns = [
+    /(-?\d{1,2}\.\d{4,})\s*,\s*(-?\d{1,3}\.\d{4,})/g,
+    /(-?\d{1,2}\.\d{4,})\s+(-?\d{1,3}\.\d{4,})/g
   ];
-  const google = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
-
-  // Try Sygic scheme first. If it doesn't open the app, after timeout open Google Maps.
-  try{
-    window.location.href = sygicSchemes[0];
-  }catch(e){}
-  // Fallback to second scheme shortly after (some devices may recognize different schemes)
-  setTimeout(()=>{ try{ window.location.href = sygicSchemes[1]; }catch(e){} }, 500);
-  // If app didn't open (browser stays), open Google Maps after 1500ms
-  setTimeout(()=>{ window.location.href = google; }, 1500);
+  for(const p of patterns){
+    let m; while((m=p.exec(cleaned))!==null){
+      const lat=Number(m[1]); const lon=Number(m[2]);
+      if(isValidLatLon(lat,lon)) return {lat,lon};
+    }
+  }
+  return null;
 }
 
-// OCR + parsing: prefer direct lat,long detection. If not found, extract first two address lines.
 async function analyzeImage(){
-  if(!imgPreview.src){ alert('Selecciona una imagen primero'); return; }
-  showLoader(true,'Analizando imagen (OCR)...');
-  btnAnalyze.disabled = true;
-
   try{
-    let worker = null;
-let text = '';
-try{
-  if(!Tesseract || !Tesseract.createWorker) throw new Error('Motor OCR no disponible');
-  worker = Tesseract.createWorker();
-  await worker.load();
-  await worker.loadLanguage('spa');
-  await worker.initialize('spa');
-  const recognizePromise = worker.recognize(imgPreview.src || imgPreview);
-  const res = await Promise.race([
-    recognizePromise,
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error('OCR timeout')),25000))
-  ]);
-  text = res && res.data && res.data.text ? res.data.text : (res && res.text) ? res.text : '';
-}catch(e){
-  // rethrow to be caught by outer try
-  throw e;
-}finally{
-  try{ if(worker) await worker.terminate(); }catch(e){}
-}
+    showLoader(true);
+    const worker = await Tesseract.createWorker({ logger:()=>{} });
+    await worker.loadLanguage('spa');
+    await worker.initialize('spa');
+    await worker.setParameters({ tessedit_char_whitelist: '0123456789.-, ' });
+    const { data } = await worker.recognize(imgPreview);
+    await worker.terminate();
 
-    // 1) Buscar primer par lat,lon en el texto (ej: 21.165380,-86.844216)
-    const coordRegex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/g;
-    let coordMatch;
-    let firstCoord = null;
-    while((coordMatch = coordRegex.exec(text)) !== null){
-      const la = Number(coordMatch[1]);
-      const lo = Number(coordMatch[2]);
-      if(isValidLatLon(la,lo)){ firstCoord = { lat: la.toFixed(6), lon: lo.toFixed(6) }; break; }
-    }
+    const text = data.text || '';
+    const coords = extractCoordsFromText(text);
+    if(!coords) throw new Error('NO_COORDS');
 
-    if(firstCoord){
-      // Use this single coordinate as requested: copy it, open Sygic and show results UI
-      resPickupAddr.innerText = 'Coordenada detectada desde imagen';
-      resPickupGps.innerText = `${firstCoord.lat}, ${firstCoord.lon}`;
-      resDropAddr.innerText = '';
-      resDropGps.innerText = 'No requerida';
+    const lat = coords.lat.toFixed(6);
+    const lon = coords.lon.toFixed(6);
+    const coord = `${lat}, ${lon}`;
 
-      await writeClipboard(resPickupGps.innerText);
-      // Open Sygic (iOS preferred) — this will switch apps; fallback to Google Maps if Sygic not installed
-      openSygicOrGoogle(firstCoord.lat, firstCoord.lon);
+    resPickupAddr.innerText = 'Coordenadas detectadas desde la captura';
+    resPickupGps.innerText = coord;
 
-      uiMain.classList.add('hidden');
-      uiResults.classList.remove('hidden');
-      showLoader(false);
-      return;
-    }
-
-    // 2) Si no hay pares lat/lon, extraer primeras 2 líneas útiles como direcciones
-    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>5);
-    const recogida = lines[0] || '';
-    const destino = lines[1] || '';
-
-    if(!recogida || !destino){
-      alert('No se pudieron detectar claramente dos direcciones ni coordenadas en la imagen. Asegúrate de que el texto sea legible.');
-      return;
-    }
-
-    resPickupAddr.innerText = recogida;
-    resDropAddr.innerText = destino;
-
-    // Try geocode both; if geocode returns null, show NO DISPONIBLE but still let user choose
-    const g1 = await safeGeocode(recogida);
-    const g2 = await safeGeocode(destino);
-
-    resPickupGps.innerText = g1?`${Number(g1.lat).toFixed(6)}, ${Number(g1.lon).toFixed(6)}`:'NO DISPONIBLE';
-    resDropGps.innerText = g2?`${Number(g2.lat).toFixed(6)}, ${Number(g2.lon).toFixed(6)}`:'NO DISPONIBLE';
-
-    // If pickup geocoded, copy and open sygic (user requested automatic pickup copy)
-    if(g1){
-      await writeClipboard(`${Number(g1.lat).toFixed(6)}, ${Number(g1.lon).toFixed(6)}`);
-      openSygicOrGoogle(Number(g1.lat).toFixed(6), Number(g1.lon).toFixed(6));
-    }
+    await writeClipboard(coord);
+    openSygicOrGoogle(lat,lon);
 
     uiMain.classList.add('hidden');
     uiResults.classList.remove('hidden');
-
-  }catch(err){
-    console.error('analyze error',err);
-    alert('Error al procesar la imagen. Intenta con otra captura.');
+  }catch(e){
+    console.error(e);
+    alert('No se pudieron detectar coordenadas visibles en la imagen. Usa una captura donde se vean LAT y LON claramente.');
   }finally{
-    btnAnalyze.disabled = false;
     showLoader(false);
   }
 }
 
-// Open in Apple Maps (manual button)
-function openAppleMaps(type){
-  const el = type==='pickup' ? resPickupGps : resDropGps;
-  if(!el || !el.innerText.includes(',')) return;
-  const [lat,lon] = el.innerText.split(',').map(s=>s.trim());
-  window.location.href = `https://maps.apple.com/?ll=${lat},${lon}`;
-}
-
-// Wire events
-const dropzoneEl = document.getElementById('dropzone');
-dropzoneEl.addEventListener('click', ()=> fileInput.click());
-fileInput.addEventListener('change', (e)=>{
-  const f = e.target.files[0]; if(!f) return;
-  const reader = new FileReader();
-  reader.onload = ev => { imgPreview.src = ev.target.result; imgPreview.style.display = 'block'; btnAnalyze.classList.add('active'); };
-  reader.readAsDataURL(f);
+const dropzone = document.getElementById('dropzone');
+dropzone.addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{ imgPreview.src=ev.target.result; imgPreview.style.display='block'; btnAnalyze.classList.add('active'); };
+  r.readAsDataURL(f);
 });
 
-btnAnalyze.addEventListener('click', analyzeImage);
-copyOriginBtn.addEventListener('click', async ()=>{ const txt = resPickupGps.innerText || ''; if(txt && txt!=='NO DISPONIBLE') await writeClipboard(txt); });
-copyDestBtn.addEventListener('click', async ()=>{ const txt = resDropGps.innerText || ''; if(txt && txt!=='NO DISPONIBLE') await writeClipboard(txt); });
-
+btnAnalyze.addEventListener('click',analyzeImage);
+copyOriginBtn.addEventListener('click',()=>writeClipboard(resPickupGps.innerText));
 </script>
 </body>
 </html>
