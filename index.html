@@ -1,281 +1,226 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Uber Pro GPS — OCR estable</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OCR Coordenadas Uber</title>
 
-<!-- Tesseract OCR -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <!-- Tesseract CDN compatible -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-<style>
-:root { --neon-blue:#00d2ff; --deep-blue:#0072ff; }
-html,body{height:100%;margin:0;background:#050505;color:#fff;font-family:Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-.page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;}
-.container{width:100%;max-width:420px;background:#0a0a0a;border-radius:20px;padding:10px;box-shadow:0 18px 40px rgba(0,0,0,.5);}
-.panel{background:rgba(10,10,10,.96);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto;box-sizing:border-box;}
-.title{font-family:Orbitron, sans-serif;font-size:22px;letter-spacing:3px;color:#000;-webkit-text-stroke:1.4px var(--neon-blue);text-align:center;margin:0;}
-.card{background:rgba(255,255,255,.03);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.06);}
-input[type=file]{width:100%;color:#fff}
-#preview{display:block;width:100%;max-height:40vh;object-fit:contain;border-radius:12px;margin-top:8px;}
-.controls{display:flex;flex-direction:column;gap:10px;position:sticky;bottom:0;margin-top:auto;padding-top:8px;background:linear-gradient(180deg, rgba(10,10,10,0), rgba(10,10,10,0.85));}
-.btn{padding:14px;border-radius:12px;border:none;font-weight:900;cursor:pointer}
-.btn-main{background:linear-gradient(135deg,#fff,#e6e6e6);color:#000}
-.btn-nav{background:linear-gradient(135deg,var(--neon-blue),var(--deep-blue));color:#000}
-#log{font-size:13px;color:#9ed7ff;white-space:pre-line;min-height:64px}
-.small{font-size:12px;color:#bcd}
-</style>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
+      margin: 0;
+      padding: 12px;
+      background: #f4f4f4;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #007aff;
+      color: white;
+    }
+
+    button.secondary {
+      background: #34c759;
+    }
+
+    button:disabled {
+      background: #999;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 40vh;
+      object-fit: contain;
+      display: block;
+      margin: 10px auto;
+      border-radius: 8px;
+      background: #000;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .coords {
+      margin-top: 10px;
+      font-size: 15px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    /* Consola visual */
+    #debugConsole {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 35%;
+      overflow-y: auto;
+      background: #000;
+      color: #0f0;
+      font-size: 12px;
+      padding: 8px;
+      z-index: 9999;
+    }
+  </style>
 </head>
+
 <body>
-  <div class="page">
-    <div class="container">
-      <div class="panel">
-        <h1 class="title">UBER PRO</h1>
 
-        <div class="card">
-          <label class="small">Cargar captura</label>
-          <input id="fileInput" type="file" accept="image/*">
-          <img id="preview" alt="preview imagen">
-        </div>
+<h1>📸 OCR → Coordenadas → Navegación</h1>
 
-        <div class="controls">
-          <button id="btnAnalyze" class="btn btn-main">Analizar Trayecto ✨</button>
-          <button id="btnNavigate" class="btn btn-nav" disabled>Navegar PRO</button>
-        </div>
+<input type="file" id="imageInput" accept="image/*" />
 
-        <div id="log">Estado: esperando imagen...</div>
-      </div>
-    </div>
-  </div>
+<img id="preview" />
+
+<button id="analyzeBtn">Analizar Trayecto</button>
+
+<div class="status" id="status">Estado: esperando imagen</div>
+
+<div class="coords" id="coords">Latitud: —<br>Longitud: —</div>
+
+<button id="navigateBtn" class="secondary" disabled>Navegar PRO</button>
+
+<!-- CONSOLA EN PANTALLA -->
+<div id="debugConsole"><b>DEBUG:</b><br></div>
 
 <script>
-/* ---------------------------
-   DOM
---------------------------- */
-const fileInput = document.getElementById('fileInput');
-const preview = document.getElementById('preview');
-const btnAnalyze = document.getElementById('btnAnalyze');
-const btnNavigate = document.getElementById('btnNavigate');
-const logBox = document.getElementById('log');
+/* =======================
+   CONSOLA VISUAL
+======================= */
+(function () {
+  const box = document.getElementById("debugConsole");
+  function log(msg) {
+    box.innerHTML += msg + "<br>";
+    box.scrollTop = box.scrollHeight;
+  }
+  window.log = log;
 
-let currentCoords = null;
+  window.onerror = function (msg, url, line, col) {
+    log("❌ JS ERROR: " + msg + " (" + line + ":" + col + ")");
+  };
 
-/* ---------------------------
-   Logger
---------------------------- */
-function log(msg){
-  console.log('[UberPro]', msg);
-  logBox.innerText = msg;
-}
-
-/* ---------------------------
-   Resize helper -> returns dataURL (reliable for Tesseract)
---------------------------- */
-function resizeImageToDataURL(file, maxWidth = 1200) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = reject;
-      img.onload = () => {
-        if (img.width <= maxWidth) {
-          resolve(reader.result); // original dataURL
-          return;
-        }
-        const scale = maxWidth / img.width;
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        resolve(dataUrl);
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
+  window.addEventListener("unhandledrejection", e => {
+    log("❌ PROMISE ERROR: " + e.reason);
   });
-}
 
-/* ---------------------------
-   Multiple regex attempts to extract coords robustly
---------------------------- */
-function extractCoordsFromText(text) {
-  if(!text || typeof text !== 'string') return null;
+  console.log = (...args) => log("🟢 " + args.join(" "));
+})();
 
-  // 1) standard decimal with comma: 21.165380, -86.844216
-  let re1 = /(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/g;
-  let m;
-  while((m = re1.exec(text)) !== null){
-    const la = Number(m[1]), lo = Number(m[2]);
-    if(isFinite(la) && isFinite(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180) return {lat:la.toFixed(6), lon:lo.toFixed(6)};
-  }
+/* =======================
+   VARIABLES
+======================= */
+const imageInput = document.getElementById("imageInput");
+const preview = document.getElementById("preview");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const navigateBtn = document.getElementById("navigateBtn");
+const statusDiv = document.getElementById("status");
+const coordsDiv = document.getElementById("coords");
 
-  // 2) space separated decimals: 21.165380 -86.844216
-  let re2 = /(-?\d{1,2}\.\d+)\s+(-?\d{1,3}\.\d+)/g;
-  while((m = re2.exec(text)) !== null){
-    const la = Number(m[1]), lo = Number(m[2]);
-    if(isFinite(la) && isFinite(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180) return {lat:la.toFixed(6), lon:lo.toFixed(6)};
-  }
+let detectedLat = null;
+let detectedLng = null;
 
-  // 3) labeled like "Lat: 21.165380 Lon: -86.844216" or "Latitude 21.165380 Longitude -86.844216"
-  let re3 = /lat(?:itude)?[:\s]*(-?\d{1,2}\.\d+)[^\d\-]+lon(?:gitude|):?\s*(-?\d{1,3}\.\d+)/i;
-  m = re3.exec(text);
-  if(m){
-    const la = Number(m[1]), lo = Number(m[2]);
-    if(isFinite(la) && isFinite(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180) return {lat:la.toFixed(6), lon:lo.toFixed(6)};
-  }
+/* =======================
+   CARGAR IMAGEN
+======================= */
+imageInput.addEventListener("change", () => {
+  const file = imageInput.files[0];
+  if (!file) return;
 
-  return null;
-}
-
-/* ---------------------------
-   OCR robust flow (definitive)
---------------------------- */
-async function analyzeImage() {
-  const file = fileInput.files[0];
-  if(!file){ log('❌ Selecciona una imagen primero'); return; }
-
-  log('⏳ Preparando imagen para OCR...');
-  btnAnalyze.disabled = true;
-  btnNavigate.disabled = true;
-  currentCoords = null;
-
-  let worker = null;
-  let dataUrl = null;
-
-  try {
-    // 1) Prepare image and show preview (resized dataURL)
-    dataUrl = await resizeImageToDataURL(file, 1200);
-    preview.src = dataUrl;
-    preview.style.display = 'block';
-    log('Imagen preparada para OCR');
-
-    // 2) Create worker (use await for compatibility)
-    if(typeof Tesseract === 'undefined' || !Tesseract.createWorker) {
-      throw new Error('Motor Tesseract no disponible en este navegador.');
-    }
-
-    worker = await Tesseract.createWorker({
-      logger: m => {
-        // Useful statuses: 'loading tesseract core', 'loading language traineddata', 'recognizing text', etc.
-        if(m && m.status) {
-          log('OCR: ' + m.status + (m.progress ? ` (${Math.round(m.progress*100)}%)` : ''));
-        }
-      }
-    });
-
-    await worker.load();
-    await worker.loadLanguage('eng+spa'); // load both to improve chances
-    await worker.initialize('eng+spa');
-    await worker.setParameters({ tessedit_char_whitelist: '0123456789.,-: LatLonlatlonABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ' });
-
-    // 3) Recognize with timeout
-    log('OCR: Reconociendo texto (esto puede tardar unos segundos)...');
-    const recognizePromise = worker.recognize(dataUrl);
-
-    const res = await Promise.race([
-      recognizePromise,
-      new Promise((_, reject) => setTimeout(()=> reject(new Error('OCR timeout')), 30000))
-    ]);
-
-    // 4) Extract text and parse coordinates
-    const text = (res && res.data && res.data.text) ? res.data.text : (res && res.text) ? res.text : '';
-    console.log('[OCR TEXT]', text);
-    log('OCR completado. Buscando coordenadas en texto...');
-
-    const coords = extractCoordsFromText(text);
-    if(!coords){
-      // For debugging, show partial text (first 300 chars) in log
-      const snippet = text ? text.trim().slice(0,300).replace(/\n/g,' ') : '(sin texto)';
-      log('❌ No se encontraron coordenadas. Texto OCR (preview):\n' + snippet + (text && text.length>300 ? '...' : ''));
-      return;
-    }
-
-    currentCoords = `${coords.lat},${coords.lon}`;
-
-    // copy to clipboard if possible
-    try{
-      await navigator.clipboard.writeText(currentCoords);
-      log(`✅ Coordenadas detectadas y copiadas:\n${currentCoords}`);
-    }catch(e){
-      log(`✅ Coordenadas detectadas:\n${currentCoords}\n(pero no se pudo copiar automáticamente)`);
-    }
-
-    // enable navigate button
-    btnNavigate.disabled = false;
-
-  } catch(err) {
-    console.error('analyze error', err);
-    if(err && err.message && err.message.includes('OCR timeout')){
-      log('❌ El OCR tardó demasiado. Intenta recortar la imagen a la zona con las coordenadas o usar una imagen más pequeña.');
-    } else {
-      log('❌ Error al procesar la imagen. Revisa la consola remota para detalles.');
-    }
-  } finally {
-    try{ if(worker) await worker.terminate(); }catch(e){/* ignore */ }
-    btnAnalyze.disabled = false;
-  }
-}
-
-/* ---------------------------
-   Navigate PRO (Sygic / Google fallback)
---------------------------- */
-function navigatePro(){
-  if(!currentCoords){ log('❌ Primero analiza la imagen para obtener coordenadas'); return; }
-  log('🚗 Intentando abrir Sygic (si no está, se abrirá Google Maps)');
-
-  const sygicSchemes = [
-    `sygic://coordinate|${currentCoords}`,
-    `com.sygic.aura://coordinate|${currentCoords}`
-  ];
-  const googleUrl = `https://www.google.com/maps/search/?api=1&query=${currentCoords}`;
-
-  // 1) Try anchor click
-  try {
-    const a = document.createElement('a');
-    a.href = sygicSchemes[0];
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(()=>{ log('Si Sygic no respondió, abriendo Google Maps...'); window.location.href = googleUrl; }, 1200);
-    return;
-  } catch(e) {
-    console.warn('anchor method failed', e);
-  }
-
-  // 2) iframe fallback
-  try {
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = sygicSchemes[0];
-    document.body.appendChild(iframe);
-    setTimeout(()=>{ try{ document.body.removeChild(iframe);}catch(_){}; window.location.href = googleUrl; }, 1200);
-    return;
-  } catch(e) {
-    console.warn('iframe method failed', e);
-  }
-
-  // 3) final fallback
-  window.location.href = googleUrl;
-}
-
-/* ---------------------------
-   Wire events
---------------------------- */
-fileInput.addEventListener('change', e => {
-  const f = e.target.files[0];
-  if(!f) return;
-  // quick preview (will be replaced by resized preview inside analyze)
-  preview.src = URL.createObjectURL(f);
-  preview.style.display = 'block';
-  log('Imagen cargada, lista para analizar.');
+  const reader = new FileReader();
+  reader.onload = () => {
+    preview.src = reader.result;
+    statusDiv.textContent = "Estado: Imagen preparada para OCR";
+    console.log("Imagen cargada correctamente");
+  };
+  reader.readAsDataURL(file);
 });
 
-btnAnalyze.addEventListener('click', analyzeImage);
-btnNavigate.addEventListener('click', navigatePro);
+/* =======================
+   ANALIZAR OCR
+======================= */
+analyzeBtn.addEventListener("click", async () => {
+  if (!preview.src) {
+    alert("Primero sube una imagen");
+    return;
+  }
+
+  statusDiv.textContent = "Estado: Iniciando OCR (puede tardar)…";
+  console.log("OCR iniciado");
+
+  try {
+    const result = await Tesseract.recognize(
+      preview.src,
+      "eng",
+      { logger: m => console.log(m.status) }
+    );
+
+    console.log("OCR finalizado");
+
+    const text = result.data.text;
+    console.log("Texto OCR:", text);
+
+    const match = text.match(/(-?\d{1,2}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
+
+    if (!match) {
+      throw new Error("No se detectaron coordenadas");
+    }
+
+    detectedLat = match[1];
+    detectedLng = match[2];
+
+    coordsDiv.innerHTML = `
+      Latitud: <b>${detectedLat}</b><br>
+      Longitud: <b>${detectedLng}</b>
+    `;
+
+    statusDiv.textContent = "Estado: Coordenadas detectadas";
+    navigateBtn.disabled = false;
+
+  } catch (err) {
+    console.log("ERROR OCR:", err);
+    statusDiv.textContent = "Error al procesar la imagen";
+    alert("Error OCR. Revisa la consola en pantalla.");
+  }
+});
+
+/* =======================
+   NAVEGAR PRO
+======================= */
+navigateBtn.addEventListener("click", () => {
+  if (!detectedLat || !detectedLng) return;
+
+  const useGoogle = confirm(
+    "¿Usar Google Maps?\n\nCancelar = intentar Sygic"
+  );
+
+  if (useGoogle) {
+    const url = `https://www.google.com/maps?q=${detectedLat},${detectedLng}`;
+    window.open(url, "_blank");
+  } else {
+    alert(
+      "⚠️ Sygic directo SOLO funciona en App iOS (Capacitor).\n\n" +
+      "En web Safari no se puede lanzar com.sygic.aura://"
+    );
+  }
+});
 </script>
+
 </body>
 </html>
