@@ -161,4 +161,132 @@ body{
   border:4px solid rgba(0,210,255,.1);
   border-top:4px solid var(--neon-blue);
   border-radius:50%;
-  animation:spin 1s line
+  animation:spin 1s linear infinite;
+}
+
+@keyframes spin{100%{transform:rotate(360deg)}}
+</style>
+</head>
+
+<body>
+
+<div id="toast">COORDENADAS COPIADAS</div>
+
+<div class="neon-container">
+  <div class="glass-panel">
+
+    <div class="text-center mb-6">
+      <h1 class="brand-title">UBER PRO</h1>
+    </div>
+
+    <div id="ui-main" class="flex-1 flex flex-col">
+      <div id="dropzone" class="ios-card">
+        <input type="file" id="file-input" class="hidden" accept="image/*">
+        <div id="upload-icon" class="text-center">
+          <div class="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+            ➕
+          </div>
+          <p class="text-xs font-black text-white/40 uppercase tracking-widest">Cargar Captura</p>
+        </div>
+        <img id="image-preview" class="preview-img">
+      </div>
+
+      <button id="analyze-trigger" class="btn-analyze py-5 text-xs uppercase tracking-[0.2em]">
+        Analizar Trayecto ✨
+      </button>
+    </div>
+
+    <div id="ui-results" class="hidden flex-1 flex flex-col space-y-4">
+      <div class="ios-card">
+        <p class="text-[11px] font-bold mb-2">Coordenadas detectadas</p>
+        <code id="res-pickup-gps" class="text-blue-400 font-mono">0.000000, 0.000000</code>
+        <button id="copy-origin" class="btn-copy mt-3">Copiar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="global-loader" class="hidden">
+  <div class="loader-ring mb-6"></div>
+  <p class="text-sm font-black uppercase tracking-widest">Analizando imagen</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<script>
+const fileInput=document.getElementById('file-input');
+const imgPreview=document.getElementById('image-preview');
+const btnAnalyze=document.getElementById('analyze-trigger');
+const loader=document.getElementById('global-loader');
+const resGps=document.getElementById('res-pickup-gps');
+const copyBtn=document.getElementById('copy-origin');
+
+function showLoader(v){loader.classList.toggle('hidden',!v);}
+
+async function copy(text){
+  await navigator.clipboard.writeText(text);
+  toast.classList.add('visible');
+  setTimeout(()=>toast.classList.remove('visible'),1800);
+}
+
+function openSygic(lat,lon){
+  const sygic=`sygic://coordinate|${lat}|${lon}`;
+  const google=`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+  window.location.href=sygic;
+  setTimeout(()=>window.location.href=google,1500);
+}
+
+function extractCoords(text){
+  const regex=/(-?\d{1,2}\.\d{4,})\s*,?\s*(-?\d{1,3}\.\d{4,})/;
+  const m=text.match(regex);
+  if(!m) return null;
+  return {lat:m[1],lon:m[2]};
+}
+
+async function analyze(){
+  showLoader(true);
+  try{
+    const worker=await Tesseract.createWorker();
+    await worker.loadLanguage('spa');
+    await worker.initialize('spa');
+    const {data}=await worker.recognize(imgPreview);
+    await worker.terminate();
+
+    const coords=extractCoords(data.text);
+    if(!coords) throw 'NO_COORDS';
+
+    const finalCoord=`${coords.lat}, ${coords.lon}`;
+    resGps.innerText=finalCoord;
+    await copy(finalCoord);
+    openSygic(coords.lat,coords.lon);
+
+    ui-main.classList.add('hidden');
+    ui-results.classList.remove('hidden');
+
+  }catch(e){
+    alert('No se detectaron coordenadas visibles en la imagen.');
+  }
+  showLoader(false);
+}
+
+dropzone.onclick=()=>fileInput.click();
+
+fileInput.onchange=e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    imgPreview.src=ev.target.result;
+    imgPreview.style.display='block';
+    btnAnalyze.classList.add('active');
+  };
+  r.readAsDataURL(f);
+};
+
+btnAnalyze.onclick=analyze;
+copyBtn.onclick=()=>copy(resGps.innerText);
+</script>
+
+</body>
+</html>
