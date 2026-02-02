@@ -24,7 +24,7 @@
     <img id="preview" />
 
     <button onclick="analyzeImage()">Analizar trayecto</button>
-    <button class="secondary" onclick="navigate()">Navegar</button>
+    <button class="secondary" onclick="navigatePro()">Navegar PRO</button>
 
     <div id="log"></div>
   </div>
@@ -60,37 +60,32 @@ async function analyzeImage(){
   }
 }
 
-async function navigate(){
+async function navigatePro(){
   if(!currentCoords){ log('Primero analiza una imagen'); return; }
 
   const sygicUrl = `com.sygic.aura://coordinate|${currentCoords}`;
   const googleUrl = `https://maps.google.com/?q=${currentCoords}`;
 
-  log('Intentando abrir Sygic…');
+  log('Elige app de navegación…');
 
-  // Si estamos dentro de Capacitor (iOS real)
-  if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App){
-    try{
-      await window.Capacitor.Plugins.App.openUrl({ url: sygicUrl });
-      return;
-    }catch(e){
-      log('Sygic no disponible, abriendo Google Maps');
-      await window.Capacitor.Plugins.App.openUrl({ url: googleUrl });
-      return;
-    }
+  // Capacitor iOS (app real)
+  if(window.Capacitor && Capacitor.Plugins?.App){
+    Capacitor.Plugins.App.openUrl({ url: sygicUrl })
+      .catch(() => Capacitor.Plugins.App.openUrl({ url: googleUrl }));
+    return;
   }
 
-  // Fallback navegador (Safari / PWA)
+  // Web / PWA fallback
   const iframe = document.createElement('iframe');
   iframe.style.display = 'none';
   iframe.src = sygicUrl;
   document.body.appendChild(iframe);
 
-  setTimeout(()=>{
-    document.body.removeChild(iframe);
+  setTimeout(() => {
     window.location.href = googleUrl;
-  },1200);
+  }, 1200);
 }
+
 
 function log(t){ logBox.innerText = t; }
 </script>
