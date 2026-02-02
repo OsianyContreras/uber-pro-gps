@@ -31,47 +31,221 @@ body { background-color:#050505;color:#fff;font-family:'Inter',sans-serif;margin
 <div id="toast">COORDENADAS COPIADAS</div>
 <div class="neon-container"><div class="glass-panel">
 <div class="text-center mb-6"><h1 class="brand-title">UBER PRO</h1></div>
-<div id="ui-main" class="flex-1 flex flex-col">
-<div id="dropzone" class="ios-card" onclick="fileInput.click()">
-<input type="file" id="file-input" class="hidden" accept="image/*">
-<div id="upload-icon"><p class="text-xs">Cargar Captura</p></div>
-<img id="image-preview" class="preview-img">
+<div id="ui-main" class="flex-1 flex flex-col min-h-0">
+  <div id="dropzone" class="ios-card" title="Toca para seleccionar imagen">
+    <input type="file" id="file-input" class="hidden" accept="image/*">
+    <div id="upload-icon" class="text-center">
+      <div class="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+        <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      </div>
+      <p class="text-xs font-black text-white/40 uppercase tracking-widest">Cargar Captura</p>
+    </div>
+    <img id="image-preview" class="preview-img" alt="preview">
+  </div>
+  <button id="analyze-trigger" class="btn-analyze py-5 text-xs uppercase tracking-[0.2em] mt-auto">Analizar Trayecto ✨</button>
 </div>
-<button id="analyze-trigger" class="btn-analyze py-5 text-xs uppercase">Analizar Trayecto ✨</button>
-</div>
-<div id="ui-results" class="hidden flex-1 flex flex-col space-y-4">
-<div class="ios-card"><p class="text-[9px]">Origen</p><p id="res-pickup-addr"></p><code id="res-pickup-gps"></code></div>
-<div class="ios-card"><p class="text-[9px]">Destino</p><p id="res-dropoff-addr"></p><code id="res-dropoff-gps"></code></div>
-<button id="btn-restart">Nueva Captura</button>
+<div id="ui-results" class="hidden flex-1 flex flex-col space-y-4 overflow-y-auto pr-1">
+  <div class="ios-card">
+    <div class="flex justify-between items-start mb-2">
+      <div class="flex-1 pr-4">
+        <span class="text-[9px] font-black text-blue-500 uppercase">Origen</span>
+        <p id="res-pickup-addr" class="text-[11px] font-bold text-white/90 mt-1"></p>
+      </div>
+      <button id="copy-origin" class="btn-copy">Copiar</button>
+    </div>
+    <div class="bg-black/50 p-2 rounded-xl border border-white/5 text-center">
+      <code id="res-pickup-gps" class="text-[11px] text-blue-400 font-mono tracking-tighter">0.000000, 0.000000</code>
+    </div>
+  </div>
+  <div class="ios-card">
+    <div class="flex justify-between items-start mb-2">
+      <div class="flex-1 pr-4">
+        <span class="text-[9px] font-black text-blue-500 uppercase">Destino</span>
+        <p id="res-dropoff-addr" class="text-[11px] font-bold text-white/90 mt-1"></p>
+      </div>
+      <button id="copy-dest" class="btn-copy">Copiar</button>
+    </div>
+    <div class="bg-black/50 p-2 rounded-xl border border-white/5 text-center">
+      <code id="res-dropoff-gps" class="text-[11px] text-blue-400 font-mono tracking-tighter">0.000000, 0.000000</code>
+    </div>
+  </div>
+  <button id="btn-restart" class="w-full py-4 text-[10px] font-bold text-white/20 uppercase tracking-widest hover:text-white transition-colors">Nueva Captura</button>
 </div>
 </div></div>
-<div id="global-loader" class="hidden fixed inset-0 bg-black flex items-center justify-center"><div class="loader-ring"></div></div>
+<div id="global-loader" class="hidden fixed inset-0 bg-black/98 z-[9999] flex flex-col items-center justify-center">
+  <div class="loader-ring mb-6"></div>
+  <div class="text-center px-6">
+    <p id="loader-text" class="text-sm font-black text-white uppercase tracking-[0.3em] mb-2">Sincronizando GPS</p>
+    <p class="text-[10px] text-blue-400/60 font-bold uppercase tracking-widest">Calculando coordenadas de alta precisión...</p>
+  </div>
+</div>
+
+<!-- Tesseract.js -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <script>
-const fileInput=document.getElementById('file-input');
-const imgPreview=document.getElementById('image-preview');
-const btnAnalyze=document.getElementById('analyze-trigger');
-const loader=document.getElementById('global-loader');
-let extracted={};
-fileInput.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{imgPreview.src=ev.target.result;imgPreview.style.display='block';btnAnalyze.classList.add('active')};r.readAsDataURL(f)});
-async function analyzeImage(){loader.classList.remove('hidden');
-// SIMULACIÓN OCR — AQUÍ VA TU MOTOR REAL
-// Se respeta orden: primera dirección = recogida, segunda = destino
-extracted={recogida:'DIRECCIÓN 1 EXACTA DE LA IMAGEN',destino:'DIRECCIÓN 2 EXACTA DE LA IMAGEN'};
-await geocode();
-loader.classList.add('hidden');}
-async function geocode(){
-const r1=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(extracted.recogida)}`);
-const r2=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(extracted.destino)}`);
-const j1=await r1.json();const j2=await r2.json();
-document.getElementById('res-pickup-addr').innerText=extracted.recogida;
-document.getElementById('res-dropoff-addr').innerText=extracted.destino;
-document.getElementById('res-pickup-gps').innerText=`${j1[0].lat},${j1[0].lon}`;
-document.getElementById('res-dropoff-gps').innerText=`${j2[0].lat},${j2[0].lon}`;
-copyAuto();
-document.getElementById('ui-main').classList.add('hidden');document.getElementById('ui-results').classList.remove('hidden');}
-function copyAuto(){navigator.clipboard.writeText(document.getElementById('res-pickup-gps').innerText);
-const t=document.getElementById('toast');t.classList.add('visible');setTimeout(()=>t.classList.remove('visible'),2000)}
-btnAnalyze.addEventListener('click',analyzeImage);
+// DOM elements
+const fileInput = document.getElementById('file-input');
+window.fileInput = fileInput; // expose for inline onclicks if any
+const imgPreview = document.getElementById('image-preview');
+const btnAnalyze = document.getElementById('analyze-trigger');
+const loader = document.getElementById('global-loader');
+const resPickupAddr = document.getElementById('res-pickup-addr');
+const resDropAddr = document.getElementById('res-dropoff-addr');
+const resPickupGps = document.getElementById('res-pickup-gps');
+const resDropGps = document.getElementById('res-dropoff-gps');
+const copyOriginBtn = document.getElementById('copy-origin');
+const copyDestBtn = document.getElementById('copy-dest');
+const uiMain = document.getElementById('ui-main');
+const uiResults = document.getElementById('ui-results');
+
+const dropzone = document.getElementById('dropzone');
+let base64String = '';
+
+// Helpers
+function showLoader(show=true,text='Sincronizando GPS'){
+  const t=document.getElementById('loader-text'); if(t) t.innerText = text;
+  loader.classList.toggle('hidden',!show);
+}
+
+async function writeClipboard(text){
+  try{ await navigator.clipboard.writeText(text); const toast=document.getElementById('toast'); toast.classList.add('visible'); setTimeout(()=>toast.classList.remove('visible'),1800); return true; }catch(e){console.warn('clipboard failed',e); return false}
+}
+
+function isValidLatLon(lat,lon){
+  const la=Number(lat), lo=Number(lon);
+  return !Number.isNaN(la) && !Number.isNaN(lo) && la>=-90 && la<=90 && lo>=-180 && lo<=180;
+}
+
+async function safeGeocode(address){
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`);
+    const json = await res.json();
+    if(!Array.isArray(json) || json.length===0) return null;
+    return json[0];
+  }catch(e){ console.warn('geocode failed',e); return null }
+}
+
+// Open Sygic on iOS if available, otherwise fallback to Google Maps
+function openSygicOrGoogle(lat,lon){
+  if(!isValidLatLon(lat,lon)) return;
+  const sygicSchemes = [
+    `sygic://coordinate|${lat}|${lon}`,
+    `com.sygic.aura://coordinate|${lat}|${lon}`
+  ];
+  const google = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+
+  // Try Sygic scheme first. If it doesn't open the app, after timeout open Google Maps.
+  try{
+    window.location.href = sygicSchemes[0];
+  }catch(e){}
+  // Fallback to second scheme shortly after (some devices may recognize different schemes)
+  setTimeout(()=>{ try{ window.location.href = sygicSchemes[1]; }catch(e){} }, 500);
+  // If app didn't open (browser stays), open Google Maps after 1500ms
+  setTimeout(()=>{ window.location.href = google; }, 1500);
+}
+
+// OCR + parsing: prefer direct lat,long detection. If not found, extract first two address lines.
+async function analyzeImage(){
+  if(!imgPreview.src){ alert('Selecciona una imagen primero'); return; }
+  showLoader(true,'Analizando imagen (OCR)...');
+  btnAnalyze.disabled = true;
+
+  try{
+    const worker = Tesseract.createWorker({ logger: m=>{} });
+    await worker.load();
+    await worker.loadLanguage('spa');
+    await worker.initialize('spa');
+    const { data:{ text } } = await worker.recognize(imgPreview);
+    await worker.terminate();
+
+    // 1) Buscar primer par lat,lon en el texto (ej: 21.165380,-86.844216)
+    const coordRegex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/g;
+    let coordMatch;
+    let firstCoord = null;
+    while((coordMatch = coordRegex.exec(text)) !== null){
+      const la = Number(coordMatch[1]);
+      const lo = Number(coordMatch[2]);
+      if(isValidLatLon(la,lo)){ firstCoord = { lat: la.toFixed(6), lon: lo.toFixed(6) }; break; }
+    }
+
+    if(firstCoord){
+      // Use this single coordinate as requested: copy it, open Sygic and show results UI
+      resPickupAddr.innerText = 'Coordenada detectada desde imagen';
+      resPickupGps.innerText = `${firstCoord.lat}, ${firstCoord.lon}`;
+      resDropAddr.innerText = '';
+      resDropGps.innerText = 'No requerida';
+
+      await writeClipboard(resPickupGps.innerText);
+      // Open Sygic (iOS preferred) — this will switch apps; fallback to Google Maps if Sygic not installed
+      openSygicOrGoogle(firstCoord.lat, firstCoord.lon);
+
+      uiMain.classList.add('hidden');
+      uiResults.classList.remove('hidden');
+      showLoader(false);
+      return;
+    }
+
+    // 2) Si no hay pares lat/lon, extraer primeras 2 líneas útiles como direcciones
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>5);
+    const recogida = lines[0] || '';
+    const destino = lines[1] || '';
+
+    if(!recogida || !destino){
+      alert('No se pudieron detectar claramente dos direcciones ni coordenadas en la imagen. Asegúrate de que el texto sea legible.');
+      return;
+    }
+
+    resPickupAddr.innerText = recogida;
+    resDropAddr.innerText = destino;
+
+    // Try geocode both; if geocode returns null, show NO DISPONIBLE but still let user choose
+    const g1 = await safeGeocode(recogida);
+    const g2 = await safeGeocode(destino);
+
+    resPickupGps.innerText = g1?`${Number(g1.lat).toFixed(6)}, ${Number(g1.lon).toFixed(6)}`:'NO DISPONIBLE';
+    resDropGps.innerText = g2?`${Number(g2.lat).toFixed(6)}, ${Number(g2.lon).toFixed(6)}`:'NO DISPONIBLE';
+
+    // If pickup geocoded, copy and open sygic (user requested automatic pickup copy)
+    if(g1){
+      await writeClipboard(`${Number(g1.lat).toFixed(6)}, ${Number(g1.lon).toFixed(6)}`);
+      openSygicOrGoogle(Number(g1.lat).toFixed(6), Number(g1.lon).toFixed(6));
+    }
+
+    uiMain.classList.add('hidden');
+    uiResults.classList.remove('hidden');
+
+  }catch(err){
+    console.error('analyze error',err);
+    alert('Error al procesar la imagen. Intenta con otra captura.');
+  }finally{
+    btnAnalyze.disabled = false;
+    showLoader(false);
+  }
+}
+
+// Open in Apple Maps (manual button)
+function openAppleMaps(type){
+  const el = type==='pickup' ? resPickupGps : resDropGps;
+  if(!el || !el.innerText.includes(',')) return;
+  const [lat,lon] = el.innerText.split(',').map(s=>s.trim());
+  window.location.href = `https://maps.apple.com/?ll=${lat},${lon}`;
+}
+
+// Wire events
+const dropzoneEl = document.getElementById('dropzone');
+dropzoneEl.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => { imgPreview.src = ev.target.result; imgPreview.style.display = 'block'; btnAnalyze.classList.add('active'); };
+  reader.readAsDataURL(f);
+});
+
+btnAnalyze.addEventListener('click', analyzeImage);
+copyOriginBtn.addEventListener('click', async ()=>{ const txt = resPickupGps.innerText || ''; if(txt && txt!=='NO DISPONIBLE') await writeClipboard(txt); });
+copyDestBtn.addEventListener('click', async ()=>{ const txt = resDropGps.innerText || ''; if(txt && txt!=='NO DISPONIBLE') await writeClipboard(txt); });
+
 </script>
 </body>
 </html>
