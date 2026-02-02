@@ -6,11 +6,9 @@
 <title>Uber Pro GPS Edition</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700;900&display=swap');
-
 :root { --neon-blue:#00d2ff; --deep-blue:#0072ff; }
 
 body{
@@ -22,6 +20,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
+  overflow:hidden;
 }
 
 .brand-title{
@@ -31,181 +30,135 @@ body{
   letter-spacing:4px;
   color:#000;
   -webkit-text-stroke:1.5px var(--neon-blue);
-  text-shadow:0 0 10px rgba(0,210,255,.7);
+  text-shadow:0 0 10px rgba(0,210,255,.7),0 0 20px rgba(0,210,255,.3);
 }
 
 .neon-container{
+  position:relative;
   width:100%;
   max-width:400px;
   height:90vh;
   background:#0a0a0a;
   border-radius:40px;
   padding:3px;
+  overflow:hidden;
   box-shadow:0 0 40px rgba(0,114,255,.3);
 }
 
+.neon-container::before{
+  content:'';
+  position:absolute;
+  inset:-50%;
+  background:conic-gradient(transparent,var(--neon-blue),var(--deep-blue),transparent 40%);
+  animation:rotate 6s linear infinite;
+}
+
+@keyframes rotate{100%{transform:rotate(360deg)}}
+
 .glass-panel{
+  position:relative;
+  z-index:1;
   background:rgba(10,10,10,.95);
   width:100%;
   height:100%;
   border-radius:37px;
-  padding:24px;
   display:flex;
   flex-direction:column;
+  padding:24px;
 }
 
 .ios-card{
   background:rgba(255,255,255,.03);
+  backdrop-filter:blur(10px);
   border-radius:24px;
   border:1px solid rgba(255,255,255,.08);
   padding:20px;
 }
 
+#dropzone{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  max-height:50vh;
+  margin-bottom:20px;
+}
+
 .preview-img{
   max-width:100%;
   max-height:100%;
+  object-fit:contain;
   border-radius:20px;
   display:none;
 }
 
 .btn-analyze{
-  background:#fff;
+  background:linear-gradient(135deg,#fff,#e0e0e0);
   color:#000;
   font-weight:900;
   border-radius:18px;
-  padding:20px;
-  margin-top:16px;
+  box-shadow:0 10px 20px rgba(0,0,0,.4);
+  transition:.3s;
+  border:none;
+  width:100%;
+}
+
+.btn-analyze:not(.active){
   opacity:.2;
+  transform:scale(.95);
   pointer-events:none;
 }
 
 .btn-analyze.active{
   opacity:1;
-  pointer-events:auto;
+  transform:scale(1);
 }
 
-.loader{
+.btn-copy{
+  background:rgba(0,210,255,.15);
+  color:var(--neon-blue);
+  font-size:10px;
+  font-weight:900;
+  padding:8px 14px;
+  border-radius:10px;
+  border:1px solid rgba(0,210,255,.3);
+}
+
+#toast{
+  position:fixed;
+  top:40px;
+  left:50%;
+  transform:translateX(-50%) translateY(-100px);
+  background:var(--deep-blue);
+  color:#fff;
+  padding:12px 24px;
+  border-radius:50px;
+  font-weight:800;
+  font-size:12px;
+  z-index:9999;
+  transition:.5s;
+}
+
+#toast.visible{
+  transform:translateX(-50%) translateY(0);
+}
+
+#global-loader{
   position:fixed;
   inset:0;
   background:#000;
-  display:none;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
-  flex-direction:column;
-  z-index:9999;
 }
-.loader.show{display:flex}
 
-.spinner{
+.loader-ring{
   width:50px;
   height:50px;
-  border:4px solid rgba(0,210,255,.2);
+  border:4px solid rgba(0,210,255,.1);
   border-top:4px solid var(--neon-blue);
   border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-@keyframes spin{100%{transform:rotate(360deg)}}
-</style>
-</head>
-
-<body>
-
-<div class="neon-container">
-<div class="glass-panel">
-
-<h1 class="brand-title text-center mb-6">UBER PRO</h1>
-
-<div id="ui-main" class="flex flex-col flex-1">
-  <div id="dropzone" class="ios-card flex flex-col items-center justify-center cursor-pointer">
-    <input type="file" id="file-input" hidden accept="image/*">
-    <p class="text-xs uppercase text-white/40">Cargar captura</p>
-    <img id="image-preview" class="preview-img mt-4">
-  </div>
-
-  <button id="analyze-trigger" class="btn-analyze">
-    Analizar Trayecto ✨
-  </button>
-</div>
-
-<div id="ui-results" class="hidden">
-  <div class="ios-card text-center">
-    <p class="text-xs text-blue-400 font-bold mb-2">COORDENADAS</p>
-    <code id="result" class="text-blue-300 font-mono text-sm"></code>
-  </div>
-</div>
-
-</div>
-</div>
-
-<div id="loader" class="loader">
-  <div class="spinner mb-4"></div>
-  <p class="text-xs uppercase tracking-widest">Analizando imagen…</p>
-</div>
-
-<script>
-const fileInput = document.getElementById('file-input');
-const imgPreview = document.getElementById('image-preview');
-const btnAnalyze = document.getElementById('analyze-trigger');
-const dropzone = document.getElementById('dropzone');
-const loader = document.getElementById('loader');
-const result = document.getElementById('result');
-const uiMain = document.getElementById('ui-main');
-const uiResults = document.getElementById('ui-results');
-
-dropzone.onclick = () => fileInput.click();
-
-fileInput.onchange = e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const r = new FileReader();
-  r.onload = ev=>{
-    imgPreview.src = ev.target.result;
-    imgPreview.style.display = 'block';
-    btnAnalyze.classList.add('active');
-  };
-  r.readAsDataURL(file);
-};
-
-function extractCoords(text){
-  const re = /(-?\d{1,2}\.\d{4,})\s*,\s*(-?\d{1,3}\.\d{4,})/;
-  const m = text.match(re);
-  if(!m) return null;
-  return {lat:m[1], lon:m[2]};
-}
-
-btnAnalyze.onclick = async ()=>{
-  loader.classList.add('show');
-
-  let worker;
-  try{
-    worker = await Tesseract.createWorker();
-    await worker.load();
-    await worker.loadLanguage('spa');
-    await worker.initialize('spa');
-
-    const res = await Promise.race([
-      worker.recognize(imgPreview.src),
-      new Promise((_,rej)=>setTimeout(()=>rej('timeout'),25000))
-    ]);
-
-    const coords = extractCoords(res.data.text);
-    if(!coords) throw 'NO_COORDS';
-
-    result.textContent = `${coords.lat}, ${coords.lon}`;
-    uiMain.classList.add('hidden');
-    uiResults.classList.remove('hidden');
-
-    navigator.clipboard.writeText(result.textContent);
-
-  }catch(e){
-    alert('No se detectaron coordenadas visibles en la imagen.');
-    console.error(e);
-  }finally{
-    if(worker) await worker.terminate();
-    loader.classList.remove('show');
-  }
-};
-</script>
-
-</body>
-</html>
+  animation:spin 1s line
