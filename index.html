@@ -4,331 +4,143 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Uber Pro GPS</title>
-
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
 <style>
-body{
-  margin:0;
-  padding:0;
-  font-family:-apple-system, BlinkMacSystemFont, system-ui;
-  background:radial-gradient(circle at top,#020617,#000);
-  color:#fff;
-  display:flex;
-  justify-content:center;
-}
-
-.card{
-  width:100%;
-  max-width:420px;
-  margin:16px;
-  padding:18px;
-  border-radius:20px;
-  background:#020617;
-  position:relative;
-  box-shadow:0 0 0 1px rgba(148,163,184,.15),
-              0 30px 60px rgba(0,0,0,.7);
-  animation:fadeIn .8s ease;
-}
-
-.card::before{
-  content:"";
-  position:absolute;
-  inset:-2px;
-  border-radius:22px;
-  background:linear-gradient(120deg,#22c55e,#38bdf8,#22c55e);
-  z-index:-1;
-  animation:borderGlow 6s linear infinite;
-}
-
-@keyframes borderGlow{
-  0%{filter:hue-rotate(0deg)}
-  100%{filter:hue-rotate(360deg)}
-}
-
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(10px)}
-  to{opacity:1}
-}
-
-h1{
-  text-align:center;
-  font-size:20px;
-  margin-bottom:10px;
-}
-
-input[type=file]{
-  width:100%;
-  margin-top:10px;
-}
-
-img{
-  width:100%;
-  max-height:35vh;
-  object-fit:contain;
-  border-radius:14px;
-  margin-top:12px;
-  background:#000;
-  display: none; /* Oculto hasta que haya imagen */
-}
-
-button{
-  width:100%;
-  padding:15px;
-  margin-top:12px;
-  border-radius:14px;
-  border:none;
-  font-size:16px;
-  font-weight:600;
-  background:#22c55e;
-  color:#000;
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-button:active { transform: scale(0.98); }
-
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,system-ui;background:radial-gradient(circle at top,#020617,#000);color:#fff;display:flex;justify-content:center}
+.card{width:100%;max-width:420px;margin:16px;padding:18px;border-radius:20px;background:#020617;position:relative;box-shadow:0 0 0 1px rgba(148,163,184,.15),0 30px 60px rgba(0,0,0,.7);animation:fadeIn .8s ease}
+.card::before{content:"";position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(120deg,#22c55e,#38bdf8,#22c55e);z-index:-1;animation:borderGlow 6s linear infinite}
+@keyframes borderGlow{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+h1{text-align:center;font-size:20px;margin-bottom:10px}
+img{width:100%;max-height:35vh;object-fit:contain;border-radius:14px;margin-top:12px;background:#000;display:none}
+button{width:100%;padding:15px;margin-top:12px;border-radius:14px;border:none;font-size:16px;font-weight:600;background:#22c55e;color:#000;cursor:pointer}
 button.secondary{background:#38bdf8}
 button.gray{background:#64748b;color:#fff}
-button.danger{background:#ef4444; color:#fff}
-button:disabled{opacity:.4; cursor: not-allowed}
-
-.status{
-  margin-top:10px;
-  font-size:14px;
-  color:#94a3b8;
-  text-align: center;
-}
-
-.coords{
-  margin-top:10px;
-  padding:10px;
-  border-radius:12px;
-  background:#020617;
-  border:1px solid rgba(148,163,184,.15);
-}
-
-.coords b{
-  color:#22c55e;
-  text-shadow:0 0 8px rgba(34,197,94,.6);
-}
-
-.highlight{
-  background:rgba(34,197,94,.15);
-  padding:2px 6px;
-  border-radius:6px;
-}
-
-.history{
-  margin-top:12px;
-  font-size:14px;
-  color:#94a3b8;
-}
-
-#debug{
-  margin-top:12px;
-  font-size:12px;
-  background:#000;
-  padding:8px;
-  border-radius:10px;
-  max-height:120px;
-  overflow:auto;
-  display: none; /* Ocultar por defecto para limpieza */
-}
-
-.toast{
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%) translateY(20px);
-  background:#22c55e;
-  color:#000;
-  padding:10px 16px;
-  border-radius:14px;
-  font-size:14px;
-  font-weight:600;
-  opacity:0;
-  pointer-events:none;
-  transition:all .3s ease;
-  box-shadow:0 10px 30px rgba(0,0,0,.6);
-  z-index: 100;
-}
-.toast.show{
-  opacity:1;
-  transform:translateX(-50%) translateY(0);
-}
+button.danger{background:#ef4444;color:#fff}
+button:disabled{opacity:.4}
+.status{margin-top:10px;font-size:14px;color:#94a3b8;text-align:center}
+.coords{margin-top:10px;padding:10px;border-radius:12px;background:#020617;border:1px solid rgba(148,163,184,.15)}
+.coords b{color:#22c55e;text-shadow:0 0 8px rgba(34,197,94,.6)}
+.highlight{background:rgba(34,197,94,.15);padding:2px 6px;border-radius:6px}
+#debug{margin-top:12px;font-size:11px;background:#000;padding:8px;border-radius:10px;max-height:80px;overflow:auto;display:none;color:#aaa}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#22c55e;color:#000;padding:10px 16px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:all .3s ease;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
-
 <body>
+
 <div class="card">
   <h1>🚗 Uber Pro GPS</h1>
-
   <input type="file" id="fileInput" accept="image/*">
   <img id="preview">
-
+  
   <button id="analyzeBtn">Analizar Trayecto</button>
-
-  <div class="status" id="status">Estado: esperando imagen</div>
+  <div class="status" id="status">Esperando imagen...</div>
 
   <div class="coords" id="coords">
     Latitud: —<br>Longitud: —<br>App: —
   </div>
 
   <button id="copyBtn" class="gray" disabled>📋 Copiar y Abrir Sygic</button>
-  <button id="navigateBtn" class="secondary" disabled>Solo Abrir Sygic</button>
+  <button id="navigateBtn" class="secondary" disabled>🚀 Solo Abrir Sygic</button>
   <button id="resetBtn" class="danger">🔄 Nueva Consulta</button>
 
-  <div class="history" id="history"></div>
-  <div id="debug"><b>DEBUG:</b><br></div>
+  <div id="debug"></div>
 </div>
 
-<div id="toast" class="toast">📋 Copiado y abriendo Sygic...</div>
+<div id="toast" class="toast">📋 Copiado al portapapeles</div>
 
 <script>
-/* ================= VARIABLES ================= */
-const fileInput = document.getElementById("fileInput");
-const preview = document.getElementById("preview");
-const status = document.getElementById("status");
-const coords = document.getElementById("coords");
-const analyzeBtn = document.getElementById("analyzeBtn");
-const copyBtn = document.getElementById("copyBtn");
-const navigateBtn = document.getElementById("navigateBtn");
-const resetBtn = document.getElementById("resetBtn");
-const historyDiv = document.getElementById("history");
+let lat = null, lng = null;
 
-let lat=null, lng=null, appDetectada="—";
-
-/* ================= UTILS ================= */
 const debug = msg => {
   const d = document.getElementById("debug");
   d.style.display = "block";
-  d.innerHTML += msg + "<br>";
+  d.innerHTML += `> ${msg}<br>`;
 };
 
-function copiedFeedback(){
-  const t = document.getElementById("toast");
-  t.classList.add("show");
-  if(navigator.vibrate) navigator.vibrate(40);
-  setTimeout(() => t.classList.remove("show"), 2500);
-}
-
-/* ================= SYGIC LOGIC ================= */
+// --- FUNCIÓN NAVEGAR (Directa para evitar bloqueos de Safari) ---
 function abrirSygic() {
-  if(!lat || !lng) return;
-  // Formato oficial Sygic: com.sygic.aura://coordinate|longitud|latitud|type
-  // Nota: Sygic suele pedir longitud primero, pero intentamos formato universal
-  const sygicUrl = `com.sygic.aura://coordinate|${lng}|${lat}|drive`;
-  
-  debug("Intentando abrir Sygic...");
-  window.location.href = sygicUrl;
-  
-  // Backup por si no abre Sygic en 1 segundo
-  setTimeout(() => {
-    debug("Si no abrió Sygic, verifica que la app esté instalada.");
-  }, 1000);
-}
-
-/* ================= ACCIONES ================= */
-
-fileInput.onchange = e => {
-  const f = e.target.files[0];
-  if(!f) return;
-  preview.src = URL.createObjectURL(f);
-  preview.style.display = "block";
-  status.textContent = "Estado: Imagen cargada";
-};
-
-analyzeBtn.onclick = async () => {
-  if(!fileInput.files[0]) {
-    alert("Por favor, selecciona una imagen primero");
+  if(!lat || !lng) {
+    alert("Primero analiza una imagen");
     return;
   }
-  
-  status.textContent = "Estado: Analizando... 🔍";
-  analyzeBtn.disabled = true;
+  // Formato Sygic iOS: coordinate|longitud|latitud|type
+  const url = `com.sygic.aura://coordinate|${lng}|${lat}|drive`;
+  debug("Invocando: " + url);
+  window.location.assign(url);
+}
 
+// --- FUNCIÓN COPIAR ---
+async function copiarCoordenadas() {
+  if(!lat) return;
   try {
-    const r = await Tesseract.recognize(preview.src, "eng");
-    const t = r.data.text;
-    
-    if(/uber/i.test(t)) appDetectada="Uber";
-    else if(/didi/i.test(t)) appDetectada="Didi";
-    else appDetectada="Desconocida";
+    await navigator.clipboard.writeText(`${lat},${lng}`);
+    const t = document.getElementById("toast");
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2000);
+    return true;
+  } catch (err) {
+    debug("Error al copiar");
+    return false;
+  }
+}
 
-    // Regex mejorada para capturar coordenadas con más precisión
-    const m = t.match(/(-?\d{1,2}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
+// --- BOTONES ---
+document.getElementById("fileInput").onchange = e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const img = document.getElementById("preview");
+  img.src = URL.createObjectURL(f);
+  img.style.display = "block";
+  document.getElementById("status").textContent = "Imagen cargada.";
+};
+
+document.getElementById("analyzeBtn").onclick = async () => {
+  const status = document.getElementById("status");
+  status.textContent = "Analizando texto... 🔍";
+  
+  try {
+    const r = await Tesseract.recognize(document.getElementById("preview").src, "eng");
+    const m = r.data.text.match(/(-?\d{1,2}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
     
-    if(!m) throw "No se detectaron coordenadas";
+    if(!m) throw "No se hallaron coordenadas";
 
     lat = m[1];
     lng = m[2];
 
-    coords.innerHTML = `
+    document.getElementById("coords").innerHTML = `
       Latitud: <span class="highlight"><b>${lat}</b></span><br>
       Longitud: <span class="highlight"><b>${lng}</b></span><br>
-      App: <b>${appDetectada}</b>
+      Status: <b>Lista para Sygic</b>
     `;
 
-    status.textContent = "Estado: ¡Éxito!";
-    copyBtn.disabled = false;
-    navigateBtn.disabled = false;
+    document.getElementById("copyBtn").disabled = false;
+    document.getElementById("navigateBtn").disabled = false;
+    status.textContent = "Análisis completo.";
     
-    // Auto-copiar y abrir al terminar el análisis
-    copiarYNav();
-    guardarHistorial();
-
+    // NOTA: Safari bloqueará un abrirSygic() automático aquí por ser asíncrono.
+    // Es mejor que el usuario toque los botones de abajo.
   } catch(e) {
     status.textContent = "Error: " + e;
-    debug("Error: " + e);
-  } finally {
-    analyzeBtn.disabled = false;
   }
 };
 
-function copiarYNav() {
-  const txt = `${lat},${lng}`;
-  navigator.clipboard.writeText(txt).then(() => {
-    copiedFeedback();
-    // Esperamos un momento para que el usuario vea el toast antes de saltar a otra app
-    setTimeout(abrirSygic, 500);
-  });
-}
-
-copyBtn.onclick = copiarYNav;
-navigateBtn.onclick = abrirSygic;
-
-resetBtn.onclick = () => {
-  fileInput.value = "";
-  preview.src = "";
-  preview.style.display = "none";
-  status.textContent = "Estado: esperando imagen";
-  coords.innerHTML = "Latitud: —<br>Longitud: —<br>App: —";
-  lat = null;
-  lng = null;
-  copyBtn.disabled = true;
-  navigateBtn.disabled = true;
-  document.getElementById("debug").innerHTML = "<b>DEBUG:</b><br>";
-  document.getElementById("debug").style.display = "none";
+// Botón: Copiar y Abrir (Acción directa)
+document.getElementById("copyBtn").onclick = async () => {
+  await copiarCoordenadas();
+  abrirSygic();
 };
 
-/* ================= HISTORIAL ================= */
-function guardarHistorial(){
-  const h = JSON.parse(localStorage.getItem("historial") || "[]");
-  h.unshift({lat, lng, app: appDetectada, fecha: new Date().toLocaleTimeString()});
-  localStorage.setItem("historial", JSON.stringify(h.slice(0,5)));
-  mostrarHistorial();
-}
+// Botón: Solo Abrir (Acción directa)
+document.getElementById("navigateBtn").onclick = () => {
+  abrirSygic();
+};
 
-function mostrarHistorial(){
-  const h = JSON.parse(localStorage.getItem("historial") || "[]");
-  if(h.length === 0) return;
-  historyDiv.innerHTML = "<b>Últimos trayectos:</b><br>" + h.map(x => 
-    `• [${x.fecha}] ${x.app}: ${x.lat}, ${x.lng}`
-  ).join("<br>");
-}
-
-mostrarHistorial();
+// Botón: Reset
+document.getElementById("resetBtn").onclick = () => {
+  location.reload();
+};
 </script>
 </body>
 </html>
