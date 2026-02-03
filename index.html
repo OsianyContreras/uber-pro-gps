@@ -48,45 +48,39 @@ button:disabled{opacity:.4}
   <div id="debug"></div>
 </div>
 
-<div id="toast" class="toast">📋 Copiado al portapapeles</div>
+<div id="toast" class="toast">📋 Copiado y abriendo Sygic...</div>
 
 <script>
 let lat = null, lng = null;
 
-const debug = msg => {
-  const d = document.getElementById("debug");
-  d.style.display = "block";
-  d.innerHTML += `> ${msg}<br>`;
-};
-
-// --- FUNCIÓN NAVEGAR (Directa para evitar bloqueos de Safari) ---
-function abrirSygic() {
-  if(!lat || !lng) {
-    alert("Primero analiza una imagen");
-    return;
-  }
-  // Formato Sygic iOS: coordinate|longitud|latitud|type
-  const url = `com.sygic.aura://coordinate|${lng}|${lat}|drive`;
-  debug("Invocando: " + url);
-  window.location.assign(url);
+// --- FUNCIÓN NAVEGAR (SÍNCRONA Y DIRECTA) ---
+function ejecutarSygic() {
+  if (!lat || !lng) return;
+  
+  // IMPORTANTE: Sygic en iOS prefiere Longitud antes que Latitud
+  // Formato: com.sygic.aura://coordinate|long|lat|drive
+  const url = "com.sygic.aura://coordinate|" + lng + "|" + lat + "|drive";
+  
+  // Usamos location.href de forma directa sin esperas
+  window.location.href = url;
 }
 
-// --- FUNCIÓN COPIAR ---
-async function copiarCoordenadas() {
-  if(!lat) return;
-  try {
-    await navigator.clipboard.writeText(`${lat},${lng}`);
-    const t = document.getElementById("toast");
-    t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 2000);
-    return true;
-  } catch (err) {
-    debug("Error al copiar");
-    return false;
-  }
+// --- FUNCIÓN COPIAR (SÍNCRONA) ---
+function copiarAlPortapapeles() {
+  const texto = lat + "," + lng;
+  const el = document.createElement('textarea');
+  el.value = texto;
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  document.body.removeChild(el);
+  
+  const t = document.getElementById("toast");
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
 }
 
-// --- BOTONES ---
+// --- LOGICA DE IMAGEN Y OCR ---
 document.getElementById("fileInput").onchange = e => {
   const f = e.target.files[0];
   if(!f) return;
@@ -118,23 +112,22 @@ document.getElementById("analyzeBtn").onclick = async () => {
     document.getElementById("copyBtn").disabled = false;
     document.getElementById("navigateBtn").disabled = false;
     status.textContent = "Análisis completo.";
-    
-    // NOTA: Safari bloqueará un abrirSygic() automático aquí por ser asíncrono.
-    // Es mejor que el usuario toque los botones de abajo.
   } catch(e) {
     status.textContent = "Error: " + e;
   }
 };
 
-// Botón: Copiar y Abrir (Acción directa)
-document.getElementById("copyBtn").onclick = async () => {
-  await copiarCoordenadas();
-  abrirSygic();
+// --- BOTONES CORREGIDOS ---
+
+// Botón: Copiar y Abrir (Combinación síncrona)
+document.getElementById("copyBtn").onclick = function() {
+  copiarAlPortapapeles();
+  ejecutarSygic();
 };
 
 // Botón: Solo Abrir (Acción directa)
-document.getElementById("navigateBtn").onclick = () => {
-  abrirSygic();
+document.getElementById("navigateBtn").onclick = function() {
+  ejecutarSygic();
 };
 
 // Botón: Reset
