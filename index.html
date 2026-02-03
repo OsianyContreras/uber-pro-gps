@@ -22,9 +22,17 @@ button:disabled{opacity:.4}
 .coords{margin-top:10px;padding:10px;border-radius:12px;background:#020617;border:1px solid rgba(148,163,184,.15)}
 .coords b{color:#22c55e;text-shadow:0 0 8px rgba(34,197,94,.6)}
 .highlight{background:rgba(34,197,94,.15);padding:2px 6px;border-radius:6px}
-#debug{margin-top:12px;font-size:11px;background:#000;padding:8px;border-radius:10px;max-height:80px;overflow:auto;display:none;color:#aaa}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#22c55e;color:#000;padding:10px 16px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:all .3s ease;z-index:100}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Estilo para el Copyright */
+.copyright {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  letter-spacing: 1px;
+}
 </style>
 </head>
 <body>
@@ -45,27 +53,23 @@ button:disabled{opacity:.4}
   <button id="navigateBtn" class="secondary" disabled>🚀 Solo Abrir Sygic</button>
   <button id="resetBtn" class="danger">🔄 Nueva Consulta</button>
 
-  <div id="debug"></div>
+  <div class="copyright">@Osiany2026</div>
 </div>
 
-<div id="toast" class="toast">📋 Copiado y abriendo Sygic...</div>
+<div id="toast" class="toast">📋 Coordenadas Copiadas</div>
 
 <script>
 let lat = null, lng = null;
 
-// --- FUNCIÓN NAVEGAR (SÍNCRONA Y DIRECTA) ---
+// --- FUNCIÓN NAVEGAR (SINCRÓNICA) ---
 function ejecutarSygic() {
   if (!lat || !lng) return;
-  
-  // IMPORTANTE: Sygic en iOS prefiere Longitud antes que Latitud
-  // Formato: com.sygic.aura://coordinate|long|lat|drive
+  // Formato oficial iOS Sygic: longitud antes que latitud
   const url = "com.sygic.aura://coordinate|" + lng + "|" + lat + "|drive";
-  
-  // Usamos location.href de forma directa sin esperas
   window.location.href = url;
 }
 
-// --- FUNCIÓN COPIAR (SÍNCRONA) ---
+// --- FUNCIÓN COPIAR (MÉTODO CLÁSICO PARA EVITAR BLOQUEO SAFARI) ---
 function copiarAlPortapapeles() {
   const texto = lat + "," + lng;
   const el = document.createElement('textarea');
@@ -80,7 +84,6 @@ function copiarAlPortapapeles() {
   setTimeout(() => t.classList.remove("show"), 2000);
 }
 
-// --- LOGICA DE IMAGEN Y OCR ---
 document.getElementById("fileInput").onchange = e => {
   const f = e.target.files[0];
   if(!f) return;
@@ -117,20 +120,16 @@ document.getElementById("analyzeBtn").onclick = async () => {
   }
 };
 
-// --- BOTONES CORREGIDOS ---
-
-// Botón: Copiar y Abrir (Combinación síncrona)
+// BOTONES DE ACCIÓN DIRECTA
 document.getElementById("copyBtn").onclick = function() {
   copiarAlPortapapeles();
   ejecutarSygic();
 };
 
-// Botón: Solo Abrir (Acción directa)
 document.getElementById("navigateBtn").onclick = function() {
   ejecutarSygic();
 };
 
-// Botón: Reset
 document.getElementById("resetBtn").onclick = () => {
   location.reload();
 };
