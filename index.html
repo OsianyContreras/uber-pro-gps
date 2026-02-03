@@ -3,172 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ubertron Pro-Vision</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <title>Ubertron Pro-Vision v2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --neon-green: #39FF14;
-            --neon-blue: #0ea5e9;
-            --bg-dark: #020617;
-            --glass: rgba(15, 23, 42, 0.8);
+            --neon-blue: #00d4ff;
+            --neon-red: #ff3131;
+            --bg-deep: #050a14;
+            --glass: rgba(10, 20, 40, 0.9);
         }
 
-        /* Fondo Animado de Partículas */
         body {
             margin: 0; padding: 0;
             font-family: 'Rajdhani', sans-serif;
-            background: radial-gradient(circle at center, #0f172a 0%, #000 100%);
+            background: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 50% 50%, #102040 0%, #000 100%),
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(57, 255, 20, 0.03) 3px);
             color: #fff;
             display: flex; justify-content: center; min-height: 100vh; align-items: center;
-            overflow-x: hidden;
         }
 
-        body::before {
-            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: radial-gradient(var(--neon-green) 1px, transparent 1px);
-            background-size: 50px 50px; opacity: 0.05; z-index: -1;
-        }
-
-        /* Tarjeta Estilo Glassmorphism */
+        /* Contenedor Principal con Bordes Gruesos */
         .card {
-            width: 100%; max-width: 380px; margin: 20px; padding: 30px;
-            border-radius: 30px; background: var(--glass);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            width: 100%; max-width: 400px; margin: 20px; padding: 35px;
+            border-radius: 35px; background: var(--glass);
+            border: 3px solid var(--neon-blue); /* Línea más gruesa */
+            position: relative; 
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3), inset 0 0 15px rgba(0, 212, 255, 0.2);
             animation: fadeIn 0.8s ease;
         }
 
-        /* Borde Infinity Mirror Animado */
-        .card::after {
-            content: ""; position: absolute; inset: -2px; border-radius: 32px;
-            background: linear-gradient(var(--neon-green), var(--neon-blue), var(--neon-green));
-            z-index: -1; filter: blur(10px); opacity: 0.4;
-            animation: borderRotate 4s linear infinite;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        @keyframes borderRotate { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
+        /* Título Futurista */
         h1 {
-            font-family: 'Orbitron', sans-serif; font-size: 22px; text-align: center;
-            margin: 0 0 20px; color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green);
-            letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif; font-weight: 900;
+            font-size: 24px; text-align: center; margin: 0 0 30px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+            letter-spacing: -1px;
         }
 
-        /* Selector de Archivos */
+        .label-header {
+            color: var(--neon-blue); font-family: 'Orbitron'; font-size: 14px;
+            text-transform: uppercase; margin-bottom: 10px; display: block;
+            letter-spacing: 2px; font-weight: 700;
+        }
+
+        /* Secciones de Input e Imagen */
+        .section-box {
+            border: 2px solid var(--neon-green);
+            background: rgba(0,0,0,0.6); border-radius: 20px;
+            padding: 10px; margin-bottom: 25px; position: relative;
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.15);
+        }
+
         input[type=file] {
-            width: 100%; padding: 10px; background: rgba(255,255,255,0.05);
-            border-radius: 12px; margin-bottom: 20px; color: var(--text-dim); border: 1px dashed var(--neon-blue);
+            width: 100%; color: var(--neon-green); font-weight: bold;
+            font-size: 14px;
         }
 
-        /* Contenedor de Imagen y Láser */
-        .img-box {
-            position: relative; border-radius: 15px; overflow: hidden;
-            background: #000; border: 1px solid rgba(57, 255, 20, 0.2);
+        .img-display {
+            width: 100%; max-height: 220px; object-fit: contain;
+            display: none; border-radius: 12px; margin-top: 5px;
         }
-        img { width: 100%; max-height: 250px; object-fit: contain; display: none; }
-        img.loaded { display: block; animation: glitch 0.3s ease; }
 
+        /* Escáner Láser */
         .laser {
-            position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            position: absolute; width: calc(100% - 20px); height: 3px;
             background: var(--neon-green); box-shadow: 0 0 20px var(--neon-green);
-            display: none; z-index: 5;
+            display: none; z-index: 10; left: 10px;
         }
-        .scanning .laser { display: block; animation: scan 2s infinite ease-in-out; }
+        .scanning .laser { display: block; animation: scan 2s infinite linear; }
+        @keyframes scan { 0% { top: 10px; } 50% { top: 90%; } 100% { top: 10px; } }
 
-        @keyframes scan { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
-        @keyframes glitch { 0% { transform: translate(2px,2px); } 50% { transform: translate(-2px,-2px); } 100% { transform: translate(0); } }
-
-        /* Coordenadas Neon */
-        .coords {
-            margin-top: 25px; padding: 20px; border-radius: 20px;
-            background: rgba(0, 0, 0, 0.5); border: 2px solid var(--neon-green);
-            box-shadow: inset 0 0 15px rgba(57, 255, 20, 0.2), 0 0 20px rgba(57, 255, 20, 0.2);
-            text-align: center; opacity: 0; transform: scale(0.9); transition: 0.4s;
+        /* RECUADRO DE COORDENADAS (EL PROTAGONISTA) */
+        .coords-box {
+            border: 3px solid var(--neon-green);
+            background: rgba(57, 255, 20, 0.05);
+            border-radius: 25px; padding: 25px; text-align: center;
+            opacity: 0; transform: translateY(15px); transition: 0.5s;
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.2);
         }
-        .coords.show { opacity: 1; transform: scale(1); }
-        .coords b { font-family: 'Orbitron', sans-serif; font-size: 1.5em; color: #fff; text-shadow: 0 0 8px var(--neon-green); }
-        .label { font-size: 11px; color: var(--neon-blue); letter-spacing: 2px; margin-bottom: 5px; display: block; }
+        .coords-box.show { opacity: 1; transform: translateY(0); }
 
-        /* Botones */
-        button {
-            width: 100%; padding: 18px; margin-top: 15px; border-radius: 15px;
-            border: none; font-family: 'Orbitron', sans-serif; font-weight: 700;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .coord-data {
+            font-family: 'Orbitron', sans-serif; font-size: 1.8em;
+            color: #fff; text-shadow: 0 0 10px var(--neon-green);
+            margin: 10px 0; display: block;
         }
-        .btn-analyze { background: var(--neon-green); color: #000; box-shadow: 0 0 20px rgba(57, 255, 20, 0.4); }
-        .btn-share { background: var(--neon-blue); color: #fff; display: none; box-shadow: 0 0 20px rgba(14, 165, 233, 0.4); }
-        .btn-danger { background: transparent; color: #ef4444; border: 1px solid #ef4444; margin-top: 25px; font-size: 12px; }
-        
-        button:active { transform: scale(0.92); }
-        .btn-share.show { display: block; animation: fadeIn 0.4s ease; }
 
-        /* Historial */
-        .history-list { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
-        .history-item { 
-            width: 50px; height: 50px; border-radius: 12px; border: 1px solid var(--neon-blue);
-            display: flex; align-items: center; justify-content: center; font-size: 10px;
-            color: var(--neon-blue); cursor: pointer; background: rgba(14, 165, 233, 0.05);
-            transition: 0.3s;
+        /* Botones con estilo Neon-Retro */
+        .btn {
+            width: 100%; padding: 18px; border-radius: 15px; border: none;
+            font-family: 'Orbitron'; font-weight: 900; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px; transition: 0.3s;
+            margin-top: 15px;
         }
-        .history-item:hover { background: var(--neon-blue); color: #fff; box-shadow: 0 0 15px var(--neon-blue); }
 
-        .copyright { margin-top: 30px; text-align: center; font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 2px; }
-        
-        /* Toast Neón */
-        .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(50px);
-            background: var(--neon-green); color: #000; padding: 12px 30px; border-radius: 50px;
-            font-weight: 800; opacity: 0; transition: 0.4s; z-index: 1000;
+        .btn-analyze {
+            background: var(--neon-green); color: #000;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
         }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .btn-share {
+            background: var(--neon-blue); color: #000;
+            display: none; box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-reset {
+            background: transparent; color: var(--neon-red);
+            border: 2px solid var(--neon-red); margin-top: 30px;
+            box-shadow: 0 0 10px rgba(255, 49, 49, 0.2);
+        }
+
+        .btn:active { transform: scale(0.95); filter: brightness(1.2); }
+
+        /* Historial y Copyright */
+        .history-container { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        .h-item {
+            width: 55px; height: 55px; border: 2px solid var(--neon-blue);
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--neon-blue); background: rgba(0, 212, 255, 0.05);
+            cursor: pointer; font-size: 12px;
+        }
+
+        .copyright {
+            margin-top: 40px; text-align: center; font-family: 'Orbitron';
+            font-size: 11px; color: var(--neon-blue); opacity: 0.8;
+            text-shadow: 0 0 5px var(--neon-blue);
+        }
+
+        .status-msg {
+            color: var(--neon-green); text-align: center; font-weight: bold;
+            margin: 15px 0; font-size: 14px; text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1>UBERTRON PRO</h1>
+    <h1>UBERTRON PRO-VISION</h1>
     
-    <input type="file" id="fileInput" accept="image/*">
-    
-    <div class="img-box" id="imgBox">
+    <span class="label-header">SOURCE_IMAGE</span>
+    <div class="section-box" id="imgContainer">
         <div class="laser"></div>
-        <img id="preview">
+        <input type="file" id="fileInput" accept="image/*">
+        <img id="preview" class="img-display">
     </div>
     
-    <button id="analyzeBtn" class="btn-analyze">SCAN_VISION</button>
+    <button id="analyzeBtn" class="btn btn-analyze">EXE_SCAN_PROCESS</button>
     
-    <div id="status" style="text-align:center; margin-top:12px; font-size:12px; color:var(--neon-blue);">SISTEMA ONLINE</div>
+    <div id="status" class="status-msg">SYSTEM_READY</div>
 
-    <div class="coords" id="coordsBlock">
-        <span class="label">DATA_COORDINATES</span>
-        <b id="latVal">0.0000</b><br>
-        <b id="lngVal">0.0000</b>
+    <div class="coords-box" id="coordsBlock">
+        <span class="label-header" style="color:#fff">DETECTED_COORDS</span>
+        <span class="coord-data" id="latVal">0.00000</span>
+        <span class="coord-data" id="lngVal">0.00000</span>
     </div>
 
-    <button id="shareBtn" class="btn-share" onclick="copiarYCompartir()">🚀 ENVIAR A SYGIC</button>
+    <button id="shareBtn" class="btn btn-share" onclick="copiarYCompartir()">🚀 SEND_TO_SYGIC</button>
 
-    <div style="text-align:center; font-size:10px; color:rgba(255,255,255,0.3); margin-top:20px;">RECOVERY_LOGS</div>
-    <div class="history-list" id="historyList"></div>
+    <span class="label-header" style="text-align:center; margin-top:30px; font-size:10px">RECOVERY_LOGS</span>
+    <div class="history-container" id="historyList"></div>
 
-    <button onclick="location.reload()" class="btn-danger">RESET_SYSTEM</button>
+    <button onclick="location.reload()" class="btn btn-reset">SYSTEM_REBOOT</button>
 
     <div class="copyright">@Copyright: Osiany2026</div>
 </div>
 
-<div id="toast" class="toast">DATA_COPIED_SUCCESS</div>
-
 <script>
 let currentLat = null, currentLng = null;
-const historyKey = "gps_history_tron";
+const historyKey = "uber_tron_v2";
 
-// --- FUNCIÓN COPIAR Y COMPARTIR ---
 async function copiarYCompartir() {
-    if (!currentLat || !currentLng) return;
-    
-    // Copiar
     const text = `${currentLat},${currentLng}`;
     const el = document.createElement('textarea');
     el.value = text;
@@ -177,21 +189,51 @@ async function copiarYCompartir() {
     document.execCommand('copy');
     document.body.removeChild(el);
     
-    // Compartir
     const mapUrl = `http://maps.apple.com/?q=${currentLat},${currentLng}`;
     if (navigator.share) {
         try {
-            await navigator.share({
-                title: 'Tron Location',
-                text: text,
-                url: mapUrl
-            });
+            await navigator.share({ title: 'GPS Data', text: text, url: mapUrl });
         } catch (err) {}
     }
-    mostrarToast("✅ COPIADO & COMPARTIENDO");
 }
 
-// --- HISTORIAL ---
+document.getElementById("fileInput").onchange = e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const img = document.getElementById("preview");
+    img.src = URL.createObjectURL(f);
+    img.style.display = "block";
+    document.getElementById("status").textContent = "IMAGE_UPLOADED";
+};
+
+document.getElementById("analyzeBtn").onclick = async () => {
+    const img = document.getElementById("preview");
+    if(!img.src) return;
+    
+    document.getElementById("imgContainer").classList.add("scanning");
+    document.getElementById("status").textContent = "SCANNING_DATA...";
+    
+    try {
+        const r = await Tesseract.recognize(img.src, "eng");
+        const m = r.data.text.match(/(-?\d{1,2}\.\d+)[,\s\n]+(-?\d{1,3}\.\d+)/);
+        
+        if(!m) throw "NO_DATA";
+
+        currentLat = m[1]; currentLng = m[2];
+        document.getElementById("latVal").textContent = currentLat;
+        document.getElementById("lngVal").textContent = currentLng;
+        document.getElementById("coordsBlock").classList.add("show");
+        document.getElementById("shareBtn").style.display = "block";
+        document.getElementById("status").textContent = "SUCCESS_COMPLETE";
+        
+        saveToHistory(currentLat, currentLng);
+    } catch(e) {
+        document.getElementById("status").textContent = "ERROR_NOT_FOUND";
+    } finally {
+        document.getElementById("imgContainer").classList.remove("scanning");
+    }
+};
+
 function saveToHistory(lat, lng) {
     let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
     history.unshift({lat, lng, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})});
@@ -204,74 +246,19 @@ function renderHistory() {
     const container = document.getElementById("historyList");
     const history = JSON.parse(localStorage.getItem(historyKey) || "[]");
     container.innerHTML = history.map(item => `
-        <div class="history-item" onclick="loadFromHistory('${item.lat}','${item.lng}')">
-            ${item.time}
-        </div>
+        <div class="h-item" onclick="loadHist('${item.lat}','${item.lng}')">${item.time}</div>
     `).join("");
 }
 
-function loadFromHistory(lat, lng) {
+function loadHist(lat, lng) {
     currentLat = lat; currentLng = lng;
     document.getElementById("latVal").textContent = lat;
     document.getElementById("lngVal").textContent = lng;
     document.getElementById("coordsBlock").classList.add("show");
-    document.getElementById("shareBtn").classList.add("show");
-    mostrarToast("RELOAD_DATA_SUCCESS");
+    document.getElementById("shareBtn").style.display = "block";
 }
-
-function mostrarToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    if(navigator.vibrate) navigator.vibrate(50);
-    setTimeout(() => t.classList.remove("show"), 2000);
-}
-
-// --- PROCESO ---
-document.getElementById("fileInput").onchange = e => {
-    const f = e.target.files[0];
-    if(!f) return;
-    const img = document.getElementById("preview");
-    img.src = URL.createObjectURL(f);
-    img.classList.add("loaded");
-    document.getElementById("status").textContent = "DATA_READY_FOR_SCAN";
-};
-
-document.getElementById("analyzeBtn").onclick = async () => {
-    const img = document.getElementById("preview");
-    if(!img.src) return alert("NO_IMAGE_DETECTED");
-    
-    document.getElementById("imgBox").classList.add("scanning");
-    document.getElementById("status").textContent = "EXECUTING_OCR_SCAN...";
-    document.getElementById("analyzeBtn").disabled = true;
-
-    try {
-        const r = await Tesseract.recognize(img.src, "eng");
-        const m = r.data.text.match(/(-?\d{1,2}\.\d+)[,\s\n]+(-?\d{1,3}\.\d+)/);
-        
-        if(!m) throw "ERROR_COORDINATES_NOT_FOUND";
-
-        currentLat = m[1];
-        currentLng = m[2];
-
-        document.getElementById("latVal").textContent = currentLat;
-        document.getElementById("lngVal").textContent = currentLng;
-        document.getElementById("coordsBlock").classList.add("show");
-        document.getElementById("shareBtn").classList.add("show");
-        document.getElementById("status").textContent = "SCAN_COMPLETE_100%";
-        
-        saveToHistory(currentLat, currentLng);
-    } catch(e) {
-        document.getElementById("status").textContent = "CRITICAL_ERROR_SCAN";
-        alert(e);
-    } finally {
-        document.getElementById("imgBox").classList.remove("scanning");
-        document.getElementById("analyzeBtn").disabled = false;
-    }
-};
 
 renderHistory();
 </script>
 </body>
 </html>
-
