@@ -2,136 +2,175 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Uber Pro GPS</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
-body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,system-ui;background:radial-gradient(circle at top,#020617,#000);color:#fff;display:flex;justify-content:center}
-.card{width:100%;max-width:420px;margin:16px;padding:18px;border-radius:20px;background:#020617;position:relative;box-shadow:0 0 0 1px rgba(148,163,184,.15),0 30px 60px rgba(0,0,0,.7);animation:fadeIn .8s ease}
-.card::before{content:"";position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(120deg,#22c55e,#38bdf8,#22c55e);z-index:-1;animation:borderGlow 6s linear infinite}
-@keyframes borderGlow{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
-h1{text-align:center;font-size:20px;margin-bottom:10px}
-img{width:100%;max-height:35vh;object-fit:contain;border-radius:14px;margin-top:12px;background:#000;display:none}
-button{width:100%;padding:15px;margin-top:12px;border-radius:14px;border:none;font-size:16px;font-weight:600;background:#22c55e;color:#000;cursor:pointer}
-button.secondary{background:#38bdf8}
-button.gray{background:#64748b;color:#fff}
-button.danger{background:#ef4444;color:#fff}
-button:disabled{opacity:.4}
-.status{margin-top:10px;font-size:14px;color:#94a3b8;text-align:center}
-.coords{margin-top:10px;padding:10px;border-radius:12px;background:#020617;border:1px solid rgba(148,163,184,.15)}
-.coords b{color:#22c55e;text-shadow:0 0 8px rgba(34,197,94,.6)}
-.highlight{background:rgba(34,197,94,.15);padding:2px 6px;border-radius:6px}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#22c55e;color:#000;padding:10px 16px;border-radius:14px;font-size:14px;font-weight:600;opacity:0;transition:all .3s ease;z-index:100}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Base y Layout */
+body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(circle at top,#020617,#000);color:#fff;display:flex;justify-content:center;min-height:100vh;align-items:center}
+.card{width:100%;max-width:400px;margin:20px;padding:24px;border-radius:24px;background:#020617;position:relative;box-shadow:0 0 0 1px rgba(148,163,184,.15),0 20px 40px -10px rgba(0,0,0,.5);animation:slideUp .6s ease-out}
+.card::before{content:"";position:absolute;inset:-2px;border-radius:26px;background:linear-gradient(45deg,#22c55e,#0ea5e9,#22c55e);z-index:-1;filter:blur(1px);opacity:.6;animation:borderRotate 4s linear infinite}
 
-/* Estilo para el Copyright */
-.copyright {
-  margin-top: 20px;
-  text-align: center;
-  font-size: 12px;
-  color: #64748b;
-  letter-spacing: 1px;
-}
+/* Animaciones Clave */
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes borderRotate{0%{filter:hue-rotate(0deg) blur(1px)}100%{filter:hue-rotate(360deg) blur(1px)}}
+@keyframes pulse{50%{opacity:.5}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* Tipografía y Elementos */
+h1{text-align:center;font-size:22px;margin:0 0 20px 0;font-weight:700;letter-spacing:-0.5px}
+input[type=file]{width:100%;padding:10px;background:rgba(255,255,255,0.05);border-radius:12px;margin-bottom:15px;color:#94a3b8;font-size:14px}
+
+/* Imagen y Estado */
+img{width:100%;max-height:300px;object-fit:contain;border-radius:16px;margin-top:10px;background:rgba(0,0,0,0.3);display:none;opacity:0;transition:opacity .4s ease}
+img.loaded{display:block;opacity:1}
+.status{margin-top:15px;font-size:14px;color:#94a3b8;text-align:center;font-weight:500;transition:all .3s}
+.status.analyzing{color:#22c55e;animation:pulse 1.5s infinite ease-in-out}
+
+/* Área de Resultados (Tap to copy) */
+.coords-container {margin-top:15px; perspective: 1000px;}
+.coords{padding:16px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(22,163,74,0.2);cursor:pointer;transition:all .2s ease;opacity:0;transform:translateY(10px);pointer-events:none}
+.coords.show{opacity:1;transform:translateY(0);pointer-events:auto}
+.coords:active{background:rgba(22,163,74,0.1);transform:scale(0.98)}
+.coords b{color:#22c55e;font-size:1.1em}
+.label{color:#94a3b8;font-size:0.9em;display:block;margin-bottom:4px}
+.coord-value{font-family:monospace;font-size:1.2em;letter-spacing:-0.5px}
+
+/* Botones */
+button{width:100%;padding:16px;margin-top:12px;border-radius:16px;border:none;font-size:16px;font-weight:700;background:#22c55e;color:#000;cursor:pointer;transition:transform .1s ease, background .2s ease, opacity .2s ease;box-shadow:0 4px 12px rgba(34,197,94,0.3)}
+button:active{transform:scale(0.96)}
+button.gray{background:#334155;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+button.danger{background:transparent;color:#ef4444;box-shadow:none;border:1px solid rgba(239,68,68,0.3);padding:12px;margin-top:20px}
+button:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;transform:none}
+
+/* Copyright y Toast */
+.copyright{margin-top:24px;text-align:center;font-size:11px;color:#64748b;letter-spacing:1px;text-transform:uppercase;opacity:0.7}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(40px);background:#22c55e;color:#000;padding:12px 20px;border-radius:30px;font-size:14px;font-weight:700;opacity:0;transition:all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);z-index:100;box-shadow:0 10px 25px -5px rgba(34,197,94,0.5);pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
 <div class="card">
   <h1>🚗 Uber Pro GPS</h1>
+  
   <input type="file" id="fileInput" accept="image/*">
   <img id="preview">
   
-  <button id="analyzeBtn">Analizar Trayecto</button>
-  <div class="status" id="status">Esperando imagen...</div>
+  <button id="analyzeBtn">🔍 Analizar Captura</button>
+  
+  <div class="status" id="status">Selecciona una imagen</div>
 
-  <div class="coords" id="coords">
-    Latitud: —<br>Longitud: —<br>App: —
+  <div class="coords-container">
+    <div class="coords" id="coordsBlock" onclick="copiarAlPortapapeles()">
+      <div><span class="label">Latitud</span><b class="coord-value" id="latVal">—</b></div>
+      <div style="margin-top:10px"><span class="label">Longitud</span><b class="coord-value" id="lngVal">—</b></div>
+      <div style="margin-top:8px;font-size:12px;color:#22c55e;text-align:right">👆 Toca para copiar</div>
+    </div>
   </div>
 
-  <button id="copyBtn" class="gray" disabled>📋 Copiar y Abrir Sygic</button>
-  <button id="navigateBtn" class="secondary" disabled>🚀 Solo Abrir Sygic</button>
+  <button id="copyBtn" class="gray" disabled>📋 Copiar Coordenadas</button>
   <button id="resetBtn" class="danger">🔄 Nueva Consulta</button>
 
   <div class="copyright">@Osiany2026</div>
 </div>
 
-<div id="toast" class="toast">📋 Coordenadas Copiadas</div>
+<div id="toast" class="toast">✅ ¡Coordenadas Copiadas!</div>
 
 <script>
 let lat = null, lng = null;
+const statusEl = document.getElementById("status");
+const coordsBlock = document.getElementById("coordsBlock");
+const previewImg = document.getElementById("preview");
 
-// --- FUNCIÓN NAVEGAR (SINCRÓNICA) ---
-function ejecutarSygic() {
-  if (!lat || !lng) return;
-  // Formato oficial iOS Sygic: longitud antes que latitud
-  const url = "com.sygic.aura://coordinate|" + lng + "|" + lat + "|drive";
-  window.location.href = url;
-}
-
-// --- FUNCIÓN COPIAR (MÉTODO CLÁSICO PARA EVITAR BLOQUEO SAFARI) ---
+// --- FUNCIÓN DE COPIADO (Síncrona para iOS) ---
 function copiarAlPortapapeles() {
+  if(!lat || !lng) return;
+  
   const texto = lat + "," + lng;
+  // Método "antiguo" pero fiable en Safari iOS tras un click
   const el = document.createElement('textarea');
   el.value = texto;
+  el.setAttribute('readonly', ''); // Evita teclado en iOS
+  el.style.position = 'absolute';
+  el.style.left = '-9999px';
   document.body.appendChild(el);
   el.select();
-  document.execCommand('copy');
-  document.body.removeChild(el);
+  el.setSelectionRange(0, 99999); // Extra para iOS
   
-  const t = document.getElementById("toast");
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2000);
+  try {
+    document.execCommand('copy');
+    mostrarToast();
+    if(navigator.vibrate) navigator.vibrate(50); // Pequeña vibración si el dispositivo lo soporta
+  } catch (err) {
+    statusEl.textContent = "Error al copiar";
+  }
+  document.body.removeChild(el);
 }
 
+function mostrarToast() {
+  const t = document.getElementById("toast");
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// --- CARGA DE IMAGEN ---
 document.getElementById("fileInput").onchange = e => {
   const f = e.target.files[0];
   if(!f) return;
-  const img = document.getElementById("preview");
-  img.src = URL.createObjectURL(f);
-  img.style.display = "block";
-  document.getElementById("status").textContent = "Imagen cargada.";
+  previewImg.src = URL.createObjectURL(f);
+  previewImg.classList.add("loaded"); // Animación fade-in
+  statusEl.textContent = "Imagen lista. Toca 'Analizar'.";
+  statusEl.className = "status";
 };
 
+// --- ANÁLISIS OCR ---
 document.getElementById("analyzeBtn").onclick = async () => {
-  const status = document.getElementById("status");
-  status.textContent = "Analizando texto... 🔍";
+  if(!previewImg.src || previewImg.src === "") {
+    statusEl.textContent = "⚠️ Primero selecciona una imagen";
+    return;
+  }
+  
+  statusEl.textContent = "Analizando imagen... ⏳";
+  statusEl.className = "status analyzing"; // Animación pulso
+  document.getElementById("analyzeBtn").disabled = true;
+  coordsBlock.classList.remove("show"); // Ocultar resultados previos
   
   try {
-    const r = await Tesseract.recognize(document.getElementById("preview").src, "eng");
-    const m = r.data.text.match(/(-?\d{1,2}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
+    const r = await Tesseract.recognize(previewImg.src, "eng");
+    // Regex ajustada para ser más permisiva con espacios
+    const m = r.data.text.match(/(-?\d{1,2}\.\d+)[,\s\n]+(-?\d{1,3}\.\d+)/);
     
-    if(!m) throw "No se hallaron coordenadas";
+    if(!m) throw "No se encontraron coordenadas válidas.";
 
     lat = m[1];
     lng = m[2];
 
-    document.getElementById("coords").innerHTML = `
-      Latitud: <span class="highlight"><b>${lat}</b></span><br>
-      Longitud: <span class="highlight"><b>${lng}</b></span><br>
-      Status: <b>Lista para Sygic</b>
-    `;
-
+    document.getElementById("latVal").textContent = lat;
+    document.getElementById("lngVal").textContent = lng;
+    
+    coordsBlock.classList.add("show"); // Animación entrada resultados
     document.getElementById("copyBtn").disabled = false;
-    document.getElementById("navigateBtn").disabled = false;
-    status.textContent = "Análisis completo.";
+    statusEl.textContent = "✅ ¡Coordenadas detectadas!";
+    statusEl.className = "status";
+
   } catch(e) {
-    status.textContent = "Error: " + e;
+    statusEl.textContent = "❌ Error: " + e;
+    statusEl.className = "status";
+    coordsBlock.classList.remove("show");
+  } finally {
+    document.getElementById("analyzeBtn").disabled = false;
   }
 };
 
-// BOTONES DE ACCIÓN DIRECTA
-document.getElementById("copyBtn").onclick = function() {
-  copiarAlPortapapeles();
-  ejecutarSygic();
-};
-
-document.getElementById("navigateBtn").onclick = function() {
-  ejecutarSygic();
-};
+// --- EVENTOS DE BOTONES ---
+// El click en el div 'coordsBlock' ya se maneja en el HTML con onclick="copiarAlPortapapeles()"
+document.getElementById("copyBtn").onclick = copiarAlPortapapeles;
 
 document.getElementById("resetBtn").onclick = () => {
-  location.reload();
+  // Recarga suave
+  document.querySelector('.card').style.opacity = '0';
+  setTimeout(() => location.reload(), 200);
 };
 </script>
 </body>
