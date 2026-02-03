@@ -116,10 +116,9 @@ button.danger{background:transparent;color:#ef4444;border:1px solid rgba(239,68,
     <div style="font-size:11px; color:var(--text-dim); margin-bottom:5px;">COORDENADAS DETECTADAS</div>
     <b id="latVal">0.0000</b><br>
     <b id="lngVal">0.0000</b>
-    <div style="font-size:12px; color:var(--primary); margin-top:10px; font-weight:700">👆 TOCA PARA COPIAR</div>
   </div>
 
-  <button id="shareBtn" class="main-btn share-btn" onclick="compartirNativo()">🚀 ENVIAR A GPS / SYGIC</button>
+  <button id="shareBtn" class="main-btn share-btn" onclick="copiarYCompartir()">🚀 ENVIAR A SYGIC</button>
 
   <div class="history-title">Últimos 3 registros</div>
   <div class="history-list" id="historyList"></div>
@@ -141,23 +140,23 @@ function toggleTheme() {
     document.getElementById('themeBtn').textContent = isDay ? "☀️ DÍA" : "🌙 NOCHE";
 }
 
-// --- CAMBIO CLAVE AQUÍ: COMPARTIR COMO UBICACIÓN REAL ---
-async function compartirNativo() {
+// --- COPIAR Y LUEGO COMPARTIR ---
+async function copiarYCompartir() {
     if (!currentLat || !currentLng) return;
     
-    // Creamos un link que iOS interpreta como mapa obligatoriamente
-    const mapUrl = `http://maps.apple.com/?q=${currentLat},${currentLng}`;
+    // Primero: Copiar
+    copiarAlPortapapeles(false); // Llamamos con false para que no muestre el toast doble
     
+    // Segundo: Compartir
+    const mapUrl = `http://maps.apple.com/?q=${currentLat},${currentLng}`;
     if (navigator.share) {
         try {
             await navigator.share({
                 title: 'Ubicación Detectada',
-                text: `Coordenadas: ${currentLat}, ${currentLng}`,
-                url: mapUrl // Al enviar una URL de maps.apple.com, iOS activa las apps de GPS
+                text: `${currentLat},${currentLng}`,
+                url: mapUrl
             });
         } catch (err) { console.log("Error al compartir"); }
-    } else {
-        copiarAlPortapapeles();
     }
 }
 
@@ -196,14 +195,14 @@ function mostrarToast(msg) {
     setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-function copiarAlPortapapeles() {
+function copiarAlPortapapeles(mostrarAviso = true) {
     const el = document.createElement('textarea');
     el.value = `${currentLat},${currentLng}`;
     document.body.appendChild(el);
     el.select();
     document.execCommand('copy');
     document.body.removeChild(el);
-    mostrarToast("✅ COPIADO AL PORTAPAPELES");
+    if(mostrarAviso) mostrarToast("✅ COPIADO AL PORTAPAPELES");
 }
 
 document.getElementById("fileInput").onchange = e => {
