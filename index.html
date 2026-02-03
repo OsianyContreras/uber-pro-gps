@@ -14,7 +14,6 @@
     --glow: rgba(34, 197, 94, 0.4);
 }
 
-/* Modo Día (Brillo Extremo) */
 body.day-mode {
     --primary: #00ff00;
     --bg-card: #051024;
@@ -29,7 +28,6 @@ body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",
 @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes borderRotate{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
 
-/* Contenedor de Imagen y Escáner */
 .img-container {
     position: relative;
     width: 100%;
@@ -62,7 +60,6 @@ img.loaded{display:block;opacity:1}
     100% { top: 0; }
 }
 
-/* Botones y UI */
 .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .theme-toggle { background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 8px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; }
 
@@ -78,7 +75,6 @@ h1{font-size:20px;margin:0;font-weight:800}
 .coords:active{transform:scale(0.95)}
 .coords b{color:var(--primary);font-size:1.4em;text-shadow: 0 0 10px var(--glow); font-family: monospace}
 
-/* Historial */
 .history-title { font-size: 12px; color: var(--text-dim); margin-top: 25px; text-align: center; text-transform: uppercase; letter-spacing: 1px;}
 .history-list { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
 .history-item { 
@@ -123,11 +119,10 @@ button.danger{background:transparent;color:#ef4444;border:1px solid rgba(239,68,
     <div style="font-size:12px; color:var(--primary); margin-top:10px; font-weight:700">👆 TOCA PARA COPIAR</div>
   </div>
 
-  <button id="shareBtn" class="main-btn share-btn" onclick="compartirNativo()">🚀 COMPARTIR / ABRIR EN SYGIC</button>
+  <button id="shareBtn" class="main-btn share-btn" onclick="compartirNativo()">🚀 ENVIAR A GPS / SYGIC</button>
 
   <div class="history-title">Últimos 3 registros</div>
-  <div class="history-list" id="historyList">
-    </div>
+  <div class="history-list" id="historyList"></div>
 
   <button onclick="location.reload()" class="main-btn danger">🔄 NUEVA CONSULTA</button>
 
@@ -140,30 +135,32 @@ button.danger{background:transparent;color:#ef4444;border:1px solid rgba(239,68,
 let currentLat = null, currentLng = null;
 const historyKey = "gps_history_osiany";
 
-// --- MEJORA 4: CAMBIO DE TEMA ---
 function toggleTheme() {
     document.body.classList.toggle('day-mode');
     const isDay = document.body.classList.contains('day-mode');
     document.getElementById('themeBtn').textContent = isDay ? "☀️ DÍA" : "🌙 NOCHE";
 }
 
-// --- MEJORA 2: COMPARTIR NATIVO ---
+// --- CAMBIO CLAVE AQUÍ: COMPARTIR COMO UBICACIÓN REAL ---
 async function compartirNativo() {
-    const text = `${currentLat},${currentLng}`;
+    if (!currentLat || !currentLng) return;
+    
+    // Creamos un link que iOS interpreta como mapa obligatoriamente
+    const mapUrl = `http://maps.apple.com/?q=${currentLat},${currentLng}`;
+    
     if (navigator.share) {
         try {
             await navigator.share({
-                title: 'Ubicación Uber Pro',
-                text: text,
-                url: `https://maps.google.com/?q=${text}`
+                title: 'Ubicación Detectada',
+                text: `Coordenadas: ${currentLat}, ${currentLng}`,
+                url: mapUrl // Al enviar una URL de maps.apple.com, iOS activa las apps de GPS
             });
-        } catch (err) { console.log("Compartir cancelado"); }
+        } catch (err) { console.log("Error al compartir"); }
     } else {
         copiarAlPortapapeles();
     }
 }
 
-// --- MEJORA 3: HISTORIAL ---
 function saveToHistory(lat, lng) {
     let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
     history.unshift({lat, lng, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})});
@@ -175,7 +172,7 @@ function saveToHistory(lat, lng) {
 function renderHistory() {
     const container = document.getElementById("historyList");
     const history = JSON.parse(localStorage.getItem(historyKey) || "[]");
-    container.innerHTML = history.map((item, index) => `
+    container.innerHTML = history.map(item => `
         <div class="history-item" onclick="loadFromHistory('${item.lat}','${item.lng}')">
             ${item.time}
         </div>
@@ -191,7 +188,6 @@ function loadFromHistory(lat, lng) {
     mostrarToast("✅ Recuperado del historial");
 }
 
-// --- COPIADO Y UI ---
 function mostrarToast(msg) {
     const t = document.getElementById("toast");
     t.textContent = msg;
@@ -210,14 +206,13 @@ function copiarAlPortapapeles() {
     mostrarToast("✅ COPIADO AL PORTAPAPELES");
 }
 
-// --- PROCESAMIENTO OCR ---
 document.getElementById("fileInput").onchange = e => {
     const f = e.target.files[0];
     if(!f) return;
     const img = document.getElementById("preview");
     img.src = URL.createObjectURL(f);
     img.classList.add("loaded");
-    document.getElementById("status").textContent = "Imagen lista para escanear";
+    document.getElementById("status").textContent = "Imagen cargada";
 };
 
 document.getElementById("analyzeBtn").onclick = async () => {
@@ -225,14 +220,14 @@ document.getElementById("analyzeBtn").onclick = async () => {
     if(!img.src) return alert("Selecciona una captura");
     
     document.getElementById("imgBox").classList.add("scanning");
-    document.getElementById("status").textContent = "Escaneando coordenadas...";
+    document.getElementById("status").textContent = "Escaneando...";
     document.getElementById("analyzeBtn").disabled = true;
 
     try {
         const r = await Tesseract.recognize(img.src, "eng");
         const m = r.data.text.match(/(-?\d{1,2}\.\d+)[,\s\n]+(-?\d{1,3}\.\d+)/);
         
-        if(!m) throw "No se encontraron coordenadas";
+        if(!m) throw "No encontré coordenadas";
 
         currentLat = m[1];
         currentLng = m[2];
@@ -241,20 +236,17 @@ document.getElementById("analyzeBtn").onclick = async () => {
         document.getElementById("lngVal").textContent = currentLng;
         document.getElementById("coordsBlock").classList.add("show");
         document.getElementById("shareBtn").classList.add("show");
-        document.getElementById("status").textContent = "✅ Escaneo exitoso";
+        document.getElementById("status").textContent = "✅ Éxito";
         
         saveToHistory(currentLat, currentLng);
-
     } catch(e) {
-        document.getElementById("status").textContent = "❌ Error en el escaneo";
-        alert(e);
+        document.getElementById("status").textContent = "❌ Error";
     } finally {
         document.getElementById("imgBox").classList.remove("scanning");
         document.getElementById("analyzeBtn").disabled = false;
     }
 };
 
-// Inicializar historial
 renderHistory();
 </script>
 </body>
