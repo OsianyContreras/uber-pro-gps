@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ubertron Pro-Vision v3.1</title>
+    <title>Ubertron Pro-Vision v4.0 Supreme</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
@@ -11,202 +11,201 @@
             --neon-green: #39FF14;
             --neon-blue: #00d4ff;
             --neon-red: #ff3131;
-            --iphone-silver: #c0c0c0;
-            --bg-dark: #050a14;
+            --iphone-silver: #d1d1d1;
+            --bg-dark: #020617;
         }
 
         body {
             margin: 0; padding: 0;
-            background: radial-gradient(circle at center, #1a1a1a, #000);
+            background: #000;
             display: flex; justify-content: center; align-items: center;
             height: 100vh; font-family: 'Rajdhani', sans-serif; color: #fff;
             overflow: hidden;
         }
 
-        /* --- CHASIS IPHONE RESPONSIVO --- */
+        /* --- FONDO CYBER GRID --- */
+        .background-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 212, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1; animation: gridMove 10s linear infinite;
+        }
+        @keyframes gridMove { from { transform: translateY(0); } to { transform: translateY(30px); } }
+
+        /* --- CHASIS IPHONE --- */
         .iphone-frame {
-            width: 90vw;
-            max-width: 380px;
-            height: 92vh; /* Se adapta a la altura de la pantalla */
-            background: var(--iphone-silver);
-            border-radius: 50px;
-            padding: 10px;
-            box-shadow: 0 0 40px rgba(0, 212, 255, 0.3), inset 0 0 10px rgba(0,0,0,0.5);
-            position: relative;
-            display: flex; flex-direction: column;
-            border: 2px solid #555;
+            width: 90vw; max-width: 385px; height: 92vh;
+            background: var(--iphone-silver); border-radius: 55px;
+            padding: 10px; position: relative;
+            box-shadow: 0 0 50px rgba(57, 255, 20, 0.15), inset 0 0 15px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column; border: 1px solid #999;
         }
 
-        /* Botones Laterales */
-        .iphone-frame::before { content: ""; position: absolute; right: -3px; top: 20%; width: 3px; height: 60px; background: #888; border-radius: 0 5px 5px 0; }
-        .iphone-frame::after { content: ""; position: absolute; left: -3px; top: 15%; width: 3px; height: 40px; background: #888; border-radius: 5px 0 0 5px; box-shadow: 0 50px 0 #888; }
-
         .screen {
-            flex: 1;
-            background: var(--bg-dark);
-            border-radius: 40px;
-            overflow-y: auto;
-            position: relative;
-            display: flex; flex-direction: column;
-            scrollbar-width: none;
+            flex: 1; background: var(--bg-dark); border-radius: 45px;
+            overflow-y: auto; position: relative; border: 2px solid #000;
+            scrollbar-width: none; display: flex; flex-direction: column;
         }
         .screen::-webkit-scrollbar { display: none; }
 
+        /* Notch con Sensores */
         .notch {
-            width: 150px; height: 25px; background: #000;
+            width: 160px; height: 28px; background: #000;
             position: sticky; top: 0; left: 50%; transform: translateX(-50%);
-            border-bottom-left-radius: 18px; border-bottom-right-radius: 18px;
-            z-index: 100;
+            border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+            z-index: 100; display: flex; align-items: center; justify-content: center;
+        }
+        .notch::after { content: ""; width: 40px; height: 4px; background: #111; border-radius: 10px; }
+
+        /* Barra de Estado */
+        .status-bar {
+            display: flex; justify-content: space-between; padding: 12px 30px 0;
+            font-size: 12px; font-weight: bold; color: #fff;
         }
 
-        /* --- CONTENIDO --- */
-        .app-content {
-            padding: 30px 20px;
-            text-align: center;
-            display: flex; flex-direction: column; gap: 15px;
-        }
+        /* --- UI ELEMENTS --- */
+        .app-body { padding: 20px; text-align: center; }
 
-        .clock {
-            font-family: 'Orbitron'; font-size: 10px; color: var(--neon-blue);
-            margin-bottom: 5px; letter-spacing: 1px;
-        }
+        .date-display { font-family: 'Orbitron'; font-size: 10px; color: var(--neon-blue); margin-bottom: 5px; }
 
         h1 {
-            font-family: 'Orbitron'; font-weight: 900; font-size: 1.4rem;
-            margin: 0; color: #fff; text-shadow: 0 0 10px var(--neon-blue);
+            font-family: 'Orbitron'; font-weight: 900; font-size: 1.5rem;
+            background: linear-gradient(to right, #fff, var(--neon-blue));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.4); margin: 10px 0;
         }
 
-        .panel {
-            background: rgba(255, 255, 255, 0.03);
-            border: 2px solid var(--neon-green);
-            border-radius: 20px; padding: 15px;
-            box-shadow: 0 0 15px rgba(57, 255, 20, 0.1);
+        .cyber-panel {
+            background: rgba(255, 255, 255, 0.03); border: 2.5px solid var(--neon-green);
+            border-radius: 22px; padding: 15px; margin: 15px 0;
+            box-shadow: inset 0 0 15px rgba(57, 255, 20, 0.1);
         }
 
-        .img-box {
-            position: relative; width: 100%; height: 160px;
-            background: #000; border-radius: 15px; overflow: hidden; margin-top: 10px;
-            border: 1px solid #333;
+        .img-container {
+            width: 100%; height: 160px; background: #000; border-radius: 15px;
+            position: relative; overflow: hidden; border: 1px solid #222;
         }
         img { width: 100%; height: 100%; object-fit: contain; display: none; }
 
-        .laser {
+        .scan-line {
             position: absolute; width: 100%; height: 3px; background: var(--neon-green);
             box-shadow: 0 0 20px var(--neon-green); top: 0; display: none; z-index: 10;
         }
-        .scanning .laser { display: block; animation: scanMove 2s infinite linear; }
-        @keyframes scanMove { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+        .scanning .scan-line { display: block; animation: scanAnim 1.5s infinite ease-in-out; }
+        @keyframes scanAnim { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
 
         .btn {
-            width: 100%; padding: 16px; border-radius: 15px; border: none;
-            font-family: 'Orbitron'; font-weight: 900; font-size: 13px;
-            cursor: pointer; transition: 0.3s; text-transform: uppercase;
+            width: 100%; padding: 18px; border-radius: 16px; border: none;
+            font-family: 'Orbitron'; font-weight: 900; font-size: 14px;
+            cursor: pointer; transition: 0.2s; margin-top: 10px;
         }
-        .btn-scan { background: var(--neon-green); color: #000; box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
-        .btn-reset { background: transparent; border: 2px solid var(--neon-red); color: var(--neon-red); margin-top: 10px; }
-        .btn-share { background: var(--neon-blue); color: #000; display: none; margin-top: 10px; box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+        .btn-scan { background: var(--neon-green); color: #000; box-shadow: 0 0 25px rgba(57, 255, 20, 0.3); }
+        .btn-reset { background: transparent; border: 2px solid var(--neon-red); color: var(--neon-red); }
+        .btn-share { background: var(--neon-blue); color: #000; display: none; }
+        .btn:active { transform: scale(0.96); opacity: 0.8; }
 
-        .btn:active { transform: scale(0.95); }
-
-        .coords-display {
-            font-family: 'Orbitron'; font-size: 1.5rem; color: #fff;
-            text-shadow: 0 0 10px var(--neon-green); display: none;
-            animation: zoomIn 0.4s ease;
-        }
-        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        /* COPYRIGHT RESALTADO */
-        .copyright-tag {
-            margin-top: 25px; font-family: 'Orbitron'; font-size: 14px;
-            color: var(--neon-blue); font-weight: 900;
-            text-shadow: 0 0 15px var(--neon-blue);
-            text-align: center; display: block;
+        .result-text {
+            font-family: 'Orbitron'; font-size: 1.7rem; color: #fff;
+            text-shadow: 0 0 15px var(--neon-green); margin: 15px 0; display: none;
         }
 
-        .home-bar {
-            width: 100px; height: 4px; background: #fff; border-radius: 10px;
+        /* COPYRIGHT SUPREMO */
+        .copyright-banner {
+            margin-top: 30px; font-family: 'Orbitron'; font-size: 14px;
+            color: var(--neon-blue); font-weight: 900; display: block;
+            text-shadow: 0 0 15px var(--neon-blue), 0 0 5px #fff;
+            letter-spacing: 2px;
+        }
+
+        .home-indicator {
+            width: 120px; height: 5px; background: #fff; border-radius: 10px;
             position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-            opacity: 0.3;
+            opacity: 0.4;
         }
-
-        .status-txt { font-size: 11px; color: var(--neon-blue); font-weight: bold; }
     </style>
 </head>
 <body>
 
+<div class="background-grid"></div>
+
 <div class="iphone-frame">
     <div class="screen">
         <div class="notch"></div>
-        
-        <div class="app-content">
-            <div class="clock" id="liveClock">MONDAY, FEB 2, 2026 - 11:32 PM</div>
-            <h1>UBERTRON PRO-VISION</h1>
+        <div class="status-bar">
+            <span>9:41</span>
+            <div>📶 5G 🔋 100%</div>
+        </div>
 
-            <div class="panel">
-                <span style="font-size: 10px; color: var(--neon-blue); display: block; margin-bottom: 5px;">INPUT_DE_FILE 📁</span>
-                <input type="file" id="fileInput" style="font-size: 11px; width: 100%; color: #fff;">
-                <div class="img-box" id="imgBox">
-                    <div class="laser"></div>
+        <div class="app-body">
+            <div class="date-display" id="fullDate">LOADING...</div>
+            <h1>UBERTRON v4.0</h1>
+
+            <div class="cyber-panel">
+                <span style="font-size: 10px; color: var(--neon-blue); letter-spacing: 2px;">SOURCE_DATA_FILE 📁</span>
+                <input type="file" id="fileInput" style="margin-top: 10px; font-size: 12px; width: 100%;">
+                <div class="img-container" id="imgBox">
+                    <div class="scan-line"></div>
                     <img id="preview">
                 </div>
             </div>
 
-            <button class="btn btn-scan" id="analyzeBtn">EXE_SCAN_PROCESS 🤖</button>
-            <div id="status" class="status-txt">SYSTEM_READY</div>
+            <button class="btn btn-scan" id="analyzeBtn">INICIAR ESCANEO 🤖</button>
+            <div id="status" style="font-size: 12px; color: var(--neon-blue); margin: 10px 0;">[ STATUS: STANDBY ]</div>
 
-            <div class="panel" id="resultsBox" style="display:none; border-color: var(--neon-blue);">
-                <span style="font-size: 10px; color: #fff;">DETECTED_COORDS 🥰</span>
-                <div class="coords-display" id="coordsVal" style="display:block;">0.00, 0.00</div>
-                <button class="btn btn-share" id="shareBtn" onclick="copiarYCompartir()">SEND_TO_SYGIC 🚀</button>
+            <div class="cyber-panel" id="resultPanel" style="display:none; border-color: var(--neon-blue);">
+                <span style="font-size: 10px;">COORDS_DETECTED 🥰</span>
+                <div class="result-text" id="coordsText">0.0, 0.0</div>
+                <button class="btn btn-share" id="shareBtn" onclick="sendToSygic()">🚀 ENVIAR A SYGIC</button>
             </div>
 
-            <button class="btn btn-reset" onclick="resetSystem()">🔄 NUEVA CONSULTA / RESET</button>
+            <button class="btn btn-reset" onclick="location.reload()">🔄 NUEVA CONSULTA / RESET</button>
 
-            <span class="copyright-tag">@Copyright: Osiany2026</span>
+            <span class="copyright-banner">@Copyright: Osiany2026</span>
         </div>
 
-        <div class="home-bar"></div>
+        <div class="home-indicator"></div>
     </div>
 </div>
 
 <script>
-    // Reloj Real
-    function updateTime() {
+    // --- SÍNTESIS DE AUDIO (SIN ARCHIVOS EXTERNOS) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq, type, duration) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Reloj
+    function updateClock() {
         const now = new Date();
-        const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-        document.getElementById('liveClock').textContent = now.toLocaleDateString('en-US', options).toUpperCase();
+        document.getElementById('fullDate').textContent = now.toLocaleDateString('es-ES', { 
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+        }).toUpperCase();
     }
-    setInterval(updateTime, 1000);
-    updateTime();
+    setInterval(updateClock, 1000); updateClock();
 
-    let currentCoords = "";
-
-    // Resetear Sistema
-    function resetSystem() {
-        document.getElementById("fileInput").value = "";
-        document.getElementById("preview").style.display = "none";
-        document.getElementById("preview").src = "";
-        document.getElementById("resultsBox").style.display = "none";
-        document.getElementById("shareBtn").style.display = "none";
-        document.getElementById("status").textContent = "SYSTEM_READY";
-        document.getElementById("imgBox").classList.remove("scanning");
-    }
+    let coordsData = "";
 
     document.getElementById("fileInput").onchange = e => {
-        const f = e.target.files[0];
-        if(!f) return;
+        const f = e.target.files[0]; if(!f) return;
         const img = document.getElementById("preview");
         img.src = URL.createObjectURL(f);
         img.style.display = "block";
-        document.getElementById("status").textContent = "IMAGE_LOADED";
+        playSound(440, 'sine', 0.1);
     };
 
     document.getElementById("analyzeBtn").onclick = async () => {
         const img = document.getElementById("preview");
-        if(!img.src) return alert("Selecciona una imagen primero");
+        if(!img.src) return alert("Carga una captura");
 
         document.getElementById("imgBox").classList.add("scanning");
-        document.getElementById("status").textContent = "SCANNING_COORDS... 🧠";
+        document.getElementById("status").textContent = "[ STATUS: ANALYZING... ]";
+        playSound(880, 'square', 0.05);
 
         try {
             const r = await Tesseract.recognize(img.src, "eng");
@@ -214,25 +213,32 @@
             
             if(!m) throw "ERROR";
 
-            const lat = m[1]; const lng = m[2];
-            currentCoords = `${lat},${lng}`;
-            
-            document.getElementById("coordsVal").textContent = currentCoords;
-            document.getElementById("resultsBox").style.display = "block";
+            coordsData = `${m[1]},${m[2]}`;
+            document.getElementById("coordsText").textContent = coordsData;
+            document.getElementById("coordsText").style.display = "block";
+            document.getElementById("resultPanel").style.display = "block";
             document.getElementById("shareBtn").style.display = "block";
-            document.getElementById("status").textContent = "SUCCESS ✅";
+            document.getElementById("status").textContent = "[ STATUS: SUCCESS ✅ ]";
+            
+            // Sonido de éxito y vibración
+            playSound(1200, 'sine', 0.2);
+            setTimeout(() => playSound(1500, 'sine', 0.3), 100);
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
         } catch(e) {
-            document.getElementById("status").textContent = "DATA_NOT_FOUND ❌";
+            document.getElementById("status").textContent = "[ STATUS: DATA_NOT_FOUND ❌ ]";
+            playSound(150, 'sawtooth', 0.5);
         } finally {
             document.getElementById("imgBox").classList.remove("scanning");
         }
     };
 
-    async function copiarYCompartir() {
-        navigator.clipboard.writeText(currentCoords);
-        const mapUrl = `http://maps.apple.com/?q=${currentCoords}`;
+    async function sendToSygic() {
+        navigator.clipboard.writeText(coordsData);
+        playSound(2000, 'sine', 0.1);
+        const url = `http://maps.apple.com/?q=${coordsData}`;
         if (navigator.share) {
-            await navigator.share({ title: 'GPS Data', text: currentCoords, url: mapUrl });
+            await navigator.share({ title: 'GPS', text: coordsData, url: url });
         }
     }
 </script>
