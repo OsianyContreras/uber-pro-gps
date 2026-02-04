@@ -393,7 +393,7 @@
             100% { top: 0; opacity: 0.7; } 
         }
 
-        /* BOTÓN DE ESCANEO CON BARRA DE PROGRESO INCORPORADA */
+        /* BOTÓN DE ESCANEO CON PROGRESO */
         .btn-scan-container {
             width: 100%;
             position: relative;
@@ -464,46 +464,17 @@
             z-index: 2;
         }
 
-        /* BOTÓN RESET */
-        .btn-reset {
-            width: 100%;
-            padding: 16px;
-            border-radius: 14px;
-            border: none;
-            font-family: 'Orbitron', monospace;
-            font-weight: 900;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 10px;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            background: rgba(255, 49, 49, 0.1);
-            border: 2px solid var(--neon-red);
-            color: var(--neon-red);
-        }
-
-        .btn-reset:hover {
-            background: rgba(255, 49, 49, 0.2);
-            box-shadow: 0 0 15px rgba(255, 49, 49, 0.3);
-        }
-
-        /* BOTONES DE ACCIÓN */
+        /* BOTONES DE ACCIÓN - 4 BOTONES DEL MISMO TAMAÑO */
         .action-buttons {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             margin-top: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
+            width: 100%;
         }
 
         .action-btn {
-            flex: 1;
-            min-width: 110px;
-            padding: 14px 12px;
+            padding: 14px 10px;
             border-radius: 12px;
             border: none;
             font-family: 'Orbitron', monospace;
@@ -520,6 +491,8 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            min-height: 70px;
+            width: 100%;
         }
 
         .action-btn:hover {
@@ -540,6 +513,7 @@
             font-size: 10px;
             letter-spacing: 1px;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            text-align: center;
         }
 
         /* Botón SYGIC */
@@ -570,6 +544,16 @@
 
         .btn-google:hover {
             box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        /* Botón RESET (conserva su color rojo) */
+        .btn-reset-panel {
+            background: linear-gradient(145deg, var(--neon-red), #cc0000);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-reset-panel:hover {
+            box-shadow: 0 6px 20px rgba(255, 49, 49, 0.4);
         }
 
         /* STATUS */
@@ -724,8 +708,12 @@
             }
             
             .action-btn {
-                min-width: 100px;
-                padding: 12px 10px;
+                padding: 12px 8px;
+                min-height: 65px;
+            }
+            
+            .action-btn span {
+                font-size: 9px;
             }
         }
     </style>
@@ -816,7 +804,7 @@
                 </div>
                 <div class="result-text" id="coordsText">0.0, 0.0</div>
                 
-                <!-- BOTONES DE ACCIÓN - TRES BOTONES VISUALMENTE MEJORADOS -->
+                <!-- BOTONES DE ACCIÓN - 4 BOTONES DEL MISMO TAMAÑO -->
                 <div class="action-buttons" id="actionButtons" style="display: none;">
                     <button class="action-btn btn-sygic" id="sygicBtn">
                         <i class="fas fa-car"></i>
@@ -830,14 +818,12 @@
                         <i class="fab fa-google"></i>
                         <span>GOOGLE MAPS</span>
                     </button>
+                    <button class="action-btn btn-reset-panel" id="resetBtnPanel">
+                        <i class="fas fa-redo"></i>
+                        <span>RESET</span>
+                    </button>
                 </div>
             </div>
-
-            <!-- BOTÓN DE RESET -->
-            <button class="btn btn-reset" id="resetBtn">
-                <i class="fas fa-redo"></i>
-                RESET / NUEVA CONSULTA
-            </button>
 
             <span class="copyright-banner">@Copyright: Osiany2026</span>
         </div>
@@ -884,7 +870,7 @@
         sygicBtn: document.getElementById('sygicBtn'),
         appleBtn: document.getElementById('appleBtn'),
         googleBtn: document.getElementById('googleBtn'),
-        resetBtn: document.getElementById('resetBtn'),
+        resetBtnPanel: document.getElementById('resetBtnPanel'),
         toast: document.getElementById('toast'),
         currentTime: document.getElementById('currentTime'),
         batteryLevel: document.getElementById('batteryLevel'),
@@ -987,7 +973,7 @@
         DOM.sygicBtn.addEventListener('click', openInSygic);
         DOM.appleBtn.addEventListener('click', openInAppleMaps);
         DOM.googleBtn.addEventListener('click', openInGoogleMaps);
-        DOM.resetBtn.addEventListener('click', resetApp);
+        DOM.resetBtnPanel.addEventListener('click', resetApp);
     }
     
     function processFile(file) {
@@ -1087,19 +1073,14 @@
             DOM.btnProgress.style.width = `${progress}%`;
             
             // Calcular posición del background para mostrar el color correcto
-            // El gradiente tiene 300% de ancho (100% rojo, 100% amarillo, 100% verde)
-            // Movemos el background para mostrar la sección correspondiente
             if (progress < 33) {
                 // Rojo al inicio (0-33%)
-                // Background position: 0% muestra el rojo
                 DOM.btnProgress.style.backgroundPosition = '0% 0%';
             } else if (progress < 66) {
                 // Amarillo en la mitad (34-66%)
-                // Background position: -100% muestra el amarillo
                 DOM.btnProgress.style.backgroundPosition = '-100% 0%';
             } else {
                 // Verde al final (67-100%)
-                // Background position: -200% muestra el verde
                 DOM.btnProgress.style.backgroundPosition = '-200% 0%';
             }
             
@@ -1112,7 +1093,7 @@
         DOM.coordsText.textContent = AppState.coordsData;
         DOM.coordsText.style.display = 'block';
         DOM.resultPanel.style.display = 'block';
-        DOM.actionButtons.style.display = 'flex';
+        DOM.actionButtons.style.display = 'grid';
         
         DOM.status.textContent = '[ STATUS: SUCCESS ✅ ]';
         DOM.status.className = 'status-success';
@@ -1217,7 +1198,7 @@
         window.open(googleMapsUrl, '_blank');
     }
     
-    // 4. RESET DE LA APLICACIÓN
+    // 4. BOTÓN RESET INTEGRADO EN EL PANEL
     function resetApp() {
         if (!confirm('¿Restablecer toda la aplicación?')) {
             return;
