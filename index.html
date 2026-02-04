@@ -954,15 +954,12 @@
         });
     }
     
-    // ============ SYGIC MEJORADO ============
+    // ============ SYGIC CORREGIDO ============
     async function openInSygic() {
         if (!AppState.coordsData) {
             showToast('No hay coordenadas disponibles', 'error');
             return;
         }
-        
-        showToast('Copiando coordenadas...', 'info');
-        playSound(2000);
         
         // Copiar coordenadas al portapapeles
         try {
@@ -977,45 +974,56 @@
             document.body.removeChild(textArea);
         }
         
-        // Múltiples métodos para abrir Sygic
-        const sygicScheme = `com.sygic.aura://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
+        // URL SCHEME CORRECTO para Sygic
+        const sygicScheme = `sygic://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
+        
+        // Universal Link alternativo
         const sygicUniversal = `https://www.sygic.com/enter?longitude=${AppState.longitude}&latitude=${AppState.latitude}`;
+        
+        // App Store
         const appStoreUrl = 'https://apps.apple.com/app/sygic-gps-navigation/id585193266';
         
-        // Intentar abrir con URL Scheme
+        showToast('Abriendo Sygic...', 'info');
+        playSound(2000);
+        
+        // Intentar abrir la app directamente
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.src = sygicScheme;
         document.body.appendChild(iframe);
         
-        // Verificar si se abrió
+        // Verificar si se abrió correctamente
         setTimeout(() => {
             document.body.removeChild(iframe);
             
-            // Si todavía estamos en la página después de 500ms, intentar Universal Link
+            // Si después de 500ms seguimos en la página, intentar otro método
             setTimeout(() => {
                 if (document.hasFocus()) {
                     showToast('Intentando método alternativo...', 'info');
+                    
+                    // Intentar con Universal Link
                     window.location.href = sygicUniversal;
                     
-                    // Si después de 1 segundo sigue sin funcionar, ofrecer App Store
+                    // Si después de 1.5 segundos sigue sin funcionar, preguntar
                     setTimeout(() => {
                         if (document.hasFocus()) {
                             const userConfirmed = confirm(
-                                'Sygic no está instalado en tu dispositivo.\n\n' +
-                                '¿Te gustaría instalar Sygic desde la App Store?\n\n' +
-                                'Coordenadas ya copiadas: ' + AppState.coordsData
+                                '¿No tienes Sygic instalado?\n\n' +
+                                '1. Las coordenadas ya están copiadas\n' +
+                                '2. Puedes abrirlas en Apple/Google Maps\n' +
+                                '3. O instalar Sygic desde la App Store\n\n' +
+                                `Coordenadas: ${AppState.coordsData}`
                             );
                             
                             if (userConfirmed) {
                                 window.open(appStoreUrl, '_blank');
-                                showToast('Redirigiendo a App Store...', 'info');
                             } else {
-                                showToast('Coordenadas copiadas. Puedes pegarlas en cualquier app de mapas.', 'info');
+                                showToast('Coordenadas copiadas. Úsalas en cualquier app de mapas.', 'info');
                             }
                         }
-                    }, 1000);
+                    }, 1500);
                 } else {
+                    // Si la app se abrió correctamente
                     showToast('Sygic abierto con las coordenadas', 'success');
                 }
             }, 500);
