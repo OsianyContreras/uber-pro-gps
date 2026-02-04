@@ -451,7 +451,7 @@
                 #00ff88 66%, 
                 #00ff88 100%);
             background-size: 300% 100%;
-            background-position = '0% 0%';
+            background-position: 0% 0%;
             border-radius: 14px;
             z-index: -1;
             transition: width 0.3s ease, background-position 0.3s ease;
@@ -556,6 +556,38 @@
             box-shadow: 0 6px 20px rgba(255, 49, 49, 0.4);
         }
 
+        /* BOTÓN RESET SOLITARIO */
+        .reset-solo-container {
+            display: none;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .reset-solo-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: 2px solid var(--neon-red);
+            background: rgba(255, 49, 49, 0.1);
+            color: var(--neon-red);
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .reset-solo-btn:hover {
+            background: rgba(255, 49, 49, 0.2);
+            box-shadow: 0 0 15px rgba(255, 49, 49, 0.3);
+            transform: translateY(-2px);
+        }
+
         /* STATUS */
         .status-container {
             font-size: 11px;
@@ -596,6 +628,22 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            display: none;
+            backdrop-filter: blur(5px);
+            text-align: center;
+        }
+
+        /* MENSAJE DE ERROR */
+        .error-message {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.0rem;
+            color: var(--neon-red);
+            text-shadow: 0 0 10px var(--neon-red);
+            margin: 12px 0;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 49, 49, 0.3);
             display: none;
             backdrop-filter: blur(5px);
             text-align: center;
@@ -650,7 +698,7 @@
         }
 
         .toast.error {
-            border-color = var(--error);
+            border-color: var(--error);
             color: var(--error);
         }
 
@@ -796,7 +844,7 @@
                 <div id="status" class="status-standby">[ STATUS: STANDBY ]</div>
             </div>
 
-            <!-- PANEL DE RESULTADOS -->
+            <!-- PANEL DE RESULTADOS (SÓLO PARA ÉXITO) -->
             <div class="cyber-panel" id="resultPanel" style="display:none;">
                 <div class="panel-title">
                     <i class="fas fa-map-marker-alt"></i>
@@ -821,6 +869,25 @@
                     <button class="action-btn btn-reset-panel" id="resetBtnPanel">
                         <i class="fas fa-redo"></i>
                         <span>RESET</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PANEL DE ERROR (SÓLO RESET) -->
+            <div class="cyber-panel" id="errorPanel" style="display:none;">
+                <div class="panel-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    NO SE DETECTARON COORDENADAS
+                </div>
+                <div class="error-message" id="errorText">
+                    No se encontraron coordenadas en la imagen
+                </div>
+                
+                <!-- BOTÓN RESET SOLITARIO -->
+                <div class="reset-solo-container" id="resetSoloContainer">
+                    <button class="reset-solo-btn" id="resetSoloBtn">
+                        <i class="fas fa-redo"></i>
+                        INTENTAR CON OTRA IMAGEN
                     </button>
                 </div>
             </div>
@@ -852,7 +919,8 @@
         latitude: 0,
         longitude: 0,
         currentImage: null,
-        originalFile: null
+        originalFile: null,
+        sygicAppInstalled: false
     };
     
     // ============ ELEMENTOS DEL DOM ============
@@ -865,12 +933,16 @@
         btnProgress: document.getElementById('btnProgress'),
         status: document.getElementById('status'),
         resultPanel: document.getElementById('resultPanel'),
+        errorPanel: document.getElementById('errorPanel'),
         coordsText: document.getElementById('coordsText'),
+        errorText: document.getElementById('errorText'),
         actionButtons: document.getElementById('actionButtons'),
         sygicBtn: document.getElementById('sygicBtn'),
         appleBtn: document.getElementById('appleBtn'),
         googleBtn: document.getElementById('googleBtn'),
         resetBtnPanel: document.getElementById('resetBtnPanel'),
+        resetSoloContainer: document.getElementById('resetSoloContainer'),
+        resetSoloBtn: document.getElementById('resetSoloBtn'),
         toast: document.getElementById('toast'),
         currentTime: document.getElementById('currentTime'),
         batteryLevel: document.getElementById('batteryLevel'),
@@ -953,113 +1025,72 @@
         });
     }
     
-    // ============ SYGIC - SOLUCIÓN DEFINITIVA PARA iOS ============
-    function openInSygic() {
+    // ============ SYGIC MEJORADO ============
+    async function openInSygic() {
         if (!AppState.coordsData) {
             showToast('No hay coordenadas disponibles', 'error');
             return;
         }
         
-        // SOLUCIÓN 1: Copiar coordenadas y abrir Sygic con URL Scheme
-        const sygicUrl = `sygic://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
-        
-        // SOLUCIÓN 2: URL alternativa que Sygic reconoce
-        const sygicUrlAlt = `com.sygic.aura://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
-        
-        // SOLUCIÓN 3: Universal Link oficial de Sygic
-        const sygicUniversal = `https://www.sygic.com/enter?longitude=${AppState.longitude}&latitude=${AppState.latitude}`;
-        
-        showToast('Copiando coordenadas y abriendo Sygic...', 'info');
+        showToast('Copiando coordenadas...', 'info');
         playSound(2000);
         
-        // Paso 1: Copiar coordenadas al portapapeles (siempre útil)
-        navigator.clipboard.writeText(AppState.coordsData).then(() => {
-            console.log('Coordenadas copiadas:', AppState.coordsData);
-            
-            // Paso 2: Intentar con iframe (funciona en algunos navegadores)
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = sygicUrl;
-            document.body.appendChild(iframe);
-            
-            // Paso 3: Intentar con window.location (más directo)
-            setTimeout(() => {
-                window.location.href = sygicUrl;
-                
-                // Paso 4: Si después de 500ms no se abrió, intentar alternativa
-                setTimeout(() => {
-                    // Verificar si estamos aún en la página
-                    if (document.hasFocus()) {
-                        console.log('Primer intento fallido, probando alternativa...');
-                        window.location.href = sygicUrlAlt;
-                        
-                        // Paso 5: Si después de otro segundo no funciona, usar Universal Link
-                        setTimeout(() => {
-                            if (document.hasFocus()) {
-                                console.log('Segundo intento fallido, probando Universal Link...');
-                                window.location.href = sygicUniversal;
-                                
-                                // Paso 6: Si todo falla, mostrar mensaje y opciones
-                                setTimeout(() => {
-                                    if (document.hasFocus()) {
-                                        showToast('Coordenadas copiadas. Ábrelas manualmente en Sygic.', 'info');
-                                        
-                                        // Opcional: Preguntar si quiere usar otro mapa
-                                        setTimeout(() => {
-                                            const useOtherMap = confirm(
-                                                'Coordenadas copiadas: ' + AppState.coordsData + '\n\n' +
-                                                '¿Quieres abrirlas en otra app de mapas?'
-                                            );
-                                            
-                                            if (useOtherMap) {
-                                                const choice = confirm(
-                                                    '¿Abrir en Apple Maps (OK) o Google Maps (Cancelar)?'
-                                                );
-                                                
-                                                if (choice) {
-                                                    openInAppleMaps();
-                                                } else {
-                                                    openInGoogleMaps();
-                                                }
-                                            }
-                                        }, 1000);
-                                    } else {
-                                        showToast('¡Sygic abierto!', 'success');
-                                    }
-                                }, 1500);
-                            }
-                        }, 1000);
-                    } else {
-                        showToast('¡Sygic abierto con las coordenadas!', 'success');
-                    }
-                }, 500);
-            }, 100);
-            
-            // Remover iframe después de un tiempo
-            setTimeout(() => {
-                if (document.body.contains(iframe)) {
-                    document.body.removeChild(iframe);
-                }
-            }, 3000);
-            
-        }).catch(err => {
-            console.error('Error copiando al portapapeles:', err);
-            // Fallback manual
+        // Copiar coordenadas al portapapeles
+        try {
+            await navigator.clipboard.writeText(AppState.coordsData);
+        } catch (err) {
+            // Fallback para navegadores antiguos
             const textArea = document.createElement('textarea');
             textArea.value = AppState.coordsData;
             document.body.appendChild(textArea);
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
+        }
+        
+        // Múltiples métodos para abrir Sygic
+        const sygicScheme = `com.sygic.aura://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
+        const sygicUniversal = `https://www.sygic.com/enter?longitude=${AppState.longitude}&latitude=${AppState.latitude}`;
+        const appStoreUrl = 'https://apps.apple.com/app/sygic-gps-navigation/id585193266';
+        
+        // Intentar abrir con URL Scheme
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = sygicScheme;
+        document.body.appendChild(iframe);
+        
+        // Verificar si se abrió
+        setTimeout(() => {
+            document.body.removeChild(iframe);
             
-            // Intentar abrir Sygic de todos modos
-            window.location.href = sygicUrl;
-        });
-    }
-    
-    // ============ FUNCIÓN MEJORADA CON DETECCIÓN DE iOS ============
-    function isIOS() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            // Si todavía estamos en la página después de 500ms, intentar Universal Link
+            setTimeout(() => {
+                if (document.hasFocus()) {
+                    showToast('Intentando método alternativo...', 'info');
+                    window.location.href = sygicUniversal;
+                    
+                    // Si después de 1 segundo sigue sin funcionar, ofrecer App Store
+                    setTimeout(() => {
+                        if (document.hasFocus()) {
+                            const userConfirmed = confirm(
+                                'Sygic no está instalado en tu dispositivo.\n\n' +
+                                '¿Te gustaría instalar Sygic desde la App Store?\n\n' +
+                                'Coordenadas ya copiadas: ' + AppState.coordsData
+                            );
+                            
+                            if (userConfirmed) {
+                                window.open(appStoreUrl, '_blank');
+                                showToast('Redirigiendo a App Store...', 'info');
+                            } else {
+                                showToast('Coordenadas copiadas. Puedes pegarlas en cualquier app de mapas.', 'info');
+                            }
+                        }
+                    }, 1000);
+                } else {
+                    showToast('Sygic abierto con las coordenadas', 'success');
+                }
+            }, 500);
+        }, 100);
     }
     
     // ============ INICIALIZACIÓN ============
@@ -1159,6 +1190,7 @@
         DOM.appleBtn.addEventListener('click', openInAppleMaps);
         DOM.googleBtn.addEventListener('click', openInGoogleMaps);
         DOM.resetBtnPanel.addEventListener('click', resetApp);
+        DOM.resetSoloBtn.addEventListener('click', resetApp);
     }
     
     async function processFile(file) {
@@ -1261,7 +1293,7 @@
                 DOM.btnProgress.style.width = '100%';
                 DOM.btnProgress.style.backgroundPosition = '-200% 0%';
                 
-                displayResults();
+                displaySuccessResults();
                 playSound(1200);
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                 showToast('✓ Coordenadas válidas detectadas', 'success');
@@ -1276,8 +1308,10 @@
             
             if (error.message.includes('inválidas')) {
                 showToast('Coordenadas inválidas. Verifica la imagen.', 'error');
+                displayErrorResults('Coordenadas inválidas detectadas');
             } else {
                 showToast('No se detectaron coordenadas', 'error');
+                displayErrorResults('No se encontraron coordenadas en la imagen');
             }
         } finally {
             DOM.imgBox.classList.remove('scanning');
@@ -1311,11 +1345,16 @@
         }
     }
     
-    function displayResults() {
+    // ============ MOSTRAR RESULTADOS DE ÉXITO ============
+    function displaySuccessResults() {
         const latFormatted = formatCoordinate(AppState.latitude, 'lat');
         const lonFormatted = formatCoordinate(AppState.longitude, 'lon');
         const formattedText = `${latFormatted}, ${lonFormatted}`;
         
+        // Ocultar panel de error si está visible
+        DOM.errorPanel.style.display = 'none';
+        
+        // Mostrar panel de éxito
         DOM.coordsText.textContent = formattedText;
         DOM.coordsText.style.display = 'block';
         DOM.resultPanel.style.display = 'block';
@@ -1323,6 +1362,21 @@
         
         DOM.status.textContent = '[ STATUS: SUCCESS ✅ ]';
         DOM.status.className = 'status-success';
+    }
+    
+    // ============ MOSTRAR RESULTADOS DE ERROR ============
+    function displayErrorResults(errorMessage) {
+        // Ocultar panel de éxito si está visible
+        DOM.resultPanel.style.display = 'none';
+        
+        // Mostrar panel de error
+        DOM.errorText.textContent = errorMessage;
+        DOM.errorText.style.display = 'block';
+        DOM.errorPanel.style.display = 'block';
+        DOM.resetSoloContainer.style.display = 'block';
+        
+        DOM.status.textContent = '[ STATUS: ERROR ❌ ]';
+        DOM.status.className = 'status-error';
     }
     
     // ============ FUNCIONES DE LOS BOTONES ============
@@ -1361,22 +1415,30 @@
         window.open(googleMapsUrl, '_blank');
     }
     
-    // BOTÓN RESET INTEGRADO EN EL PANEL
+    // ============ BOTÓN RESET (FUNCIONALIDAD COMPLETA) ============
     function resetApp() {
-        if (!confirm('¿Restablecer toda la aplicación?')) {
-            return;
+        // No pedir confirmación si no hay imagen cargada
+        if (AppState.currentImage || DOM.imgBox.classList.contains('active')) {
+            if (!confirm('¿Restablecer toda la aplicación?')) {
+                return;
+            }
         }
         
+        // Restablecer elementos visuales
         DOM.preview.src = '';
         DOM.imgBox.classList.remove('active');
         DOM.fileUploadArea.style.display = 'flex';
         DOM.resultPanel.style.display = 'none';
+        DOM.errorPanel.style.display = 'none';
         DOM.actionButtons.style.display = 'none';
+        DOM.resetSoloContainer.style.display = 'none';
         DOM.analyzeBtn.disabled = true;
         
+        // Restablecer barra de progreso
         DOM.btnProgress.style.width = '0%';
         DOM.btnProgress.style.backgroundPosition = '0% 0%';
         
+        // Limpiar input de archivo
         DOM.fileInput.value = '';
         DOM.status.textContent = '[ STATUS: STANDBY ]';
         DOM.status.className = 'status-standby';
@@ -1395,7 +1457,7 @@
         AppState.originalFile = null;
         
         playSound(300);
-        showToast('Aplicación reiniciada', 'info');
+        showToast('Listo para cargar nueva imagen', 'info');
     }
     
     // ============ NOTIFICACIONES TOAST ============
