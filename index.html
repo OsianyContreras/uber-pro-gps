@@ -451,7 +451,7 @@
                 #00ff88 66%, 
                 #00ff88 100%);
             background-size: 300% 100%;
-            background-position: 0% 0%;
+            background-position = '0% 0%';
             border-radius: 14px;
             z-index: -1;
             transition: width 0.3s ease, background-position 0.3s ease;
@@ -650,7 +650,7 @@
         }
 
         .toast.error {
-            border-color: var(--error);
+            border-color = var(--error);
             color: var(--error);
         }
 
@@ -852,8 +852,7 @@
         latitude: 0,
         longitude: 0,
         currentImage: null,
-        originalFile: null,
-        sygicAppInstalled: false
+        originalFile: null
     };
     
     // ============ ELEMENTOS DEL DOM ============
@@ -954,138 +953,113 @@
         });
     }
     
-    // ============ SYGIC CORREGIDO - VERSIÓN MEJORADA ============
-    async function openInSygic() {
+    // ============ SYGIC - SOLUCIÓN DEFINITIVA PARA iOS ============
+    function openInSygic() {
         if (!AppState.coordsData) {
             showToast('No hay coordenadas disponibles', 'error');
             return;
         }
         
-        // Copiar coordenadas al portapapeles (siempre útil)
-        try {
-            await navigator.clipboard.writeText(AppState.coordsData);
-        } catch (err) {
-            // Fallback para navegadores antiguos
+        // SOLUCIÓN 1: Copiar coordenadas y abrir Sygic con URL Scheme
+        const sygicUrl = `sygic://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
+        
+        // SOLUCIÓN 2: URL alternativa que Sygic reconoce
+        const sygicUrlAlt = `com.sygic.aura://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
+        
+        // SOLUCIÓN 3: Universal Link oficial de Sygic
+        const sygicUniversal = `https://www.sygic.com/enter?longitude=${AppState.longitude}&latitude=${AppState.latitude}`;
+        
+        showToast('Copiando coordenadas y abriendo Sygic...', 'info');
+        playSound(2000);
+        
+        // Paso 1: Copiar coordenadas al portapapeles (siempre útil)
+        navigator.clipboard.writeText(AppState.coordsData).then(() => {
+            console.log('Coordenadas copiadas:', AppState.coordsData);
+            
+            // Paso 2: Intentar con iframe (funciona en algunos navegadores)
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = sygicUrl;
+            document.body.appendChild(iframe);
+            
+            // Paso 3: Intentar con window.location (más directo)
+            setTimeout(() => {
+                window.location.href = sygicUrl;
+                
+                // Paso 4: Si después de 500ms no se abrió, intentar alternativa
+                setTimeout(() => {
+                    // Verificar si estamos aún en la página
+                    if (document.hasFocus()) {
+                        console.log('Primer intento fallido, probando alternativa...');
+                        window.location.href = sygicUrlAlt;
+                        
+                        // Paso 5: Si después de otro segundo no funciona, usar Universal Link
+                        setTimeout(() => {
+                            if (document.hasFocus()) {
+                                console.log('Segundo intento fallido, probando Universal Link...');
+                                window.location.href = sygicUniversal;
+                                
+                                // Paso 6: Si todo falla, mostrar mensaje y opciones
+                                setTimeout(() => {
+                                    if (document.hasFocus()) {
+                                        showToast('Coordenadas copiadas. Ábrelas manualmente en Sygic.', 'info');
+                                        
+                                        // Opcional: Preguntar si quiere usar otro mapa
+                                        setTimeout(() => {
+                                            const useOtherMap = confirm(
+                                                'Coordenadas copiadas: ' + AppState.coordsData + '\n\n' +
+                                                '¿Quieres abrirlas en otra app de mapas?'
+                                            );
+                                            
+                                            if (useOtherMap) {
+                                                const choice = confirm(
+                                                    '¿Abrir en Apple Maps (OK) o Google Maps (Cancelar)?'
+                                                );
+                                                
+                                                if (choice) {
+                                                    openInAppleMaps();
+                                                } else {
+                                                    openInGoogleMaps();
+                                                }
+                                            }
+                                        }, 1000);
+                                    } else {
+                                        showToast('¡Sygic abierto!', 'success');
+                                    }
+                                }, 1500);
+                            }
+                        }, 1000);
+                    } else {
+                        showToast('¡Sygic abierto con las coordenadas!', 'success');
+                    }
+                }, 500);
+            }, 100);
+            
+            // Remover iframe después de un tiempo
+            setTimeout(() => {
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                }
+            }, 3000);
+            
+        }).catch(err => {
+            console.error('Error copiando al portapapeles:', err);
+            // Fallback manual
             const textArea = document.createElement('textarea');
             textArea.value = AppState.coordsData;
             document.body.appendChild(textArea);
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-        }
-        
-        // URL Scheme CORRECTO para Sygic en iOS
-        const sygicScheme = `sygic://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
-        
-        showToast('Abriendo Sygic...', 'info');
-        playSound(2000);
-        
-        // PRIMERO: Intentar con window.location (más confiable para iOS)
-        let appOpened = false;
-        
-        // Escuchar evento de blur para detectar si la app se abrió
-        const onBlur = () => {
-            appOpened = true;
-            console.log('App opened - blur event fired');
-        };
-        
-        window.addEventListener('blur', onBlur);
-        
-        // Intentar abrir la app
-        window.location.href = sygicScheme;
-        
-        // Timeout más largo para iOS (puede mostrar diálogo de confirmación)
-        setTimeout(() => {
-            window.removeEventListener('blur', onBlur);
             
-            if (!appOpened) {
-                // SEGUNDO: Intentar con iframe como fallback
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = sygicScheme;
-                document.body.appendChild(iframe);
-                
-                // TERCERO: Si después de 2 segundos no se abrió, mostrar opciones
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                    
-                    // Verificar si estamos aún en la página
-                    if (document.hasFocus()) {
-                        // Solo mostrar opciones si realmente no se abrió
-                        showToast('Coordenadas copiadas. Puedes pegarlas en Sygic manualmente.', 'info');
-                        
-                        // Opcional: Preguntar si quiere abrir en otra app
-                        setTimeout(() => {
-                            const useOtherApp = confirm(
-                                'Las coordenadas ya están copiadas en el portapapeles.\n\n' +
-                                '¿Quieres abrirlas en otra aplicación de mapas?\n\n' +
-                                `Coordenadas: ${AppState.coordsData}`
-                            );
-                            
-                            if (useOtherApp) {
-                                // Mostrar opciones de mapas alternativos
-                                const mapChoice = confirm(
-                                    '¿Abrir en:\n\n' +
-                                    '• Cancelar: No abrir ningún mapa\n' +
-                                    '• OK: Apple Maps'
-                                );
-                                
-                                if (mapChoice) {
-                                    openInAppleMaps();
-                                }
-                            }
-                        }, 500);
-                    }
-                }, 2000); // Más tiempo para iOS
-            } else {
-                showToast('Sygic abierto con las coordenadas', 'success');
-            }
-        }, 1000); // Menos tiempo de espera inicial
+            // Intentar abrir Sygic de todos modos
+            window.location.href = sygicUrl;
+        });
     }
     
-    // ============ DETECCIÓN MEJORADA DE SYGIC ============
-    function checkSygicInstalled() {
-        return new Promise((resolve) => {
-            // Intentar abrir la app y ver si responde
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = 'sygic://';
-            
-            let responded = false;
-            
-            // Timeout corto para ver si la app responde
-            const timeout = setTimeout(() => {
-                if (!responded) {
-                    document.body.removeChild(iframe);
-                    resolve(false);
-                }
-            }, 500);
-            
-            iframe.onload = () => {
-                responded = true;
-                clearTimeout(timeout);
-                document.body.removeChild(iframe);
-                resolve(true);
-            };
-            
-            iframe.onerror = () => {
-                responded = true;
-                clearTimeout(timeout);
-                document.body.removeChild(iframe);
-                resolve(false);
-            };
-            
-            document.body.appendChild(iframe);
-            
-            // Forzar la carga
-            setTimeout(() => {
-                if (!responded) {
-                    clearTimeout(timeout);
-                    document.body.removeChild(iframe);
-                    resolve(false);
-                }
-            }, 1000);
-        });
+    // ============ FUNCIÓN MEJORADA CON DETECCIÓN DE iOS ============
+    function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
     
     // ============ INICIALIZACIÓN ============
@@ -1181,15 +1155,7 @@
         });
         
         DOM.analyzeBtn.addEventListener('click', analyzeImage);
-        
-        // MODIFICADO: Detectar Sygic antes de intentar abrir
-        DOM.sygicBtn.addEventListener('click', async () => {
-            showToast('Verificando Sygic...', 'info');
-            
-            // Primero intentar abrir directamente
-            openInSygic();
-        });
-        
+        DOM.sygicBtn.addEventListener('click', openInSygic);
         DOM.appleBtn.addEventListener('click', openInAppleMaps);
         DOM.googleBtn.addEventListener('click', openInGoogleMaps);
         DOM.resetBtnPanel.addEventListener('click', resetApp);
