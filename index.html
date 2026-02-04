@@ -393,8 +393,79 @@
             100% { top: 0; opacity: 0.7; } 
         }
 
-        /* BOTONES PRINCIPALES */
-        .btn {
+        /* BOTÓN DE ESCANEO CON BARRA DE PROGRESO INCORPORADA */
+        .btn-scan-container {
+            width: 100%;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .btn-scan {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            color: #000;
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.4);
+        }
+
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-scan:active {
+            transform: scale(0.98);
+        }
+
+        .btn-scan:disabled {
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* BARRA DE PROGRESO DENTRO DEL BOTÓN */
+        .btn-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, 
+                #ff3131 0%, 
+                #ff3131 33%, 
+                #ffaa00 33%, 
+                #ffaa00 66%, 
+                #00ff88 66%, 
+                #00ff88 100%);
+            background-size: 300% 100%;
+            background-position: 0% 0%;
+            border-radius: 14px;
+            z-index: -1;
+            transition: width 0.3s ease, background-position 0.3s ease;
+        }
+
+        .btn-scan-text {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 2;
+        }
+
+        /* BOTÓN RESET */
+        .btn-reset {
             width: 100%;
             padding: 16px;
             border-radius: 14px;
@@ -410,32 +481,6 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn-scan {
-            background: linear-gradient(145deg, var(--neon-green), #2bd411);
-            color: #000;
-            box-shadow: 0 0 25px rgba(57, 255, 20, 0.4);
-        }
-
-        .btn-scan:disabled {
-            background: #333;
-            color: #666;
-            box-shadow: none;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .btn-reset {
             background: rgba(255, 49, 49, 0.1);
             border: 2px solid var(--neon-red);
             color: var(--neon-red);
@@ -446,7 +491,7 @@
             box-shadow: 0 0 15px rgba(255, 49, 49, 0.3);
         }
 
-        /* BOTONES DE ACCIÓN - NUEVO DISEÑO MEJORADO */
+        /* BOTONES DE ACCIÓN */
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -499,32 +544,32 @@
 
         /* Botón SYGIC */
         .btn-sygic {
-            background: linear-gradient(145deg, var(--sygic-blue), #005bb5);
+            background: linear-gradient(145deg, var(--neon-blue), #0099cc);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .btn-sygic:hover {
-            box-shadow: 0 6px 20px rgba(0, 115, 230, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
         }
 
         /* Botón Apple Maps */
         .btn-apple {
-            background: linear-gradient(145deg, var(--apple-blue), #0056cc);
+            background: linear-gradient(145deg, var(--neon-blue), #0099cc);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .btn-apple:hover {
-            box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
         }
 
         /* Botón Google Maps */
         .btn-google {
-            background: linear-gradient(145deg, var(--google-red), #c62828);
+            background: linear-gradient(145deg, var(--neon-blue), #0099cc);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .btn-google:hover {
-            box-shadow: 0 6px 20px rgba(234, 67, 53, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
         }
 
         /* STATUS */
@@ -747,11 +792,16 @@
                 </div>
             </div>
 
-            <!-- BOTÓN DE ESCANEO -->
-            <button class="btn btn-scan" id="analyzeBtn" disabled>
-                <i class="fas fa-play"></i>
-                INICIAR ESCANEO 🤖
-            </button>
+            <!-- BOTÓN DE ESCANEO CON PROGRESO -->
+            <div class="btn-scan-container">
+                <button class="btn-scan" id="analyzeBtn" disabled>
+                    <div class="btn-progress" id="btnProgress"></div>
+                    <div class="btn-scan-text">
+                        <i class="fas fa-play"></i>
+                        INICIAR ESCANEO 🤖
+                    </div>
+                </button>
+            </div>
             
             <!-- STATUS -->
             <div class="status-container">
@@ -826,6 +876,7 @@
         imgBox: document.getElementById('imgBox'),
         preview: document.getElementById('preview'),
         analyzeBtn: document.getElementById('analyzeBtn'),
+        btnProgress: document.getElementById('btnProgress'),
         status: document.getElementById('status'),
         resultPanel: document.getElementById('resultPanel'),
         coordsText: document.getElementById('coordsText'),
@@ -963,7 +1014,7 @@
         showToast('Imagen cargada', 'success');
     }
     
-    // ============ ANÁLISIS DE IMAGEN ============
+    // ============ ANÁLISIS DE IMAGEN CON BARRA DE PROGRESO EN EL BOTÓN ============
     async function analyzeImage() {
         if (AppState.isProcessing) return;
         
@@ -974,9 +1025,13 @@
         
         AppState.isProcessing = true;
         DOM.analyzeBtn.disabled = true;
-        DOM.analyzeBtn.innerHTML = '<div class="loader"></div> PROCESANDO...';
+        DOM.analyzeBtn.querySelector('.btn-scan-text').innerHTML = '<div class="loader"></div> PROCESANDO...';
         DOM.status.textContent = '[ STATUS: ANALYZING... ]';
         DOM.status.className = 'status-processing';
+        
+        // Resetear la barra de progreso del botón
+        DOM.btnProgress.style.width = '0%';
+        DOM.btnProgress.style.backgroundPosition = '0% 0%';
         
         DOM.imgBox.classList.add('scanning');
         playSound(880);
@@ -984,7 +1039,10 @@
         try {
             const result = await Tesseract.recognize(
                 DOM.preview.src, 
-                CONFIG.TESSERACT_LANG
+                CONFIG.TESSERACT_LANG,
+                {
+                    logger: (m) => updateProgress(m)
+                }
             );
             
             const matches = result.data.text.match(CONFIG.COORD_REGEX);
@@ -994,6 +1052,10 @@
                 AppState.latitude = parseFloat(coords[0]);
                 AppState.longitude = parseFloat(coords[1]);
                 AppState.coordsData = `${AppState.latitude}, ${AppState.longitude}`;
+                
+                // Barra al 100% verde al final
+                DOM.btnProgress.style.width = '100%';
+                DOM.btnProgress.style.backgroundPosition = '-200% 0%'; // Mover al verde
                 
                 displayResults();
                 playSound(1200);
@@ -1011,8 +1073,38 @@
         } finally {
             DOM.imgBox.classList.remove('scanning');
             DOM.analyzeBtn.disabled = false;
-            DOM.analyzeBtn.innerHTML = '<i class="fas fa-play"></i> INICIAR ESCANEO 🤖';
+            DOM.analyzeBtn.querySelector('.btn-scan-text').innerHTML = '<i class="fas fa-play"></i> INICIAR ESCANEO 🤖';
             AppState.isProcessing = false;
+        }
+    }
+    
+    // FUNCIÓN PARA ACTUALIZAR LA BARRA DE PROGRESO DEL BOTÓN CON COLORES
+    function updateProgress(message) {
+        if (message.status === 'recognizing text') {
+            const progress = Math.round(message.progress * 100);
+            
+            // Actualizar ancho de la barra del botón
+            DOM.btnProgress.style.width = `${progress}%`;
+            
+            // Calcular posición del background para mostrar el color correcto
+            // El gradiente tiene 300% de ancho (100% rojo, 100% amarillo, 100% verde)
+            // Movemos el background para mostrar la sección correspondiente
+            if (progress < 33) {
+                // Rojo al inicio (0-33%)
+                // Background position: 0% muestra el rojo
+                DOM.btnProgress.style.backgroundPosition = '0% 0%';
+            } else if (progress < 66) {
+                // Amarillo en la mitad (34-66%)
+                // Background position: -100% muestra el amarillo
+                DOM.btnProgress.style.backgroundPosition = '-100% 0%';
+            } else {
+                // Verde al final (67-100%)
+                // Background position: -200% muestra el verde
+                DOM.btnProgress.style.backgroundPosition = '-200% 0%';
+            }
+            
+            // Actualizar texto del estado
+            DOM.status.textContent = `[ STATUS: PROCESSING ${progress}% ]`;
         }
     }
     
@@ -1137,6 +1229,10 @@
         DOM.resultPanel.style.display = 'none';
         DOM.actionButtons.style.display = 'none';
         DOM.analyzeBtn.disabled = true;
+        
+        // Resetear barra de progreso del botón
+        DOM.btnProgress.style.width = '0%';
+        DOM.btnProgress.style.backgroundPosition = '0% 0%';
         
         DOM.fileInput.value = '';
         DOM.status.textContent = '[ STATUS: STANDBY ]';
