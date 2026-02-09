@@ -996,6 +996,7 @@
             overflow: hidden;
             letter-spacing: 0.5px;
             min-height: clamp(50px, 8vh, 60px);
+            width: 100%;
         }
 
         .copy-btn.copied {
@@ -1402,6 +1403,53 @@
                 color: rgba(26, 26, 46, 0.8);
             }
         }
+
+        /* ========== BOTÓN DE COMPARTIR ========== */
+        .share-btn {
+            padding: clamp(16px, 4vw, 20px);
+            background: linear-gradient(135deg, #FF6584, #FF4D6D);
+            color: white;
+            border: none;
+            border-radius: clamp(14px, 3vw, 18px);
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(8px, 2vw, 12px);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            min-height: clamp(50px, 8vh, 60px);
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .share-btn.shared {
+            background: linear-gradient(135deg, #4CD964, #2ECC71);
+        }
+
+        .share-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Contenedor para los dos botones (Copiar y Compartir) */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(10px, 2.5vw, 15px);
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        /* Para móviles muy pequeños, cambiar a columna */
+        @media (max-width: 350px) {
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1418,6 +1466,7 @@
             const [loading, setLoading] = useState(false);
             const [progress, setProgress] = useState(0);
             const [copied, setCopied] = useState(false);
+            const [shared, setShared] = useState(false); // NUEVO ESTADO PARA COMPARTIR
             const [mode, setMode] = useState('upload');
             const [error, setError] = useState('');
             const [extractedLocation, setExtractedLocation] = useState('');
@@ -1673,6 +1722,55 @@
                     });
             };
 
+            // FUNCIÓN PARA COMPARTIR
+            const shareContent = async () => {
+                if (!coordinates && !address && !extractedLocation) {
+                    setError('No hay contenido para compartir');
+                    return;
+                }
+                
+                const textToShare = coordinates || address || extractedLocation;
+                const shareData = {
+                    title: 'Ubicación extraída - Ubertron Pro Vision',
+                    text: `📍 ${textToShare}\n\nExtraído con Ubertron Pro Vision v5.0`,
+                    url: window.location.href
+                };
+                
+                // Verificar si la Web Share API está disponible (iOS/Android)
+                if (navigator.share) {
+                    try {
+                        await navigator.share(shareData);
+                        setShared(true);
+                        setTimeout(() => setShared(false), 2000);
+                    } catch (error) {
+                        if (error.name !== 'AbortError') {
+                            // Si el usuario cancela, no hacemos nada
+                            // Si hay otro error, copiamos al portapapeles como fallback
+                            fallbackShare(textToShare);
+                        }
+                    }
+                } else {
+                    // Para navegadores que no soportan Web Share API
+                    fallbackShare(textToShare);
+                }
+            };
+
+            // FUNCIÓN DE RESPALDO PARA COMPARTIR
+            const fallbackShare = (text) => {
+                // Intentar copiar al portapapeles
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        setShared(true);
+                        setTimeout(() => setShared(false), 2000);
+                        // Mostrar mensaje especial para fallback
+                        alert('✅ Texto copiado al portapapeles. Ahora puedes pegarlo en cualquier app para compartir.');
+                    })
+                    .catch(err => {
+                        console.error('Error al copiar:', err);
+                        setError('Error al intentar compartir');
+                    });
+            };
+
             const openInGoogleMaps = () => {
                 if (!coordinates && !address) return;
                 const query = coordinates || encodeURIComponent(address);
@@ -1699,6 +1797,7 @@
                 setLoading(false);
                 setProgress(0);
                 setCopied(false);
+                setShared(false);
                 setError('');
                 setExtractedLocation('');
                 setScanAnimation(false);
@@ -2088,18 +2187,32 @@
                                                     {coordinates || address || extractedLocation}
                                                 </div>
                                                 
-                                                <button 
-                                                    className={`copy-btn ${copied ? 'copied' : ''}`}
-                                                    onClick={() => copyToClipboard(coordinates || address || extractedLocation)}
-                                                >
-                                                    <div className="copy-glow"></div>
-                                                    <span className="copy-icon">{copied ? '✓' : '📋'}</span>
-                                                    <span className="copy-text">{copied ? 'COPIADO' : 'COPIAR'}</span>
-                                                </button>
+                                                {/* CONTENEDOR DE DOS BOTONES: COPIAR Y COMPARTIR */}
+                                                <div className="button-group">
+                                                    <button 
+                                                        className={`copy-btn ${copied ? 'copied' : ''}`}
+                                                        onClick={() => copyToClipboard(coordinates || address || extractedLocation)}
+                                                    >
+                                                        <div className="copy-glow"></div>
+                                                        <span className="copy-icon">{copied ? '✓' : '📋'}</span>
+                                                        <span className="copy-text">{copied ? 'COPIADO' : 'COPIAR'}</span>
+                                                    </button>
+                                                    
+                                                    <button 
+                                                        className={`share-btn ${shared ? 'shared' : ''}`}
+                                                        onClick={shareContent}
+                                                    >
+                                                        <div className="copy-glow"></div>
+                                                        <span className="copy-icon">📤</span>
+                                                        <span className="copy-text">{shared ? 'COMPARTIDO' : 'COMPARTIR'}</span>
+                                                    </button>
+                                                </div>
                                             </div>
                                             
                                             <p className="location-hint">
-                                                {copied ? '✅ ¡Texto copiado al portapapeles!' : '👆 Toca para copiar al portapapeles'}
+                                                {copied ? '✅ ¡Texto copiado al portapapeles!' : 
+                                                 shared ? '✅ ¡Contenido compartido exitosamente!' : 
+                                                 '👆 Copia o comparte la ubicación extraída'}
                                             </p>
                                         </div>
                                         
