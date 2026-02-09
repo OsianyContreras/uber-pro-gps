@@ -2,829 +2,2245 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extractor de Coordenadas y Direcciones</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Ubertron PRO Vision v5.0</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/tesseract.js@v3.0.3/dist/tesseract.min.js"></script>
     <style>
+        /* Reset y configuración premium para móviles */
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
-        
+
+        :root {
+            --primary: #6C63FF;
+            --primary-dark: #4A42D4;
+            --primary-light: #8B85FF;
+            --secondary: #FF6584;
+            --accent: #36D1DC;
+            --success: #4CD964;
+            --warning: #FFD700;
+            --danger: #FF4D4D;
+            --dark: #1A1A2E;
+            --darker: #0F0F1E;
+            --light: #F8F9FF;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-dark: rgba(0, 0, 0, 0.2);
+            --shadow: 0 20px 60px rgba(108, 99, 255, 0.3);
+            --glow: 0 0 40px rgba(108, 99, 255, 0.5);
+        }
+
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: local('SF Pro Display'), local('Helvetica Neue');
+            font-weight: 300 900;
+        }
+
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
             overflow: hidden;
-            padding: 30px;
+            height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none;
         }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
+
+        /* Contenedor principal optimizado para cualquier dispositivo */
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            max-height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(108, 99, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 101, 132, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(54, 209, 220, 0.1) 0%, transparent 50%);
+            backdrop-filter: blur(20px);
         }
-        
-        h1 {
-            color: #4a5568;
-            font-size: 28px;
-            margin-bottom: 10px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+
+        /* Header adaptable a cualquier dispositivo */
+        .app-header {
+            height: auto;
+            min-height: 70px;
+            padding: 15px 20px;
+            padding-top: max(15px, env(safe-area-inset-top, 15px));
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(108, 99, 255, 0.3);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
         }
-        
-        .subtitle {
-            color: #718096;
-            font-size: 16px;
-            line-height: 1.5;
+
+        .header-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--secondary));
+            animation: glowMove 3s infinite;
         }
-        
-        .upload-section {
-            background: #f8f9fa;
-            border: 3px dashed #cbd5e0;
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 30px;
-            transition: all 0.3s ease;
+
+        @keyframes glowMove {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
-        
-        .upload-section:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
-        }
-        
-        .upload-btn {
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 18px 40px;
-            font-size: 18px;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            display: inline-flex;
+
+        .header-content {
+            display: flex;
             align-items: center;
             gap: 12px;
-            margin: 15px 0;
-        }
-        
-        .upload-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-        }
-        
-        .upload-icon {
-            font-size: 24px;
-        }
-        
-        .or-text {
-            color: #718096;
-            margin: 15px 0;
-            font-weight: 500;
-        }
-        
-        .screenshot-btn {
-            background: #48bb78;
-            color: white;
-            border: none;
-            padding: 15px 35px;
-            font-size: 16px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .screenshot-btn:hover {
-            background: #38a169;
-            transform: translateY(-2px);
-        }
-        
-        .result-section {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 30px;
-            border: 2px solid #e2e8f0;
-            display: none;
-        }
-        
-        .result-title {
-            color: #4a5568;
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .result-content {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .coordinates-found, .addresses-found {
-            display: none;
-        }
-        
-        .coordinate-item, .address-item {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 15px 0;
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .coordinate-item:hover, .address-item:hover {
-            border-color: #667eea;
-            transform: translateX(5px);
-        }
-        
-        .coordinate-text, .address-text {
-            font-family: 'Courier New', monospace;
-            background: #f7fafc;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            font-size: 16px;
-            word-break: break-all;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
+            flex: 1;
             flex-wrap: wrap;
         }
-        
-        .copy-btn, .share-btn, .select-btn {
-            padding: 14px 28px;
-            border: none;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
+
+        .app-title {
+            display: flex;
             align-items: center;
             gap: 10px;
-            flex: 1;
-            min-width: 150px;
-            justify-content: center;
         }
-        
-        .copy-btn {
-            background: linear-gradient(90deg, #4299e1, #3182ce);
-            color: white;
+
+        .app-icon {
+            font-size: clamp(1.8rem, 4vw, 2.2rem);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: float 3s ease-in-out infinite;
         }
-        
-        .copy-btn:hover {
-            background: linear-gradient(90deg, #3182ce, #2b6cb0);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(49, 130, 206, 0.3);
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
-        
-        .share-btn {
-            background: linear-gradient(90deg, #48bb78, #38a169);
-            color: white;
+
+        .title-text {
+            display: flex;
+            flex-direction: column;
         }
-        
-        .share-btn:hover {
-            background: linear-gradient(90deg, #38a169, #2f855a);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(56, 161, 105, 0.3);
+
+        .main-title {
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--light), #FFFFFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
         }
-        
-        .select-btn {
-            background: linear-gradient(90deg, #ed8936, #dd6b20);
-            color: white;
+
+        .sub-title {
+            font-size: clamp(0.7rem, 2vw, 0.9rem);
+            font-weight: 600;
+            color: var(--primary-light);
+            letter-spacing: 2px;
+            margin-top: -3px;
         }
-        
-        .select-btn:hover {
-            background: linear-gradient(90deg, #dd6b20, #c05621);
-            transform: translateY(-2px);
-        }
-        
-        .no-results {
-            text-align: center;
-            padding: 40px;
-            color: #718096;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
+
+        .app-subtitle {
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            font-weight: 500;
+            color: var(--accent);
+            opacity: 0.9;
+            letter-spacing: 0.5px;
             display: none;
         }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+
+        @media (min-width: 375px) {
+            .app-subtitle {
+                display: block;
+            }
         }
-        
+
+        .header-pulse {
+            position: relative;
+            width: clamp(30px, 8vw, 40px);
+            height: clamp(30px, 8vw, 40px);
+            flex-shrink: 0;
+        }
+
+        .pulse-dot {
+            width: clamp(8px, 2vw, 12px);
+            height: clamp(8px, 2vw, 12px);
+            background: var(--success);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: clamp(30px, 8vw, 40px);
+            height: clamp(30px, 8vw, 40px);
+            border: 2px solid var(--success);
+            border-radius: 50%;
+            animation: ringPulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes ringPulse {
+            0% {
+                width: clamp(30px, 8vw, 40px);
+                height: clamp(30px, 8vw, 40px);
+                opacity: 1;
+            }
+            100% {
+                width: clamp(45px, 12vw, 55px);
+                height: clamp(45px, 12vw, 55px);
+                opacity: 0;
+            }
+        }
+
+        /* Tabs optimizados para cualquier dispositivo */
+        .app-tabs {
+            height: auto;
+            min-height: 60px;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            position: sticky;
+            bottom: 0;
+            z-index: 1000;
+            border-top: 1px solid rgba(108, 99, 255, 0.2);
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.4);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: clamp(8px, 2vw, 12px) 5px;
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(4px, 1vw, 8px);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: clamp(0.65rem, 2vw, 0.8rem);
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            min-height: 60px;
+        }
+
+        .tab-btn.active {
+            color: var(--light);
+        }
+
+        .tab-btn.active .tab-indicator {
+            transform: scaleX(1);
+        }
+
+        .tab-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .tab-icon-container {
+            position: relative;
+            width: clamp(24px, 7vw, 32px);
+            height: clamp(24px, 7vw, 32px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-icon {
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            position: relative;
+            z-index: 2;
+        }
+
+        .tab-glow {
+            position: absolute;
+            width: clamp(24px, 7vw, 32px);
+            height: clamp(24px, 7vw, 32px);
+            background: var(--primary);
+            border-radius: 50%;
+            filter: blur(6px);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tab-btn.active .tab-glow {
+            opacity: 0.5;
+        }
+
+        .tab-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 2px 2px 0 0;
+            transform: scaleX(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Contenido principal adaptable */
+        .app-main {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding: clamp(12px, 3vw, 20px);
+            scroll-behavior: smooth;
+            padding-bottom: calc(clamp(12px, 3vw, 20px) + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* Tarjetas adaptables */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: clamp(16px, 4vw, 24px);
+            padding: clamp(16px, 4vw, 24px);
+            margin-bottom: clamp(12px, 3vw, 18px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 50px rgba(108, 99, 255, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: clamp(10px, 3vw, 16px);
+            margin-bottom: clamp(16px, 4vw, 24px);
+        }
+
+        .card-icon {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: iconPulse 2s infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .card-title {
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            font-weight: 700;
+            color: var(--light);
+            letter-spacing: 0.5px;
+        }
+
+        /* Grid de modos adaptable */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: clamp(12px, 3vw, 18px);
+        }
+
+        @media (min-width: 375px) {
+            .mode-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .mode-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: clamp(15px, 4vw, 20px);
+            padding: clamp(16px, 4vw, 24px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: clamp(12px, 3vw, 18px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: clamp(140px, 25vh, 180px);
+        }
+
+        .mode-option.active {
+            background: rgba(108, 99, 255, 0.15);
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .mode-option:active {
+            transform: scale(0.98);
+        }
+
+        .mode-glow {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(108, 99, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .mode-option.active .mode-glow {
+            opacity: 1;
+        }
+
+        .mode-icon {
+            font-size: clamp(2rem, 6vw, 3rem);
+            width: clamp(50px, 15vw, 70px);
+            height: clamp(50px, 15vw, 70px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: clamp(12px, 3vw, 16px);
+            transition: all 0.3s;
+        }
+
+        .mode-option.active .mode-icon {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            transform: rotateY(360deg);
+        }
+
+        .mode-content {
+            flex: 1;
+            width: 100%;
+        }
+
+        .mode-content h3 {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: 5px;
+        }
+
+        .mode-content p {
+            font-size: clamp(0.75rem, 2vw, 0.9rem);
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            padding: clamp(3px, 1vw, 5px) clamp(8px, 2vw, 12px);
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            color: white;
+            border-radius: clamp(10px, 2vw, 14px);
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Cámara adaptable */
+        .camera-preview {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 3vw, 18px);
+        }
+
+        .camera-frame {
+            position: relative;
+            width: 100%;
+            height: clamp(200px, 30vh, 300px);
+            background: #000;
+            border-radius: clamp(15px, 4vw, 20px);
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .camera-view {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .scan-grid {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+        }
+
+        .focus-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            height: 60%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            animation: focusPulse 2s infinite;
+        }
+
+        @keyframes focusPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* Botones de acción adaptables */
+        .action-btn {
+            width: 100%;
+            padding: clamp(16px, 4vw, 20px);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: clamp(14px, 3vw, 18px);
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(8px, 2vw, 12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            min-height: clamp(50px, 8vh, 60px);
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+            animation: btnShine 2s infinite;
+        }
+
+        @keyframes btnShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .btn-icon {
+            font-size: clamp(1.1rem, 3vw, 1.3rem);
+        }
+
+        .btn-text {
+            font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+            font-weight: 700;
+        }
+
+        /* Vista previa adaptable */
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 3vw, 18px);
+        }
+
+        .image-frame {
+            position: relative;
+            width: 100%;
+            height: clamp(200px, 30vh, 300px);
+            background: #000;
+            border-radius: clamp(15px, 4vw, 20px);
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        .scan-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            filter: drop-shadow(0 0 10px currentColor);
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        .scan-dots {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .scan-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            filter: drop-shadow(0 0 8px currentColor);
+            animation: dotMove 2s linear infinite;
+        }
+
+        .progress-overlay {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: clamp(10px, 3vw, 14px);
+            padding: clamp(12px, 3vw, 16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: clamp(10px, 2vw, 14px);
+        }
+
+        .progress-title {
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-value {
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            font-weight: 800;
+        }
+
+        .progress-bar-container {
+            margin-bottom: clamp(8px, 2vw, 12px);
+        }
+
+        .progress-track {
+            position: relative;
+            width: 100%;
+            height: clamp(6px, 1.5vw, 8px);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: clamp(6px, 1.5vw, 8px);
+        }
+
+        .progress-indicator {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-indicator::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .color-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .color-marker {
+            position: absolute;
+            width: 3px;
+            height: 100%;
+            transform: translateX(-50%);
+        }
+
+        .color-marker.red { background: #FF4D4D; }
+        .color-marker.orange { background: #FFB74D; }
+        .color-marker.yellow { background: #FFD700; }
+        .color-marker.green { background: #4CD964; }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            font-weight: 600;
+        }
+
+        .progress-label {
+            transition: color 0.3s;
+        }
+
+        /* Procesamiento adaptable */
+        .processing-content {
+            text-align: center;
+        }
+
+        .ai-loader {
+            position: relative;
+            width: clamp(60px, 15vw, 90px);
+            height: clamp(60px, 15vw, 90px);
+            margin: 0 auto clamp(20px, 5vw, 30px);
+        }
+
+        .loader-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: clamp(3px, 1vw, 5px) solid transparent;
+            border-top: clamp(3px, 1vw, 5px) solid var(--primary);
+            border-right: clamp(3px, 1vw, 5px) solid var(--accent);
+            border-bottom: clamp(3px, 1vw, 5px) solid var(--secondary);
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
-        .icon {
-            font-size: 20px;
-        }
-        
-        .selected {
-            border-color: #48bb78 !important;
-            background: #f0fff4 !important;
-        }
-        
-        .selected-badge {
+
+        .loader-core {
             position: absolute;
-            top: -10px;
-            right: 20px;
-            background: #48bb78;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            top: 20%;
+            left: 20%;
+            width: 60%;
+            height: 60%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%;
+            animation: pulse 2s infinite;
         }
-        
-        .action-buttons {
+
+        .loader-particle {
+            position: absolute;
+            width: clamp(12px, 3vw, 18px);
+            height: clamp(12px, 3vw, 18px);
+            background: var(--warning);
+            border-radius: 50%;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: orbit 3s linear infinite;
+        }
+
+        @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(40px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(40px) rotate(-360deg); }
+        }
+
+        .processing-title {
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: clamp(16px, 4vw, 24px);
+            letter-spacing: 0.5px;
+        }
+
+        .ai-progress {
+            width: 100%;
+            margin-bottom: clamp(20px, 5vw, 30px);
+        }
+
+        .ai-progress-bar {
+            width: 100%;
+            height: clamp(8px, 2vw, 12px);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: clamp(10px, 2.5vw, 15px);
+            position: relative;
+        }
+
+        .ai-progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+            background: linear-gradient(90deg, 
+                #FF4D4D 0%, 
+                #FFB74D 25%, 
+                #FFD700 50%, 
+                #4CD964 100%);
+            background-size: 400% 100%;
+            animation: gradientMove 3s infinite linear;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+
+        .progress-text {
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .processing-details {
             display: flex;
-            gap: 15px;
+            flex-direction: column;
+            gap: clamp(10px, 2.5vw, 15px);
+        }
+
+        .detail {
+            display: flex;
+            align-items: center;
+            gap: clamp(10px, 2.5vw, 15px);
+            padding: clamp(10px, 2.5vw, 15px);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: clamp(10px, 2.5vw, 15px);
+            border-left: 3px solid var(--accent);
+        }
+
+        .detail-icon {
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+        }
+
+        .detail-text {
+            font-size: clamp(0.8rem, 2.2vw, 0.95rem);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        /* Resultados adaptables */
+        .result-content {
+            margin-bottom: clamp(20px, 5vw, 30px);
+        }
+
+        .location-header {
+            display: flex;
+            align-items: center;
+            gap: clamp(12px, 3vw, 20px);
+            margin-bottom: clamp(16px, 4vw, 24px);
+        }
+
+        .location-icon {
+            position: relative;
+            font-size: clamp(2.2rem, 6vw, 3.5rem);
+            width: clamp(55px, 15vw, 80px);
+            height: clamp(55px, 15vw, 80px);
+            display: flex;
+            align-items: center;
             justify-content: center;
-            margin-top: 30px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border-radius: clamp(15px, 4vw, 20px);
+            box-shadow: var(--glow);
+            flex-shrink: 0;
         }
-        
-        .action-btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 50px;
+
+        .icon-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            border-radius: clamp(15px, 4vw, 20px);
+            filter: blur(12px);
+            opacity: 0.5;
+            animation: glowPulse 2s infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .location-type h3 {
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: 5px;
+        }
+
+        .location-type p {
+            font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .location-display {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 3vw, 18px);
+            margin-bottom: clamp(10px, 2.5vw, 15px);
+        }
+
+        .location-text {
+            padding: clamp(16px, 4vw, 24px);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: clamp(15px, 4vw, 20px);
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
             font-weight: 600;
+            color: var(--light);
+            word-break: break-word;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            min-height: clamp(60px, 10vh, 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.5px;
+        }
+
+        .copy-btn {
+            padding: clamp(16px, 4vw, 20px);
+            background: linear-gradient(135deg, var(--accent), #2AB7CA);
+            color: white;
+            border: none;
+            border-radius: clamp(14px, 3vw, 18px);
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(8px, 2vw, 12px);
+            transition: all 0.3s;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            min-height: clamp(50px, 8vh, 60px);
         }
-        
-        .clear-btn {
-            background: #fed7d7;
-            color: #c53030;
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, var(--success), #2ECC71);
         }
-        
-        .clear-btn:hover {
-            background: #feb2b2;
+
+        .copy-btn:active {
+            transform: scale(0.95);
         }
-        
-        .process-btn {
-            background: linear-gradient(90deg, #667eea, #764ba2);
+
+        .copy-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+            animation: copyShine 2s infinite;
+        }
+
+        .copy-icon {
+            font-size: clamp(1.1rem, 3vw, 1.3rem);
+        }
+
+        .copy-text {
+            font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+            font-weight: 700;
+        }
+
+        .location-hint {
+            font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .actions-section {
+            margin-top: clamp(20px, 5vw, 30px);
+        }
+
+        .actions-title {
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: clamp(12px, 3vw, 20px);
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        /* GRID 2x2 adaptable */
+        .actions-grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(10px, 2.5vw, 15px);
+        }
+
+        @media (min-width: 768px) {
+            .actions-grid-2x2 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .action-card-2x2 {
+            padding: clamp(14px, 3.5vw, 20px) clamp(10px, 2.5vw, 15px);
+            border: none;
+            border-radius: clamp(12px, 3vw, 16px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(6px, 1.5vw, 10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: clamp(90px, 15vh, 120px);
+        }
+
+        .action-card-2x2:active {
+            transform: scale(0.95);
+        }
+
+        .action-glow-2x2 {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+            animation: actionShine 2s infinite;
+        }
+
+        .action-icon-2x2 {
+            font-size: clamp(1.6rem, 4vw, 2.5rem);
+            margin-bottom: 5px;
+        }
+
+        .action-label-2x2 {
+            font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+            font-weight: 800;
             color: white;
+            letter-spacing: 0.5px;
         }
-        
-        .process-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+
+        .action-sub-2x2 {
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
         }
-        
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #48bb78;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+
+        .sygic {
+            background: linear-gradient(135deg, #FF6584, #FF4D6D);
+        }
+
+        .google {
+            background: linear-gradient(135deg, #4285F4, #2D68F4);
+        }
+
+        .apple {
+            background: linear-gradient(135deg, #000000, #333333);
+        }
+
+        .reset {
+            background: linear-gradient(135deg, #9B59B6, #8E44AD);
+        }
+
+        /* Estados vacíos y error adaptables */
+        .empty-content, .error-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: clamp(25px, 6vw, 40px) clamp(12px, 3vw, 20px);
+        }
+
+        .empty-icon, .error-icon {
+            font-size: clamp(3rem, 8vw, 5rem);
+            margin-bottom: clamp(16px, 4vw, 25px);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .empty-title, .error-title {
+            font-size: clamp(1.3rem, 4vw, 1.8rem);
+            font-weight: 800;
+            color: var(--light);
+            margin-bottom: clamp(10px, 2.5vw, 15px);
+            letter-spacing: 0.5px;
+        }
+
+        .empty-text, .error-text {
+            font-size: clamp(0.8rem, 2.2vw, 1rem);
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: clamp(20px, 5vw, 30px);
+            line-height: 1.5;
+            max-width: 90%;
+        }
+
+        .error-card {
+            background: linear-gradient(135deg, rgba(255, 77, 77, 0.1), rgba(255, 77, 77, 0.05));
+            border: 1px solid rgba(255, 77, 77, 0.3);
+        }
+
+        .error-icon {
+            color: var(--danger);
+        }
+
+        .error-title {
+            color: var(--danger);
+        }
+
+        /* Footer adaptable */
+        .app-footer {
+            height: auto;
+            min-height: 50px;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(10px, 2.5vw, 15px) clamp(12px, 3vw, 20px);
+            border-top: 1px solid rgba(108, 99, 255, 0.2);
+            position: relative;
+        }
+
+        .footer-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        .footer-content {
+            text-align: center;
+            width: 100%;
+        }
+
+        .footer-title {
+            font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: 3px;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-subtitle {
+            font-size: clamp(0.6rem, 1.8vw, 0.75rem);
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: clamp(5px, 1.5vw, 8px);
+        }
+
+        .footer-stats {
+            display: flex;
+            gap: clamp(8px, 2vw, 12px);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            font-size: clamp(0.55rem, 1.6vw, 0.7rem);
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            padding: clamp(2px, 1vw, 4px) clamp(5px, 1.5vw, 8px);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        /* Ajustes para orientación horizontal en móviles */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .app-header {
+                min-height: 60px;
+                padding: 10px 15px;
+            }
+            
+            .app-tabs {
+                min-height: 55px;
+            }
+            
+            .app-footer {
+                min-height: 45px;
+            }
+            
+            .app-main {
+                padding: 10px;
+            }
+            
+            .glass-card {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+            
+            .camera-frame,
+            .image-frame {
+                height: clamp(180px, 40vh, 220px);
+            }
+            
+            .mode-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .actions-grid-2x2 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Ajustes para iOS Safari */
+        @supports (-webkit-touch-callout: none) {
+            .app-container {
+                height: -webkit-fill-available;
+            }
+            
+            .app-main {
+                padding-bottom: calc(clamp(12px, 3vw, 20px) + env(safe-area-inset-bottom));
+            }
+            
+            .app-tabs {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            
+            .action-btn,
+            .tab-btn,
+            .mode-option,
+            .action-card-2x2 {
+                -webkit-tap-highlight-color: rgba(108, 99, 255, 0.3);
+            }
+        }
+
+        /* Input oculto para archivos */
+        .file-input-hidden {
             display: none;
-            z-index: 1000;
-            animation: slideIn 0.3s ease;
         }
-        
-        @keyframes slideIn {
+
+        /* Mejoras de rendimiento para móviles */
+        .glass-card, .action-btn, .mode-option, .action-card-2x2 {
+            will-change: transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+        /* Animaciones de entrada optimizadas */
+        @keyframes slideInUp {
             from {
-                transform: translateX(100%);
                 opacity: 0;
+                transform: translateY(20px);
             }
             to {
-                transform: translateX(0);
                 opacity: 1;
+                transform: translateY(0);
             }
         }
-        
-        .instructions {
-            background: #e6fffa;
-            border: 2px solid #81e6d9;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 30px 0;
+
+        .tab-content > * {
+            animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        .instructions h3 {
-            color: #234e52;
-            margin-bottom: 10px;
+
+        /* Efectos de brillo adicionales */
+        @keyframes copyShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
-        
-        .instructions ul {
-            padding-left: 20px;
-            color: #2d3748;
+
+        @keyframes actionShine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
         }
-        
-        .instructions li {
-            margin: 8px 0;
-            line-height: 1.5;
+
+        /* Mejoras de accesibilidad táctil */
+        button, [role="button"] {
+            cursor: pointer;
+            user-select: none;
         }
-        
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-                border-radius: 15px;
+
+        /* Prevenir zoom en inputs en iOS */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px;
             }
-            
-            .button-group {
-                flex-direction: column;
-            }
-            
-            .copy-btn, .share-btn, .select-btn {
-                width: 100%;
+        }
+
+        /* Ajustes de alto contraste para accesibilidad */
+        @media (prefers-contrast: high) {
+            .glass-card {
+                border: 2px solid rgba(255, 255, 255, 0.2);
             }
             
-            .upload-btn, .screenshot-btn {
-                width: 100%;
-                justify-content: center;
+            .action-btn {
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        /* Ajustes para modo oscuro automático */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --light: #F8F9FF;
+                --dark: #1A1A2E;
+                --darker: #0F0F1E;
+            }
+        }
+
+        /* Ajustes para modo claro (si se requiere en el futuro) */
+        @media (prefers-color-scheme: light) {
+            :root {
+                --light: #1A1A2E;
+                --dark: #F8F9FF;
+                --darker: #E6E9FF;
             }
             
-            h1 {
-                font-size: 24px;
+            body {
+                background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            }
+            
+            .glass-card {
+                background: rgba(26, 26, 46, 0.05);
+                border: 1px solid rgba(26, 26, 46, 0.1);
+            }
+            
+            .app-header,
+            .app-tabs,
+            .app-footer {
+                background: rgba(248, 249, 255, 0.95);
+            }
+            
+            .card-title,
+            .mode-content h3,
+            .progress-title,
+            .location-type h3,
+            .actions-title,
+            .empty-title,
+            .error-title,
+            .footer-title {
+                color: var(--light);
+            }
+            
+            .mode-content p,
+            .detail-text,
+            .location-type p,
+            .location-hint,
+            .action-sub-2x2,
+            .empty-text,
+            .error-text,
+            .footer-subtitle,
+            .stat {
+                color: rgba(26, 26, 46, 0.8);
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📱 Extractor Inteligente de Coordenadas y Direcciones</h1>
-            <p class="subtitle">Sube una imagen con coordenadas o direcciones y extrae automáticamente la información</p>
-        </div>
-        
-        <div class="upload-section">
-            <input type="file" id="imageInput" accept="image/*" style="display: none;">
-            <button class="upload-btn" onclick="document.getElementById('imageInput').click()">
-                <span class="upload-icon">📁</span>
-                SUBIR IMAGEN
-            </button>
-            <p class="or-text">O</p>
-            <button class="screenshot-btn" onclick="captureScreenshot()">
-                <span class="icon">📸</span>
-                CAPTURAR PANTALLA
-            </button>
-        </div>
-        
-        <div class="instructions">
-            <h3>📋 ¿Cómo funciona?</h3>
-            <ul>
-                <li>Sube una imagen que contenga coordenadas GPS o direcciones</li>
-                <li>El sistema extraerá automáticamente las coordenadas encontradas</li>
-                <li>Si no encuentra coordenadas, buscará direcciones de domicilio</li>
-                <li>Selecciona la coordenada o dirección que desees utilizar</li>
-                <li>Copia o comparte el resultado fácilmente</li>
-            </ul>
-        </div>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Procesando imagen...</p>
-        </div>
-        
-        <div class="result-section" id="resultSection">
-            <h2 class="result-title">
-                <span class="icon">🔍</span>
-                <span id="resultTitle">Resultados Encontrados</span>
-            </h2>
-            
-            <div class="result-content">
-                <div id="coordinatesResult" class="coordinates-found">
-                    <h3>📍 Coordenadas Encontradas:</h3>
-                    <div id="coordinatesList"></div>
-                </div>
-                
-                <div id="addressesResult" class="addresses-found">
-                    <h3>🏠 Direcciones Encontradas:</h3>
-                    <p>Selecciona la dirección correcta:</p>
-                    <div id="addressesList"></div>
-                </div>
-                
-                <div id="noResults" class="no-results">
-                    <p>No se encontraron coordenadas ni direcciones en la imagen.</p>
-                </div>
-                
-                <div id="selectedResult" style="display: none;">
-                    <h3>✅ Resultado Seleccionado:</h3>
-                    <div class="coordinate-text" id="selectedText"></div>
-                    <div class="button-group">
-                        <button class="copy-btn" onclick="copySelected()">
-                            <span class="icon">📋</span>
-                            COPIAR
-                        </button>
-                        <button class="share-btn" onclick="shareSelected()">
-                            <span class="icon">📤</span>
-                            COMPARTIR
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="action-buttons">
-                <button class="clear-btn action-btn" onclick="clearResults()">
-                    <span class="icon">🗑️</span>
-                    LIMPIAR
-                </button>
-                <button class="process-btn action-btn" onclick="processImage()">
-                    <span class="icon">🔄</span>
-                    PROCESAR NUEVAMENTE
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="notification" id="notification"></div>
+    <div id="root"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
-    <script>
-        let selectedCoordinates = [];
-        let selectedAddresses = [];
-        let currentImageData = null;
-        let selectedResult = null;
-        let resultType = null; // 'coordinate' o 'address'
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
 
-        document.getElementById('imageInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                processFile(file);
-            }
-        });
+        function App() {
+            const [preview, setPreview] = useState(null);
+            const [text, setText] = useState('');
+            const [coordinates, setCoordinates] = useState('');
+            const [address, setAddress] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [progress, setProgress] = useState(0);
+            const [copied, setCopied] = useState(false);
+            const [mode, setMode] = useState('upload');
+            const [error, setError] = useState('');
+            const [extractedLocation, setExtractedLocation] = useState('');
+            const [scanAnimation, setScanAnimation] = useState(false);
+            const [appHeight, setAppHeight] = useState(window.innerHeight);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [scanColor, setScanColor] = useState('#FF4D4D');
+            const fileInputRef = useRef(null);
+            const videoRef = useRef(null);
+            const canvasRef = useRef(null);
+            const [activeTab, setActiveTab] = useState('capture');
+            const contentRef = useRef(null);
+            const [hasAutoOpenedFilePicker, setHasAutoOpenedFilePicker] = useState(false);
 
-        function processFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                currentImageData = e.target.result;
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('resultSection').style.display = 'none';
+            // Auto-cambiar a pestaña de resultados cuando termine el escaneo
+            useEffect(() => {
+                if (progress === 100 && !loading && extractedLocation) {
+                    setTimeout(() => {
+                        setActiveTab('results');
+                    }, 500);
+                }
+            }, [progress, loading, extractedLocation]);
+
+            // Actualizar altura de la app para móviles
+            useEffect(() => {
+                const updateHeight = () => {
+                    setAppHeight(window.innerHeight);
+                };
+
+                window.addEventListener('resize', updateHeight);
+                window.addEventListener('orientationchange', updateHeight);
+
+                return () => {
+                    window.removeEventListener('resize', updateHeight);
+                    window.removeEventListener('orientationchange', updateHeight);
+                };
+            }, []);
+
+            // Actualizar color del botón según progreso
+            useEffect(() => {
+                if (progress < 25) {
+                    setScanColor('#FF4D4D'); // Rojo
+                } else if (progress < 50) {
+                    setScanColor('#FFB74D'); // Naranja
+                } else if (progress < 75) {
+                    setScanColor('#FFD700'); // Amarillo
+                } else {
+                    setScanColor('#4CD964'); // Verde
+                }
+            }, [progress]);
+
+            // Inicializar cámara
+            useEffect(() => {
+                if (mode === 'camera') {
+                    startCamera();
+                } else {
+                    stopCamera();
+                }
                 
-                Tesseract.recognize(
-                    e.target.result,
-                    'spa+eng',
-                    {
-                        logger: m => console.log(m)
+                return () => {
+                    stopCamera();
+                };
+            }, [mode]);
+
+            // Ajustar altura del contenido para móviles
+            useEffect(() => {
+                if (contentRef.current) {
+                    const tabHeight = 65;
+                    const headerHeight = 80;
+                    const footerHeight = 55;
+                    const mainHeight = appHeight - tabHeight - headerHeight - footerHeight;
+                    contentRef.current.style.minHeight = `${mainHeight}px`;
+                }
+            }, [appHeight, activeTab]);
+
+            // Auto-abrir explorador de archivos cuando se selecciona modo upload
+            useEffect(() => {
+                if (mode === 'upload' && !hasAutoOpenedFilePicker) {
+                    const timer = setTimeout(() => {
+                        if (fileInputRef.current) {
+                            fileInputRef.current.click();
+                            setHasAutoOpenedFilePicker(true);
+                        }
+                    }, 300);
+                    
+                    return () => clearTimeout(timer);
+                }
+                
+                if (mode !== 'upload') {
+                    setHasAutoOpenedFilePicker(false);
+                }
+            }, [mode, hasAutoOpenedFilePicker]);
+
+            const startCamera = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        } 
+                    });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
                     }
-                ).then(({ data: { text } }) => {
-                    processExtractedText(text);
-                }).finally(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('resultSection').style.display = 'block';
-                });
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    setError('No se pudo acceder a la cámara. Asegúrate de permitir el acceso.');
+                }
             };
-            reader.readAsDataURL(file);
-        }
 
-        function captureScreenshot() {
-            alert("En iOS, puedes tomar una captura de pantalla y luego seleccionarla desde el botón 'SUBIR IMAGEN'.");
-        }
+            const stopCamera = () => {
+                if (videoRef.current && videoRef.current.srcObject) {
+                    const stream = videoRef.current.srcObject;
+                    const tracks = stream.getTracks();
+                    tracks.forEach(track => track.stop());
+                    videoRef.current.srcObject = null;
+                }
+            };
 
-        function processExtractedText(text) {
-            console.log("Texto extraído:", text);
-            
-            // Limpiar resultados anteriores
-            selectedCoordinates = [];
-            selectedAddresses = [];
-            selectedResult = null;
-            resultType = null;
-            
-            // Ocultar todas las secciones
-            document.getElementById('coordinatesResult').style.display = 'none';
-            document.getElementById('addressesResult').style.display = 'none';
-            document.getElementById('noResults').style.display = 'none';
-            document.getElementById('selectedResult').style.display = 'none';
-            
-            // Buscar coordenadas
-            const coordinatePatterns = [
-                /(-?\d{1,3}[\.\,]\d{5,})\s*[\,\;\|\s]\s*(-?\d{1,3}[\.\,]\d{5,})/g,
-                /(-?\d{1,3}\s*°\s*\d{1,2}\s*['′]\s*\d{1,2}(?:[\.\,]\d+)?\s*["″]?\s*[NS]?)\s*[\,\;\|\s]\s*(-?\d{1,3}\s*°\s*\d{1,2}\s*['′]\s*\d{1,2}(?:[\.\,]\d+)?\s*["″]?\s*[EWO]?)/gi,
-                /(lat(?:itud)?\s*[:=\s]*(-?\d{1,3}[\.\,]\d+))[\s\,\;]+(lon(?:gitud)?\s*[:=\s]*(-?\d{1,3}[\.\,]\d+))/gi,
-                /(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)/g
-            ];
+            const captureImage = () => {
+                if (!videoRef.current) return;
+                
+                const canvas = canvasRef.current;
+                const video = videoRef.current;
+                
+                if (!canvas || !video) return;
+                
+                const aspectRatio = video.videoWidth / video.videoHeight;
+                canvas.width = Math.min(video.videoWidth, 800);
+                canvas.height = canvas.width / aspectRatio;
+                
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = canvas.toDataURL('image/jpeg', 0.9);
+                setPreview(imageData);
+                setScanAnimation(true);
+                setIsProcessing(true);
+                processImage(imageData);
+            };
 
-            let coordinatesFound = [];
-            coordinatePatterns.forEach(pattern => {
-                let match;
-                while ((match = pattern.exec(text)) !== null) {
-                    let lat, lon;
-                    if (match[1] && match[2]) {
-                        lat = match[1].replace(/lat(?:itud)?\s*[:=\s]*/gi, '').trim();
-                        lon = match[2].replace(/lon(?:gitud)?\s*[:=\s]*/gi, '').trim();
-                        
-                        // Limpiar coordenadas
-                        lat = lat.replace(/[^\d\.\,\-]/g, '').replace(',', '.');
-                        lon = lon.replace(/[^\d\.\,\-]/g, '').replace(',', '.');
-                        
-                        if (lat && lon) {
-                            const coord = `${lat}, ${lon}`;
-                            if (!coordinatesFound.includes(coord)) {
-                                coordinatesFound.push(coord);
+            const triggerFileInput = () => {
+                if (fileInputRef.current) {
+                    fileInputRef.current.click();
+                }
+            };
+
+            const handleImageUpload = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                // Validar tipo de archivo
+                if (!file.type.match('image.*')) {
+                    setError('Por favor, selecciona un archivo de imagen válido');
+                    return;
+                }
+                
+                // Validar tamaño (5MB máximo)
+                if (file.size > 5 * 1024 * 1024) {
+                    setError('La imagen es demasiado grande. Máximo 5MB');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageData = e.target.result;
+                    setPreview(imageData);
+                    setScanAnimation(true);
+                    setIsProcessing(true);
+                    processImage(imageData);
+                };
+                reader.readAsDataURL(file);
+            };
+
+            const processImage = (imageData) => {
+                setLoading(true);
+                setProgress(0);
+                setError('');
+                setText('');
+                setCoordinates('');
+                setAddress('');
+                setExtractedLocation('');
+
+                Tesseract.recognize(
+                    imageData,
+                    'eng+spa',
+                    {
+                        logger: (m) => {
+                            if (m.status === 'recognizing text') {
+                                const newProgress = Math.round(m.progress * 100);
+                                setProgress(newProgress);
                             }
                         }
                     }
-                }
-            });
-
-            if (coordinatesFound.length > 0) {
-                selectedCoordinates = coordinatesFound;
-                displayCoordinates(coordinatesFound);
-                return;
-            }
-
-            // Si no hay coordenadas, buscar direcciones
-            findAddresses(text);
-        }
-
-        function findAddresses(text) {
-            // Patrones comunes de direcciones
-            const addressPatterns = [
-                /(calle|av|avenida|blvd|boulevard|carretera|cta)\s+[^,\.\n]+\s+(no|n°|número|#)\s*\d+[^,\.\n]*/gi,
-                /[^,\.\n]+\s+\d+\s*[-\/]?\s*\d*\s*[^,\.\n]*/gi,
-                /(entre|y|esquina|colonia|col)\s+[^,\.\n]+/gi,
-                /(cp|c\.p\.|código postal)\s*\d{5}/gi
-            ];
-
-            // Dividir texto en líneas y buscar posibles direcciones
-            const lines = text.split('\n');
-            let potentialAddresses = [];
-            
-            lines.forEach(line => {
-                line = line.trim();
-                if (line.length > 10 && line.length < 200) {
-                    // Verificar si parece una dirección
-                    const hasNumber = /\d/.test(line);
-                    const hasStreetWords = /(calle|av|avenida|blvd|carretera|numero|n°|#|colonia|col|cp)/i.test(line);
-                    const hasCommonAddressChars = /[,\-\/]/.test(line);
-                    
-                    if (hasNumber && (hasStreetWords || hasCommonAddressChars)) {
-                        // Limpiar la línea
-                        let cleanLine = line
-                            .replace(/\s+/g, ' ')
-                            .replace(/[\[\]\(\)\{\}]/g, '')
-                            .trim();
-                        
-                        if (cleanLine.length > 15 && !potentialAddresses.includes(cleanLine)) {
-                            potentialAddresses.push(cleanLine);
-                        }
-                    }
-                }
-            });
-
-            // También buscar con patrones específicos
-            addressPatterns.forEach(pattern => {
-                let match;
-                while ((match = pattern.exec(text)) !== null) {
-                    if (match[0]) {
-                        const address = match[0].trim();
-                        if (address.length > 15 && !potentialAddresses.includes(address)) {
-                            potentialAddresses.push(address);
-                        }
-                    }
-                }
-            });
-
-            if (potentialAddresses.length > 0) {
-                selectedAddresses = potentialAddresses;
-                displayAddresses(potentialAddresses);
-            } else {
-                document.getElementById('noResults').style.display = 'block';
-                document.getElementById('resultTitle').textContent = 'No se encontraron resultados';
-            }
-        }
-
-        function displayCoordinates(coordinates) {
-            const container = document.getElementById('coordinatesList');
-            container.innerHTML = '';
-            
-            coordinates.forEach((coord, index) => {
-                const coordDiv = document.createElement('div');
-                coordDiv.className = 'coordinate-item';
-                coordDiv.innerHTML = `
-                    <p><strong>Coordenada ${index + 1}:</strong></p>
-                    <div class="coordinate-text">${coord}</div>
-                    <button class="select-btn" onclick="selectCoordinate(${index})">
-                        <span class="icon">✅</span>
-                        SELECCIONAR ESTA COORDENADA
-                    </button>
-                `;
-                container.appendChild(coordDiv);
-            });
-            
-            document.getElementById('coordinatesResult').style.display = 'block';
-            document.getElementById('resultTitle').textContent = 'Coordenadas Encontradas';
-        }
-
-        function displayAddresses(addresses) {
-            const container = document.getElementById('addressesList');
-            container.innerHTML = '';
-            
-            addresses.forEach((address, index) => {
-                const addressDiv = document.createElement('div');
-                addressDiv.className = 'address-item';
-                addressDiv.innerHTML = `
-                    <p><strong>Dirección ${index + 1}:</strong></p>
-                    <div class="coordinate-text">${address}</div>
-                    <button class="select-btn" onclick="selectAddress(${index})">
-                        <span class="icon">✅</span>
-                        SELECCIONAR ESTA DIRECCIÓN
-                    </button>
-                `;
-                container.appendChild(addressDiv);
-            });
-            
-            document.getElementById('addressesResult').style.display = 'block';
-            document.getElementById('resultTitle').textContent = 'Direcciones Encontradas';
-        }
-
-        function selectCoordinate(index) {
-            selectedResult = selectedCoordinates[index];
-            resultType = 'coordinate';
-            showSelectedResult();
-        }
-
-        function selectAddress(index) {
-            selectedResult = selectedAddresses[index];
-            resultType = 'address';
-            showSelectedResult();
-        }
-
-        function showSelectedResult() {
-            // Ocultar listas
-            document.getElementById('coordinatesResult').style.display = 'none';
-            document.getElementById('addressesResult').style.display = 'none';
-            document.getElementById('noResults').style.display = 'none';
-            
-            // Mostrar resultado seleccionado
-            document.getElementById('selectedText').textContent = selectedResult;
-            document.getElementById('selectedResult').style.display = 'block';
-            
-            // Actualizar título
-            const typeText = resultType === 'coordinate' ? 'Coordenada Seleccionada' : 'Dirección Seleccionada';
-            document.getElementById('resultTitle').textContent = typeText;
-            
-            showNotification('✅ ' + (resultType === 'coordinate' ? 'Coordenada seleccionada' : 'Dirección seleccionada'));
-        }
-
-        function copySelected() {
-            if (selectedResult) {
-                navigator.clipboard.writeText(selectedResult).then(() => {
-                    showNotification('📋 ¡Texto copiado al portapapeles!');
-                }).catch(err => {
-                    // Fallback para navegadores más antiguos
-                    const textArea = document.createElement('textarea');
-                    textArea.value = selectedResult;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    showNotification('📋 ¡Texto copiado al portapapeles!');
-                });
-            }
-        }
-
-        function shareSelected() {
-            if (selectedResult) {
-                const typeText = resultType === 'coordinate' ? 'Coordenada' : 'Dirección';
-                const shareText = `${typeText}: ${selectedResult}\n\nExtraído con Extractor de Coordenadas y Direcciones`;
-                
-                if (navigator.share) {
-                    navigator.share({
-                        title: `${typeText} Compartida`,
-                        text: shareText,
-                        url: window.location.href
-                    }).catch(err => {
-                        console.log('Error al compartir:', err);
-                        copyAndShareFallback(shareText);
-                    });
-                } else {
-                    copyAndShareFallback(shareText);
-                }
-            }
-        }
-
-        function copyAndShareFallback(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showNotification('📋 ¡Texto copiado! Ahora puedes pegarlo en cualquier app para compartir.');
-            }).catch(err => {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showNotification('📋 ¡Texto copiado! Ahora puedes pegarlo en cualquier app para compartir.');
-            });
-        }
-
-        function processImage() {
-            if (currentImageData) {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('resultSection').style.display = 'none';
-                
-                Tesseract.recognize(
-                    currentImageData,
-                    'spa+eng',
-                    {
-                        logger: m => console.log(m)
-                    }
                 ).then(({ data: { text } }) => {
-                    processExtractedText(text);
-                }).finally(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('resultSection').style.display = 'block';
+                    setText(text);
+                    extractLocationInfo(text);
+                    setLoading(false);
+                    setScanAnimation(false);
+                    setIsProcessing(false);
+                    
+                }).catch((err) => {
+                    console.error('OCR Error:', err);
+                    setError('Error procesando la imagen. Intenta con otra imagen.');
+                    setLoading(false);
+                    setScanAnimation(false);
+                    setIsProcessing(false);
                 });
-            } else {
-                showNotification('⚠️ Primero sube una imagen');
-            }
-        }
+            };
 
-        function clearResults() {
-            document.getElementById('resultSection').style.display = 'none';
-            document.getElementById('imageInput').value = '';
-            currentImageData = null;
-            selectedCoordinates = [];
-            selectedAddresses = [];
-            selectedResult = null;
-            resultType = null;
-            showNotification('🗑️ Resultados limpiados');
-        }
-
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
-        }
-
-        // Soporte para arrastrar y soltar
-        document.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            document.querySelector('.upload-section').style.borderColor = '#667eea';
-            document.querySelector('.upload-section').style.background = '#f0f4ff';
-        });
-
-        document.addEventListener('dragleave', (e) => {
-            if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) {
-                document.querySelector('.upload-section').style.borderColor = '#cbd5e0';
-                document.querySelector('.upload-section').style.background = '#f8f9fa';
-            }
-        });
-
-        document.addEventListener('drop', (e) => {
-            e.preventDefault();
-            document.querySelector('.upload-section').style.borderColor = '#cbd5e0';
-            document.querySelector('.upload-section').style.background = '#f8f9fa';
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.type.startsWith('image/')) {
-                    processFile(file);
-                } else {
-                    showNotification('⚠️ Por favor, sube solo imágenes');
+            const extractLocationInfo = (text) => {
+                // Buscar coordenadas GPS
+                const coordinateRegex = /[-+]?\d{1,3}\.\d+,\s*[-+]?\d{1,3}\.\d+/g;
+                const coordinatesMatch = text.match(coordinateRegex);
+                
+                if (coordinatesMatch) {
+                    const coords = coordinatesMatch[0];
+                    setCoordinates(coords);
+                    setExtractedLocation(coords);
+                    return;
                 }
-            }
-        });
+                
+                // Buscar dirección
+                const addressRegex = /([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\s)+(\d+)(\s*[A-Za-z0-9#\-\.]+)?/g;
+                const addressMatch = text.match(addressRegex);
+                
+                if (addressMatch) {
+                    const addr = addressMatch[0];
+                    setAddress(addr);
+                    setExtractedLocation(addr);
+                    return;
+                }
+                
+                // Si no encuentra ubicación específica, mostrar primeras líneas del texto
+                const lines = text.split('\n').filter(line => line.trim().length > 5);
+                if (lines.length > 0) {
+                    setExtractedLocation(lines[0].substring(0, 100) + (lines[0].length > 100 ? '...' : ''));
+                } else {
+                    setExtractedLocation('Ubicación no encontrada en el texto');
+                }
+            };
+
+            const copyToClipboard = (textToCopy) => {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                    })
+                    .catch(err => {
+                        console.error('Error copying:', err);
+                        setError('Error al copiar al portapapeles');
+                    });
+            };
+
+            const openInGoogleMaps = () => {
+                if (!coordinates && !address) return;
+                const query = coordinates || encodeURIComponent(address);
+                window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+            };
+
+            const openInAppleMaps = () => {
+                if (!coordinates && !address) return;
+                const query = coordinates || encodeURIComponent(address);
+                window.open(`https://maps.apple.com/?q=${query}`, '_blank');
+            };
+
+            const openInSygic = () => {
+                if (!coordinates && !address) return;
+                const query = coordinates || encodeURIComponent(address);
+                window.open(`https://www.sygic.com/plan?q=${query}`, '_blank');
+            };
+
+            const resetAll = () => {
+                setPreview(null);
+                setText('');
+                setCoordinates('');
+                setAddress('');
+                setLoading(false);
+                setProgress(0);
+                setCopied(false);
+                setError('');
+                setExtractedLocation('');
+                setScanAnimation(false);
+                setIsProcessing(false);
+                setActiveTab('capture');
+                setHasAutoOpenedFilePicker(false);
+                stopCamera();
+                
+                // Resetear input de archivo
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            };
+
+            return (
+                <div className="app-container" style={{ height: `${appHeight}px` }}>
+                    {/* Header Premium */}
+                    <header className="app-header">
+                        <div className="header-glow"></div>
+                        <div className="header-content">
+                            <h1 className="app-title">
+                                <span className="app-icon">🌍</span>
+                                <div className="title-text">
+                                    <div className="main-title">UBERTRON PRO</div>
+                                    <div className="sub-title">VISION v5.0</div>
+                                </div>
+                            </h1>
+                            <p className="app-subtitle">INTELIGENCIA ARTIFICIAL PARA UBICACIONES</p>
+                        </div>
+                        <div className="header-pulse">
+                            <div className="pulse-dot"></div>
+                            <div className="pulse-ring"></div>
+                        </div>
+                    </header>
+
+                    {/* Tabs de navegación optimizados para móviles */}
+                    <nav className="app-tabs">
+                        <button 
+                            className={`tab-btn ${activeTab === 'capture' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('capture')}
+                        >
+                            <div className="tab-icon-container">
+                                <span className="tab-icon">📸</span>
+                                <div className="tab-glow"></div>
+                            </div>
+                            <span className="tab-label">CAPTURAR</span>
+                            <div className="tab-indicator"></div>
+                        </button>
+                        
+                        <button 
+                            className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('results')}
+                            disabled={!extractedLocation && !loading}
+                        >
+                            <div className="tab-icon-container">
+                                <span className="tab-icon">📍</span>
+                                <div className="tab-glow"></div>
+                            </div>
+                            <span className="tab-label">RESULTADOS</span>
+                            <div className="tab-indicator"></div>
+                        </button>
+                        
+                        <button 
+                            className={`tab-btn ${activeTab === 'text' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('text')}
+                            disabled={!text}
+                        >
+                            <div className="tab-icon-container">
+                                <span className="tab-icon">🔤</span>
+                                <div className="tab-glow"></div>
+                            </div>
+                            <span className="tab-label">TEXTO</span>
+                            <div className="tab-indicator"></div>
+                        </button>
+                    </nav>
+
+                    {/* Contenido principal optimizado para móviles */}
+                    <main className="app-main" ref={contentRef}>
+                        {/* Pestaña de Captura - SOLO VISTA PREVIA */}
+                        {activeTab === 'capture' && (
+                            <div className="tab-content">
+                                {/* Input de archivo oculto que se abre automáticamente */}
+                                <input 
+                                    ref={fileInputRef}
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="file-input-hidden"
+                                />
+                                
+                                {/* Card de selección de modo */}
+                                {!preview && (
+                                    <div className="glass-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">⚙️</div>
+                                            <h2 className="card-title">SELECCIONA TU MODO</h2>
+                                        </div>
+                                        
+                                        <div className="mode-grid">
+                                            <button 
+                                                className={`mode-option ${mode === 'upload' ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setMode('upload');
+                                                    setHasAutoOpenedFilePicker(false);
+                                                    // Auto-abrir explorador después de cambiar modo
+                                                    setTimeout(() => {
+                                                        if (fileInputRef.current) {
+                                                            fileInputRef.current.click();
+                                                            setHasAutoOpenedFilePicker(true);
+                                                        }
+                                                    }, 100);
+                                                }}
+                                            >
+                                                <div className="mode-glow"></div>
+                                                <div className="mode-icon">📁</div>
+                                                <div className="mode-content">
+                                                    <h3>SUBIR ARCHIVO</h3>
+                                                    <p>Selecciona desde tu galería</p>
+                                                    <div className="mode-badge">RECOMENDADO</div>
+                                                </div>
+                                            </button>
+                                            
+                                            <button 
+                                                className={`mode-option ${mode === 'camera' ? 'active' : ''}`}
+                                                onClick={() => setMode('camera')}
+                                            >
+                                                <div className="mode-glow"></div>
+                                                <div className="mode-icon">📷</div>
+                                                <div className="mode-content">
+                                                    <h3>CAPTURA EN VIVO</h3>
+                                                    <p>Usa tu cámara en tiempo real</p>
+                                                    <div className="mode-badge">INSTANTÁNEO</div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Vista de cámara */}
+                                {mode === 'camera' && !preview && (
+                                    <div className="glass-card camera-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">🎥</div>
+                                            <h2 className="card-title">CÁMARA ACTIVA</h2>
+                                        </div>
+                                        
+                                        <div className="camera-preview">
+                                            <div className="camera-frame">
+                                                <video 
+                                                    ref={videoRef} 
+                                                    autoPlay 
+                                                    playsInline
+                                                    muted
+                                                    className="camera-view"
+                                                />
+                                                <canvas ref={canvasRef} style={{ display: 'none' }} />
+                                                <div className="camera-overlay">
+                                                    <div className="scan-grid"></div>
+                                                    <div className="focus-ring"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <button 
+                                                className="action-btn capture-btn"
+                                                onClick={captureImage}
+                                                disabled={isProcessing}
+                                                style={isProcessing ? {
+                                                    background: `linear-gradient(135deg, ${scanColor} 0%, ${scanColor}80 100%)`,
+                                                    boxShadow: `0 0 20px ${scanColor}40`
+                                                } : {}}
+                                            >
+                                                <div className="btn-glow"></div>
+                                                <span className="btn-icon">
+                                                    {isProcessing ? '🔍' : '📸'}
+                                                </span>
+                                                <span className="btn-text">
+                                                    {isProcessing ? `ESCANEANDO ${progress}%` : 'CAPTURAR IMAGEN'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Vista previa con escaneo - ÚNICO ELEMENTO QUE SE MUESTRA DESPUÉS DE SELECCIONAR IMAGEN */}
+                                {preview && (
+                                    <div className="glass-card preview-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">👁️</div>
+                                            <h2 className="card-title">VISTA PREVIA</h2>
+                                        </div>
+                                        
+                                        <div className="preview-container">
+                                            <div className="image-frame">
+                                                <img src={preview} alt="Preview" className="preview-image" />
+                                                
+                                                {/* Efecto de escaneo mejorado */}
+                                                {scanAnimation && (
+                                                    <div className="scan-animation">
+                                                        {/* Línea de escaneo que se mueve */}
+                                                        <div 
+                                                            className="scan-line" 
+                                                            style={{ 
+                                                                top: `${progress}%`,
+                                                                backgroundColor: scanColor,
+                                                                boxShadow: `0 0 20px ${scanColor}`
+                                                            }}
+                                                        ></div>
+                                                        
+                                                        {/* Puntos de escaneo */}
+                                                        <div className="scan-dots">
+                                                            <div 
+                                                                className="scan-dot" 
+                                                                style={{ 
+                                                                    animationDelay: '0s',
+                                                                    backgroundColor: scanColor,
+                                                                    left: '20%',
+                                                                    top: `${progress}%`
+                                                                }}
+                                                            ></div>
+                                                            <div 
+                                                                className="scan-dot" 
+                                                                style={{ 
+                                                                    animationDelay: '0.5s',
+                                                                    backgroundColor: scanColor,
+                                                                    left: '50%',
+                                                                    top: `${progress}%`
+                                                                }}
+                                                            ></div>
+                                                            <div 
+                                                                className="scan-dot" 
+                                                                style={{ 
+                                                                    animationDelay: '1s',
+                                                                    backgroundColor: scanColor,
+                                                                    left: '80%',
+                                                                    top: `${progress}%`
+                                                                }}
+                                                            ></div>
+                                                        </div>
+                                                        
+                                                        {/* Barra de progreso sobre la imagen */}
+                                                        <div className="progress-overlay">
+                                                            <div className="progress-header">
+                                                                <span className="progress-title">ESCANEANDO IMAGEN</span>
+                                                                <span className="progress-value" style={{ color: scanColor }}>
+                                                                    {progress}%
+                                                                </span>
+                                                            </div>
+                                                            
+                                                            <div className="progress-bar-container">
+                                                                <div className="progress-track">
+                                                                    <div 
+                                                                        className="progress-indicator" 
+                                                                        style={{ 
+                                                                            width: `${progress}%`,
+                                                                            background: scanColor
+                                                                        }}
+                                                                    ></div>
+                                                                    {/* Marcadores de color */}
+                                                                    <div className="color-markers">
+                                                                        <div className="color-marker red" style={{ left: '0%' }}></div>
+                                                                        <div className="color-marker orange" style={{ left: '25%' }}></div>
+                                                                        <div className="color-marker yellow" style={{ left: '50%' }}></div>
+                                                                        <div className="color-marker green" style={{ left: '75%' }}></div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div className="progress-labels">
+                                                                    <span className="progress-label" style={{ color: progress >= 0 ? scanColor : '#777' }}>ROJO</span>
+                                                                    <span className="progress-label" style={{ color: progress >= 25 ? scanColor : '#777' }}>NARANJA</span>
+                                                                    <span className="progress-label" style={{ color: progress >= 50 ? scanColor : '#777' }}>AMARILLO</span>
+                                                                    <span className="progress-label" style={{ color: progress >= 75 ? scanColor : '#777' }}>VERDE</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            {/* Botón que cambia de color según progreso */}
+                                            <button 
+                                                className="action-btn secondary"
+                                                onClick={isProcessing ? undefined : resetAll}
+                                                style={isProcessing ? {
+                                                    background: `linear-gradient(135deg, ${scanColor} 0%, ${scanColor}80 100%)`,
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    boxShadow: `0 0 20px ${scanColor}40`
+                                                } : {}}
+                                            >
+                                                <span className="btn-icon">
+                                                    {isProcessing ? '🔍' : '🔄'}
+                                                </span>
+                                                <span className="btn-text">
+                                                    {isProcessing ? `ESCANEANDO ${progress}%` : 'CAMBIAR IMAGEN'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Estado de procesamiento */}
+                                {loading && (
+                                    <div className="glass-card processing-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">⚡</div>
+                                            <h2 className="card-title">PROCESANDO CON IA</h2>
+                                        </div>
+                                        
+                                        <div className="processing-content">
+                                            <div className="ai-loader">
+                                                <div className="loader-ring" style={{ borderTopColor: scanColor }}></div>
+                                                <div className="loader-core" style={{ background: `linear-gradient(135deg, ${scanColor} 0%, ${scanColor}80 100%)` }}></div>
+                                                <div className="loader-particle" style={{ backgroundColor: scanColor }}></div>
+                                            </div>
+                                            
+                                            <div className="processing-info">
+                                                <h3 className="processing-title">ANALIZANDO TU IMAGEN</h3>
+                                                
+                                                <div className="ai-progress">
+                                                    <div className="ai-progress-bar">
+                                                        <div 
+                                                            className="ai-progress-fill" 
+                                                            style={{ 
+                                                                width: `${progress}%`,
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                    
+                                                    <div className="progress-labels">
+                                                        <span style={{ color: progress >= 0 ? scanColor : '#999' }}>0%</span>
+                                                        <span style={{ color: progress >= 25 ? scanColor : '#999' }}>25%</span>
+                                                        <span style={{ color: progress >= 50 ? scanColor : '#999' }}>50%</span>
+                                                        <span style={{ color: progress >= 75 ? scanColor : '#999' }}>75%</span>
+                                                        <span style={{ color: progress >= 100 ? scanColor : '#999' }}>100%</span>
+                                                    </div>
+                                                    
+                                                    <div className="progress-text" style={{ color: scanColor }}>
+                                                        {progress}% COMPLETADO
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="processing-details">
+                                                    <div className="detail">
+                                                        <span className="detail-icon">🔍</span>
+                                                        <span className="detail-text">Extrayendo texto con OCR avanzado</span>
+                                                    </div>
+                                                    <div className="detail">
+                                                        <span className="detail-icon">🧠</span>
+                                                        <span className="detail-text">Analizando patrones de ubicación</span>
+                                                    </div>
+                                                    <div className="detail">
+                                                        <span className="detail-icon">⚡</span>
+                                                        <span className="detail-text">Optimizando resultados con IA</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Pestaña de Resultados con GRID 2x2 FIJO */}
+                        {activeTab === 'results' && (
+                            <div className="tab-content">
+                                {extractedLocation ? (
+                                    <div className="glass-card result-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">🎯</div>
+                                            <h2 className="card-title">RESULTADOS ENCONTRADOS</h2>
+                                        </div>
+                                        
+                                        <div className="result-content">
+                                            <div className="location-header">
+                                                <div className="location-icon">
+                                                    {coordinates ? '📍' : '🏠'}
+                                                    <div className="icon-glow"></div>
+                                                </div>
+                                                <div className="location-type">
+                                                    <h3>{coordinates ? 'COORDENADAS GPS' : 'DIRECCIÓN'}</h3>
+                                                    <p>{coordinates ? 'Precisión máxima' : 'Extraída del texto'}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="location-display">
+                                                <div className="location-text">
+                                                    {coordinates || address || extractedLocation}
+                                                </div>
+                                                
+                                                <button 
+                                                    className={`copy-btn ${copied ? 'copied' : ''}`}
+                                                    onClick={() => copyToClipboard(coordinates || address || extractedLocation)}
+                                                >
+                                                    <div className="copy-glow"></div>
+                                                    <span className="copy-icon">{copied ? '✓' : '📋'}</span>
+                                                    <span className="copy-text">{copied ? 'COPIADO' : 'COPIAR'}</span>
+                                                </button>
+                                            </div>
+                                            
+                                            <p className="location-hint">
+                                                {copied ? '✅ ¡Texto copiado al portapapeles!' : '👆 Toca para copiar al portapapeles'}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="actions-section">
+                                            <h3 className="actions-title">ACCIONES DISPONIBLES</h3>
+                                            
+                                            {/* GRID 2x2 FIJO para móviles */}
+                                            <div className="actions-grid-2x2">
+                                                <button className="action-card-2x2 sygic" onClick={openInSygic}>
+                                                    <div className="action-glow-2x2"></div>
+                                                    <div className="action-icon-2x2">🗺️</div>
+                                                    <div className="action-label-2x2">SYGIC</div>
+                                                    <div className="action-sub-2x2">Abrir mapa</div>
+                                                </button>
+                                                
+                                                <button className="action-card-2x2 google" onClick={openInGoogleMaps}>
+                                                    <div className="action-glow-2x2"></div>
+                                                    <div className="action-icon-2x2">🌐</div>
+                                                    <div className="action-label-2x2">GOOGLE</div>
+                                                    <div className="action-sub-2x2">Maps</div>
+                                                </button>
+                                                
+                                                <button className="action-card-2x2 apple" onClick={openInAppleMaps}>
+                                                    <div className="action-glow-2x2"></div>
+                                                    <div className="action-icon-2x2">🍎</div>
+                                                    <div className="action-label-2x2">APPLE</div>
+                                                    <div className="action-sub-2x2">Maps</div>
+                                                </button>
+                                                
+                                                <button className="action-card-2x2 reset" onClick={resetAll}>
+                                                    <div className="action-glow-2x2"></div>
+                                                    <div className="action-icon-2x2">🔄</div>
+                                                    <div className="action-label-2x2">NUEVO</div>
+                                                    <div className="action-sub-2x2">Escanear</div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="glass-card empty-card">
+                                        <div className="empty-content">
+                                            <div className="empty-icon">📷</div>
+                                            <h2 className="empty-title">SIN RESULTADOS</h2>
+                                            <p className="empty-text">
+                                                {loading 
+                                                    ? 'Analizando imagen con IA...' 
+                                                    : 'Sube o captura una imagen para comenzar'}
+                                            </p>
+                                            <button 
+                                                className="action-btn"
+                                                onClick={() => setActiveTab('capture')}
+                                            >
+                                                <span className="btn-icon">📸</span>
+                                                <span className="btn-text">CAPTURAR IMAGEN</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Mensaje de error */}
+                                {error && (
+                                    <div className="glass-card error-card">
+                                        <div className="error-content">
+                                            <div className="error-icon">⚠️</div>
+                                            <h2 className="error-title">ERROR</h2>
+                                            <p className="error-text">{error}</p>
+                                            <button className="action-btn secondary" onClick={resetAll}>
+                                                <span className="btn-icon">🔄</span>
+                                                <span className="btn-text">INTENTAR NUEVAMENTE</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Pestaña de Texto */}
+                        {activeTab === 'text' && (
+                            <div className="tab-content">
+                                {text ? (
+                                    <div className="glass-card text-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">📄</div>
+                                            <h2 className="card-title">TEXTO EXTRAÍDO</h2>
+                                        </div>
+                                        
+                                        <div className="text-content">
+                                            <div className="text-display">
+                                                {text}
+                                            </div>
+                                            
+                                            <button 
+                                                className="action-btn"
+                                                onClick={() => copyToClipboard(text)}
+                                            >
+                                                <span className="btn-icon">📋</span>
+                                                <span className="btn-text">COPIAR TEXTO COMPLETO</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="glass-card empty-card">
+                                        <div className="empty-content">
+                                            <div className="empty-icon">🔤</div>
+                                            <h2 className="empty-title">NO HAY TEXTO</h2>
+                                            <p className="empty-text">
+                                                Procesa una imagen para extraer texto mediante OCR
+                                            </p>
+                                            <button 
+                                                className="action-btn"
+                                                onClick={() => setActiveTab('capture')}
+                                            >
+                                                <span className="btn-icon">📸</span>
+                                                <span className="btn-text">IR A CAPTURAR</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Footer optimizado para móviles */}
+                    <footer className="app-footer">
+                        <div className="footer-glow"></div>
+                        <div className="footer-content">
+                            <p className="footer-title">UBERTRON PRO VISION v5.0</p>
+                            <p className="footer-subtitle">Tecnología OCR • IA Avanzada • Geolocalización</p>
+                            <div className="footer-stats">
+                                <span className="stat">⚡ ALTO RENDIMIENTO</span>
+                                <span className="stat">🔒 SEGURO</span>
+                                <span className="stat">🌍 MULTI-IDIOMA</span>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        // Renderizar la aplicación
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
