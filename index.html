@@ -7,26 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Ubertron PRO Vision v5.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/react@18/umd/react.development.js">
-function shareResult() {
-    const text = window.__lastCopiedText || '';
-    if (!text) {
-        alert('No hay coordenadas o direcciones para compartir');
-        return;
-    }
-    if (navigator.share) {
-        navigator.share({
-            title: 'Ubicación detectada',
-            text: text
-        }).catch(() => {});
-    } else {
-        window.__lastCopiedText = text;
-    navigator.clipboard.writeText(text);
-        alert('Texto copiado al portapapeles');
-    }
-}
-
-</script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/tesseract.js@v3.0.3/dist/tesseract.min.js"></script>
@@ -1681,8 +1662,7 @@ function shareResult() {
             };
 
             const copyToClipboard = (textToCopy) => {
-                window.__lastCopiedText = text;
-    navigator.clipboard.writeText(textToCopy)
+                navigator.clipboard.writeText(textToCopy)
                     .then(() => {
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
@@ -1766,7 +1746,7 @@ function shareResult() {
                             </div>
                             <span className="tab-label">CAPTURAR</span>
                             <div className="tab-indicator"></div>
-                        </button><button id="shareBtn" style="padding:6px 10px;" onclick="shareResult()">Compartir</button>
+                        </button>
                         
                         <button 
                             className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`}
