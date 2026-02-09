@@ -3,1478 +3,2244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ubertron Pro-Vision v4.1</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Ubertron PRO Vision v5.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/tesseract.js@v3.0.3/dist/tesseract.min.js"></script>
     <style>
-        :root {
-            --neon-green: #39FF14;
-            --neon-blue: #00d4ff;
-            --neon-red: #ff3131;
-            --neon-purple: #b967ff;
-            --iphone-black: #1d1d1f;
-            --iphone-border: #38383a;
-            --iphone-screen: #000;
-            --bg-dark: #020617;
-            --success: #00ff88;
-            --warning: #ffaa00;
-            --error: #ff3131;
-            --apple-blue: #007AFF;
-            --google-red: #EA4335;
-            --sygic-blue: #0073e6;
-        }
-
+        /* Reset y configuración premium para móviles */
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        :root {
+            --primary: #6C63FF;
+            --primary-dark: #4A42D4;
+            --primary-light: #8B85FF;
+            --secondary: #FF6584;
+            --accent: #36D1DC;
+            --success: #4CD964;
+            --warning: #FFD700;
+            --danger: #FF4D4D;
+            --dark: #1A1A2E;
+            --darker: #0F0F1E;
+            --light: #F8F9FF;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-dark: rgba(0, 0, 0, 0.2);
+            --shadow: 0 20px 60px rgba(108, 99, 255, 0.3);
+            --glow: 0 0 40px rgba(108, 99, 255, 0.5);
+        }
+
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: local('SF Pro Display'), local('Helvetica Neue');
+            font-weight: 300 900;
         }
 
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Rajdhani', sans-serif;
-            color: #fff;
-            overflow-x: hidden;
-            padding: 20px;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            overflow: hidden;
+            height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none;
         }
 
-        .background-grid {
+        /* Contenedor principal optimizado para cualquier dispositivo */
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            max-height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            z-index: -2;
-            animation: gridMove 20s linear infinite;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(108, 99, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 101, 132, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(54, 209, 220, 0.1) 0%, transparent 50%);
+            backdrop-filter: blur(20px);
         }
 
-        @keyframes gridMove { 
-            0% { transform: translateY(0) translateX(0); } 
-            100% { transform: translateY(40px) translateX(20px); } 
-        }
-
-        /* iPhone REALISTA */
-        .iphone-frame {
-            width: 100%;
-            max-width: 380px;
-            height: 780px;
-            background: var(--iphone-black);
-            border-radius: 50px;
-            padding: 14px;
-            position: relative;
-            box-shadow: 
-                0 0 0 1px var(--iphone-border),
-                0 20px 40px rgba(0, 0, 0, 0.8),
-                0 0 60px rgba(57, 255, 20, 0.1),
-                inset 0 0 20px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        /* BOTONES FÍSICOS DEL IPHONE */
-        .iphone-buttons {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        .volume-up {
-            position: absolute;
-            left: -4px;
-            top: 100px;
-            width: 3px;
-            height: 40px;
-            background: var(--iphone-border);
-            border-radius: 2px;
-        }
-
-        .volume-down {
-            position: absolute;
-            left: -4px;
-            top: 160px;
-            width: 3px;
-            height: 40px;
-            background: var(--iphone-border);
-            border-radius: 2px;
-        }
-
-        .power-button {
-            position: absolute;
-            right: -4px;
-            top: 120px;
-            width: 3px;
-            height: 70px;
-            background: var(--iphone-border);
-            border-radius: 2px;
-        }
-
-        .mute-switch {
-            position: absolute;
-            left: -4px;
-            top: 220px;
-            width: 3px;
-            height: 25px;
-            background: var(--iphone-border);
-            border-radius: 2px;
-        }
-
-        /* PANTALLA DEL IPHONE */
-        .screen {
-            flex: 1;
-            background: var(--iphone-screen);
-            border-radius: 38px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            position: relative;
-            border: 2px solid rgba(0, 0, 0, 0.9);
-            scrollbar-width: none;
-            display: flex;
-            flex-direction: column;
-            z-index: 2;
-        }
-
-        .screen::-webkit-scrollbar { 
-            display: none; 
-        }
-
-        /* NOTCH REALISTA */
-        .notch {
-            width: 210px;
-            height: 32px;
-            background: #000;
+        /* Header adaptable a cualquier dispositivo */
+        .app-header {
+            height: auto;
+            min-height: 70px;
+            padding: 15px 20px;
+            padding-top: max(15px, env(safe-area-inset-top, 15px));
             position: sticky;
             top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            border-bottom-left-radius: 22px;
-            border-bottom-right-radius: 22px;
-            z-index: 100;
+            z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 25px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .notch-speaker {
-            width: 80px;
-            height: 6px;
-            background: #111;
-            border-radius: 3px;
-            position: relative;
-        }
-
-        .notch-speaker::before {
-            content: "";
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background: #222;
-            border-radius: 50%;
-            right: -25px;
-            top: -3px;
-        }
-
-        .notch-camera {
-            width: 12px;
-            height: 12px;
-            background: #222;
-            border-radius: 50%;
-            position: relative;
-        }
-
-        .notch-camera::before {
-            content: "";
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background: #111;
-            border-radius: 50%;
-            top: 3px;
-            left: 3px;
-        }
-
-        /* STATUS BAR REALISTA */
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 25px 8px;
-            font-size: 13px;
-            font-weight: bold;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(26, 26, 46, 0.95);
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(108, 99, 255, 0.3);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
         }
 
-        .status-icons {
+        .header-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--secondary));
+            animation: glowMove 3s infinite;
+        }
+
+        @keyframes glowMove {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .header-content {
             display: flex;
-            gap: 8px;
             align-items: center;
-        }
-
-        .signal-bars {
-            display: flex;
-            align-items: flex-end;
-            gap: 1px;
-            height: 10px;
-        }
-
-        .signal-bar {
-            width: 3px;
-            background: #fff;
-            border-radius: 1px;
-        }
-
-        .signal-bar:nth-child(1) { height: 4px; }
-        .signal-bar:nth-child(2) { height: 6px; }
-        .signal-bar:nth-child(3) { height: 8px; }
-        .signal-bar:nth-child(4) { height: 10px; }
-
-        /* CONTENIDO DE LA APP */
-        .app-body {
-            padding: 20px;
-            text-align: center;
+            gap: 12px;
             flex: 1;
+            flex-wrap: wrap;
+        }
+
+        .app-title {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
 
-        .date-display {
-            font-family: 'Orbitron', monospace;
-            font-size: 10px;
-            color: var(--neon-blue);
-            margin-bottom: 5px;
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-            letter-spacing: 1px;
-            opacity: 0.9;
-        }
-
-        h1 {
-            font-family: 'Orbitron', monospace;
-            font-weight: 900;
-            font-size: 1.4rem;
-            background: linear-gradient(to right, #fff, var(--neon-blue));
+        .app-icon {
+            font-size: clamp(1.8rem, 4vw, 2.2rem);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
-            margin: 8px 0 18px;
-            letter-spacing: 1px;
+            animation: float 3s ease-in-out infinite;
         }
 
-        /* PANEL CYBER */
-        .cyber-panel {
-            background: rgba(20, 20, 30, 0.8);
-            border: 2px solid var(--neon-green);
-            border-radius: 20px;
-            padding: 18px;
-            margin: 15px 0;
-            box-shadow: 
-                inset 0 0 20px rgba(57, 255, 20, 0.1),
-                0 5px 15px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
 
-        .panel-title {
-            font-size: 11px;
-            color: var(--neon-blue);
-            letter-spacing: 2px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            opacity: 0.9;
-        }
-
-        /* ÁREA DE SUBIDA */
-        .file-upload-area {
-            width: 100%;
-            height: 170px;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 15px;
-            border: 2px dashed var(--neon-blue);
+        .title-text {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
-            overflow: hidden;
-            position: relative;
         }
 
-        .file-upload-area:hover {
-            border-color: var(--neon-green);
-            background: rgba(0, 0, 0, 0.8);
+        .main-title {
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--light), #FFFFFF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
         }
 
-        .upload-icon {
-            font-size: 35px;
-            color: var(--neon-blue);
-            margin-bottom: 10px;
-            opacity: 0.8;
-        }
-
-        .upload-text {
-            font-size: 13px;
-            color: #ccc;
-            margin-bottom: 5px;
+        .sub-title {
+            font-size: clamp(0.7rem, 2vw, 0.9rem);
             font-weight: 600;
+            color: var(--primary-light);
+            letter-spacing: 2px;
+            margin-top: -3px;
         }
 
-        .upload-subtext {
-            font-size: 10px;
-            color: #888;
-        }
-
-        /* VISTA PREVIA */
-        .img-container {
-            width: 100%;
-            height: 170px;
-            background: #000;
-            border-radius: 15px;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #222;
+        .app-subtitle {
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            font-weight: 500;
+            color: var(--accent);
+            opacity: 0.9;
+            letter-spacing: 0.5px;
             display: none;
         }
 
-        .img-container.active {
-            display: block;
+        @media (min-width: 375px) {
+            .app-subtitle {
+                display: block;
+            }
         }
 
-        .preview-img {
+        .header-pulse {
+            position: relative;
+            width: clamp(30px, 8vw, 40px);
+            height: clamp(30px, 8vw, 40px);
+            flex-shrink: 0;
+        }
+
+        .pulse-dot {
+            width: clamp(8px, 2vw, 12px);
+            height: clamp(8px, 2vw, 12px);
+            background: var(--success);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: clamp(30px, 8vw, 40px);
+            height: clamp(30px, 8vw, 40px);
+            border: 2px solid var(--success);
+            border-radius: 50%;
+            animation: ringPulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes ringPulse {
+            0% {
+                width: clamp(30px, 8vw, 40px);
+                height: clamp(30px, 8vw, 40px);
+                opacity: 1;
+            }
+            100% {
+                width: clamp(45px, 12vw, 55px);
+                height: clamp(45px, 12vw, 55px);
+                opacity: 0;
+            }
+        }
+
+        /* Tabs optimizados para cualquier dispositivo */
+        .app-tabs {
+            height: auto;
+            min-height: 60px;
+            background: rgba(15, 15, 30, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            position: sticky;
+            bottom: 0;
+            z-index: 1000;
+            border-top: 1px solid rgba(108, 99, 255, 0.2);
+            box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.4);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: clamp(8px, 2vw, 12px) 5px;
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(4px, 1vw, 8px);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: clamp(0.65rem, 2vw, 0.8rem);
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            min-height: 60px;
+        }
+
+        .tab-btn.active {
+            color: var(--light);
+        }
+
+        .tab-btn.active .tab-indicator {
+            transform: scaleX(1);
+        }
+
+        .tab-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .tab-icon-container {
+            position: relative;
+            width: clamp(24px, 7vw, 32px);
+            height: clamp(24px, 7vw, 32px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-icon {
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            position: relative;
+            z-index: 2;
+        }
+
+        .tab-glow {
+            position: absolute;
+            width: clamp(24px, 7vw, 32px);
+            height: clamp(24px, 7vw, 32px);
+            background: var(--primary);
+            border-radius: 50%;
+            filter: blur(6px);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tab-btn.active .tab-glow {
+            opacity: 0.5;
+        }
+
+        .tab-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 2px 2px 0 0;
+            transform: scaleX(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Contenido principal adaptable */
+        .app-main {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding: clamp(12px, 3vw, 20px);
+            scroll-behavior: smooth;
+            padding-bottom: calc(clamp(12px, 3vw, 20px) + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* Tarjetas adaptables */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: clamp(16px, 4vw, 24px);
+            padding: clamp(16px, 4vw, 24px);
+            margin-bottom: clamp(12px, 3vw, 18px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 50px rgba(108, 99, 255, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: clamp(10px, 3vw, 16px);
+            margin-bottom: clamp(16px, 4vw, 24px);
+        }
+
+        .card-icon {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: iconPulse 2s infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .card-title {
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            font-weight: 700;
+            color: var(--light);
+            letter-spacing: 0.5px;
+        }
+
+        /* Grid de modos adaptable */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: clamp(12px, 3vw, 18px);
+        }
+
+        @media (min-width: 375px) {
+            .mode-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .mode-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: clamp(15px, 4vw, 20px);
+            padding: clamp(16px, 4vw, 24px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: clamp(12px, 3vw, 18px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: clamp(140px, 25vh, 180px);
+        }
+
+        .mode-option.active {
+            background: rgba(108, 99, 255, 0.15);
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .mode-option:active {
+            transform: scale(0.98);
+        }
+
+        .mode-glow {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(108, 99, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .mode-option.active .mode-glow {
+            opacity: 1;
+        }
+
+        .mode-icon {
+            font-size: clamp(2rem, 6vw, 3rem);
+            width: clamp(50px, 15vw, 70px);
+            height: clamp(50px, 15vw, 70px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: clamp(12px, 3vw, 16px);
+            transition: all 0.3s;
+        }
+
+        .mode-option.active .mode-icon {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            transform: rotateY(360deg);
+        }
+
+        .mode-content {
+            flex: 1;
+            width: 100%;
+        }
+
+        .mode-content h3 {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: 5px;
+        }
+
+        .mode-content p {
+            font-size: clamp(0.75rem, 2vw, 0.9rem);
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            padding: clamp(3px, 1vw, 5px) clamp(8px, 2vw, 12px);
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            color: white;
+            border-radius: clamp(10px, 2vw, 14px);
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Cámara adaptable */
+        .camera-preview {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 3vw, 18px);
+        }
+
+        .camera-frame {
+            position: relative;
+            width: 100%;
+            height: clamp(200px, 30vh, 300px);
+            background: #000;
+            border-radius: clamp(15px, 4vw, 20px);
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .camera-view {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .scan-grid {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+        }
+
+        .focus-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            height: 60%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            animation: focusPulse 2s infinite;
+        }
+
+        @keyframes focusPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        /* Botones de acción adaptables */
+        .action-btn {
+            width: 100%;
+            padding: clamp(16px, 4vw, 20px);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: clamp(14px, 3vw, 18px);
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(8px, 2vw, 12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            min-height: clamp(50px, 8vh, 60px);
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+            animation: btnShine 2s infinite;
+        }
+
+        @keyframes btnShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .btn-icon {
+            font-size: clamp(1.1rem, 3vw, 1.3rem);
+        }
+
+        .btn-text {
+            font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+            font-weight: 700;
+        }
+
+        /* Vista previa adaptable */
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 3vw, 18px);
+        }
+
+        .image-frame {
+            position: relative;
+            width: 100%;
+            height: clamp(200px, 30vh, 300px);
+            background: #000;
+            border-radius: clamp(15px, 4vw, 20px);
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+
+        .preview-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
             background: #000;
         }
 
-        .scan-line {
-            position: absolute;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(to right, transparent, var(--neon-green), transparent);
-            box-shadow: 0 0 20px var(--neon-green);
-            top: 0;
-            display: none;
-            z-index: 10;
-        }
-
-        .scanning .scan-line {
-            display: block;
-            animation: scanAnim 1.5s infinite ease-in-out;
-        }
-
-        @keyframes scanAnim { 
-            0% { top: 0; opacity: 0.7; } 
-            50% { top: 100%; opacity: 1; } 
-            100% { top: 0; opacity: 0.7; } 
-        }
-
-        /* BOTÓN DE ESCANEO CON PROGRESO */
-        .btn-scan-container {
-            width: 100%;
-            position: relative;
-            margin-top: 10px;
-        }
-
-        .btn-scan {
-            width: 100%;
-            padding: 16px;
-            border-radius: 14px;
-            border: none;
-            font-family: 'Orbitron', monospace;
-            font-weight: 900;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-            color: #000;
-            box-shadow: 0 0 25px rgba(57, 255, 20, 0.4);
-        }
-
-        .btn-scan:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
-        }
-
-        .btn-scan:active {
-            transform: scale(0.98);
-        }
-
-        .btn-scan:disabled {
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        /* BARRA DE PROGRESO DENTRO DEL BOTÓN */
-        .btn-progress {
+        .scan-animation {
             position: absolute;
             top: 0;
             left: 0;
+            width: 100%;
             height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, 
-                #ff3131 0%, 
-                #ff3131 33%, 
-                #ffaa00 33%, 
-                #ffaa00 66%, 
-                #00ff88 66%, 
-                #00ff88 100%);
-            background-size: 300% 100%;
-            background-position: 0% 0%;
-            border-radius: 14px;
-            z-index: -1;
-            transition: width 0.3s ease, background-position 0.3s ease;
+            pointer-events: none;
         }
 
-        .btn-scan-text {
+        .scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            filter: drop-shadow(0 0 10px currentColor);
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        .scan-dots {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .scan-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            filter: drop-shadow(0 0 8px currentColor);
+            animation: dotMove 2s linear infinite;
+        }
+
+        .progress-overlay {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: clamp(10px, 3vw, 14px);
+            padding: clamp(12px, 3vw, 16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: clamp(10px, 2vw, 14px);
+        }
+
+        .progress-title {
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-value {
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            font-weight: 800;
+        }
+
+        .progress-bar-container {
+            margin-bottom: clamp(8px, 2vw, 12px);
+        }
+
+        .progress-track {
+            position: relative;
+            width: 100%;
+            height: clamp(6px, 1.5vw, 8px);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: clamp(6px, 1.5vw, 8px);
+        }
+
+        .progress-indicator {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-indicator::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .color-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .color-marker {
+            position: absolute;
+            width: 3px;
+            height: 100%;
+            transform: translateX(-50%);
+        }
+
+        .color-marker.red { background: #FF4D4D; }
+        .color-marker.orange { background: #FFB74D; }
+        .color-marker.yellow { background: #FFD700; }
+        .color-marker.green { background: #4CD964; }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            font-weight: 600;
+        }
+
+        .progress-label {
+            transition: color 0.3s;
+        }
+
+        /* Procesamiento adaptable */
+        .processing-content {
+            text-align: center;
+        }
+
+        .ai-loader {
+            position: relative;
+            width: clamp(60px, 15vw, 90px);
+            height: clamp(60px, 15vw, 90px);
+            margin: 0 auto clamp(20px, 5vw, 30px);
+        }
+
+        .loader-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: clamp(3px, 1vw, 5px) solid transparent;
+            border-top: clamp(3px, 1vw, 5px) solid var(--primary);
+            border-right: clamp(3px, 1vw, 5px) solid var(--accent);
+            border-bottom: clamp(3px, 1vw, 5px) solid var(--secondary);
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-core {
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 60%;
+            height: 60%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .loader-particle {
+            position: absolute;
+            width: clamp(12px, 3vw, 18px);
+            height: clamp(12px, 3vw, 18px);
+            background: var(--warning);
+            border-radius: 50%;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: orbit 3s linear infinite;
+        }
+
+        @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(40px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(40px) rotate(-360deg); }
+        }
+
+        .processing-title {
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: clamp(16px, 4vw, 24px);
+            letter-spacing: 0.5px;
+        }
+
+        .ai-progress {
+            width: 100%;
+            margin-bottom: clamp(20px, 5vw, 30px);
+        }
+
+        .ai-progress-bar {
+            width: 100%;
+            height: clamp(8px, 2vw, 12px);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: clamp(10px, 2.5vw, 15px);
+            position: relative;
+        }
+
+        .ai-progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+            background: linear-gradient(90deg, 
+                #FF4D4D 0%, 
+                #FFB74D 25%, 
+                #FFD700 50%, 
+                #4CD964 100%);
+            background-size: 400% 100%;
+            animation: gradientMove 3s infinite linear;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 0%; }
+        }
+
+        .progress-text {
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .processing-details {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(10px, 2.5vw, 15px);
+        }
+
+        .detail {
             display: flex;
             align-items: center;
-            gap: 10px;
-            z-index: 2;
+            gap: clamp(10px, 2.5vw, 15px);
+            padding: clamp(10px, 2.5vw, 15px);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: clamp(10px, 2.5vw, 15px);
+            border-left: 3px solid var(--accent);
         }
 
-        /* BOTONES DE ACCIÓN - 4 BOTONES DEL MISMO TAMAÑO */
-        .action-buttons {
+        .detail-icon {
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+        }
+
+        .detail-text {
+            font-size: clamp(0.8rem, 2.2vw, 0.95rem);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        /* Resultados adaptables */
+        .result-content {
+            margin-bottom: clamp(20px, 5vw, 30px);
+        }
+
+        .location-header {
+            display: flex;
+            align-items: center;
+            gap: clamp(12px, 3vw, 20px);
+            margin-bottom: clamp(16px, 4vw, 24px);
+        }
+
+        .location-icon {
+            position: relative;
+            font-size: clamp(2.2rem, 6vw, 3.5rem);
+            width: clamp(55px, 15vw, 80px);
+            height: clamp(55px, 15vw, 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border-radius: clamp(15px, 4vw, 20px);
+            box-shadow: var(--glow);
+            flex-shrink: 0;
+        }
+
+        .icon-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--primary);
+            border-radius: clamp(15px, 4vw, 20px);
+            filter: blur(12px);
+            opacity: 0.5;
+            animation: glowPulse 2s infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .location-type h3 {
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: 5px;
+        }
+
+        .location-type p {
+            font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .location-display {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 3vw, 18px);
+            margin-bottom: clamp(10px, 2.5vw, 15px);
+        }
+
+        .location-text {
+            padding: clamp(16px, 4vw, 24px);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: clamp(15px, 4vw, 20px);
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            font-weight: 600;
+            color: var(--light);
+            word-break: break-word;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            min-height: clamp(60px, 10vh, 80px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.5px;
+        }
+
+        .copy-btn {
+            padding: clamp(16px, 4vw, 20px);
+            background: linear-gradient(135deg, var(--accent), #2AB7CA);
+            color: white;
+            border: none;
+            border-radius: clamp(14px, 3vw, 18px);
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(8px, 2vw, 12px);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            min-height: clamp(50px, 8vh, 60px);
+        }
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, var(--success), #2ECC71);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .copy-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+            animation: copyShine 2s infinite;
+        }
+
+        .copy-icon {
+            font-size: clamp(1.1rem, 3vw, 1.3rem);
+        }
+
+        .copy-text {
+            font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+            font-weight: 700;
+        }
+
+        .location-hint {
+            font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .actions-section {
+            margin-top: clamp(20px, 5vw, 30px);
+        }
+
+        .actions-title {
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: clamp(12px, 3vw, 20px);
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        /* GRID 2x2 adaptable */
+        .actions-grid-2x2 {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-            width: 100%;
+            gap: clamp(10px, 2.5vw, 15px);
         }
 
-        .action-btn {
-            padding: 14px 10px;
-            border-radius: 12px;
+        @media (min-width: 768px) {
+            .actions-grid-2x2 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .action-card-2x2 {
+            padding: clamp(14px, 3.5vw, 20px) clamp(10px, 2.5vw, 15px);
             border: none;
-            font-family: 'Orbitron', monospace;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            border-radius: clamp(12px, 3vw, 16px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            color: white;
+            gap: clamp(6px, 1.5vw, 10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            min-height: 70px;
-            width: 100%;
+            min-height: clamp(90px, 15vh, 120px);
         }
 
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        .action-card-2x2:active {
+            transform: scale(0.95);
         }
 
-        .action-btn:active {
-            transform: scale(0.97);
-        }
-
-        .action-btn i {
-            font-size: 20px;
-            margin-bottom: 2px;
-        }
-
-        .action-btn span {
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-            text-align: center;
-        }
-
-        /* Botón SYGIC */
-        .btn-sygic {
-            background: linear-gradient(145deg, var(--neon-blue), #0099cc);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-sygic:hover {
-            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
-        }
-
-        /* Botón Apple Maps */
-        .btn-apple {
-            background: linear-gradient(145deg, var(--neon-blue), #0099cc);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-apple:hover {
-            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
-        }
-
-        /* Botón Google Maps */
-        .btn-google {
-            background: linear-gradient(145deg, var(--neon-blue), #0099cc);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-google:hover {
-            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
-        }
-
-        /* Botón RESET (conserva su color rojo) */
-        .btn-reset-panel {
-            background: linear-gradient(145deg, var(--neon-red), #cc0000);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-reset-panel:hover {
-            box-shadow: 0 6px 20px rgba(255, 49, 49, 0.4);
-        }
-
-        /* BOTÓN RESET SOLITARIO */
-        .reset-solo-container {
-            display: none;
-            margin-top: 15px;
-            width: 100%;
-        }
-
-        .reset-solo-btn {
-            width: 100%;
-            padding: 16px;
-            border-radius: 14px;
-            border: 2px solid var(--neon-red);
-            background: rgba(255, 49, 49, 0.1);
-            color: var(--neon-red);
-            font-family: 'Orbitron', monospace;
-            font-weight: 900;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .reset-solo-btn:hover {
-            background: rgba(255, 49, 49, 0.2);
-            box-shadow: 0 0 15px rgba(255, 49, 49, 0.3);
-            transform: translateY(-2px);
-        }
-
-        /* STATUS */
-        .status-container {
-            font-size: 11px;
-            margin: 10px 0;
-            min-height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #status {
-            font-family: 'Orbitron', monospace;
-            padding: 8px 15px;
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(5px);
-        }
-
-        .status-standby { color: var(--neon-blue); }
-        .status-processing { color: var(--warning); }
-        .status-success { color: var(--success); }
-        .status-error { color: var(--error); }
-
-        /* COORDENADAS EN UNA SOLA LÍNEA */
-        .result-text {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.1rem;
-            color: #fff;
-            text-shadow: 0 0 10px var(--neon-green);
-            margin: 12px 0;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            border: 1px solid rgba(57, 255, 20, 0.3);
-            word-break: break-all;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            display: none;
-            backdrop-filter: blur(5px);
-            text-align: center;
-        }
-
-        /* MENSAJE DE ERROR */
-        .error-message {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.0rem;
-            color: var(--neon-red);
-            text-shadow: 0 0 10px var(--neon-red);
-            margin: 12px 0;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 49, 49, 0.3);
-            display: none;
-            backdrop-filter: blur(5px);
-            text-align: center;
-        }
-
-        /* HOME INDICATOR REALISTA */
-        .home-indicator {
-            width: 134px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 3px;
+        .action-glow-2x2 {
             position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 3;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+            animation: actionShine 2s infinite;
         }
 
-        /* TOAST NOTIFICATIONS */
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: rgba(0, 0, 0, 0.95);
-            border: 1px solid var(--neon-blue);
-            border-radius: 12px;
-            padding: 12px 20px;
-            font-family: 'Orbitron', monospace;
-            font-size: 11px;
-            color: #fff;
-            z-index: 1000;
+        .action-icon-2x2 {
+            font-size: clamp(1.6rem, 4vw, 2.5rem);
+            margin-bottom: 5px;
+        }
+
+        .action-label-2x2 {
+            font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .action-sub-2x2 {
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .sygic {
+            background: linear-gradient(135deg, #FF6584, #FF4D6D);
+        }
+
+        .google {
+            background: linear-gradient(135deg, #4285F4, #2D68F4);
+        }
+
+        .apple {
+            background: linear-gradient(135deg, #000000, #333333);
+        }
+
+        .reset {
+            background: linear-gradient(135deg, #9B59B6, #8E44AD);
+        }
+
+        /* Estados vacíos y error adaptables */
+        .empty-content, .error-content {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.7);
-            opacity: 0;
-            transition: all 0.3s ease;
-            max-width: 300px;
+            justify-content: center;
             text-align: center;
+            padding: clamp(25px, 6vw, 40px) clamp(12px, 3vw, 20px);
+        }
+
+        .empty-icon, .error-icon {
+            font-size: clamp(3rem, 8vw, 5rem);
+            margin-bottom: clamp(16px, 4vw, 25px);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .empty-title, .error-title {
+            font-size: clamp(1.3rem, 4vw, 1.8rem);
+            font-weight: 800;
+            color: var(--light);
+            margin-bottom: clamp(10px, 2.5vw, 15px);
+            letter-spacing: 0.5px;
+        }
+
+        .empty-text, .error-text {
+            font-size: clamp(0.8rem, 2.2vw, 1rem);
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: clamp(20px, 5vw, 30px);
+            line-height: 1.5;
+            max-width: 90%;
+        }
+
+        .error-card {
+            background: linear-gradient(135deg, rgba(255, 77, 77, 0.1), rgba(255, 77, 77, 0.05));
+            border: 1px solid rgba(255, 77, 77, 0.3);
+        }
+
+        .error-icon {
+            color: var(--danger);
+        }
+
+        .error-title {
+            color: var(--danger);
+        }
+
+        /* Footer adaptable */
+        .app-footer {
+            height: auto;
+            min-height: 50px;
+            background: rgba(15, 15, 30, 0.95);
             backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(10px, 2.5vw, 15px) clamp(12px, 3vw, 20px);
+            border-top: 1px solid rgba(108, 99, 255, 0.2);
+            position: relative;
         }
 
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
+        .footer-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
         }
 
-        .toast.success {
-            border-color: var(--success);
-            color: var(--success);
+        .footer-content {
+            text-align: center;
+            width: 100%;
         }
 
-        .toast.error {
-            border-color: var(--error);
-            color: var(--error);
+        .footer-title {
+            font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: 3px;
+            letter-spacing: 0.5px;
         }
 
-        .toast.info {
-            border-color: var(--neon-blue);
-            color: var(--neon-blue);
+        .footer-subtitle {
+            font-size: clamp(0.6rem, 1.8vw, 0.75rem);
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: clamp(5px, 1.5vw, 8px);
         }
 
-        /* LOADER */
-        .loader {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--neon-green);
-            animation: spin 1s ease-in-out infinite;
+        .footer-stats {
+            display: flex;
+            gap: clamp(8px, 2vw, 12px);
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .stat {
+            font-size: clamp(0.55rem, 1.6vw, 0.7rem);
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            padding: clamp(2px, 1vw, 4px) clamp(5px, 1.5vw, 8px);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
         }
 
-        /* COPYRIGHT */
-        .copyright-banner {
-            margin-top: auto;
-            padding-top: 20px;
-            font-family: 'Orbitron', monospace;
-            font-size: 10px;
-            color: var(--neon-blue);
-            font-weight: 900;
-            text-shadow: 0 0 10px var(--neon-blue);
-            letter-spacing: 1px;
-            opacity: 0.8;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 400px) {
-            .iphone-frame {
-                max-width: 350px;
-                height: 720px;
-                border-radius: 45px;
+        /* Ajustes para orientación horizontal en móviles */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .app-header {
+                min-height: 60px;
+                padding: 10px 15px;
             }
             
-            .screen {
-                border-radius: 35px;
+            .app-tabs {
+                min-height: 55px;
             }
             
-            h1 {
-                font-size: 1.2rem;
+            .app-footer {
+                min-height: 45px;
             }
             
-            .result-text {
-                font-size: 1.0rem;
+            .app-main {
+                padding: 10px;
+            }
+            
+            .glass-card {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+            
+            .camera-frame,
+            .image-frame {
+                height: clamp(180px, 40vh, 220px);
+            }
+            
+            .mode-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .actions-grid-2x2 {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Ajustes para iOS Safari */
+        @supports (-webkit-touch-callout: none) {
+            .app-container {
+                height: -webkit-fill-available;
+            }
+            
+            .app-main {
+                padding-bottom: calc(clamp(12px, 3vw, 20px) + env(safe-area-inset-bottom));
+            }
+            
+            .app-tabs {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            
+            .action-btn,
+            .tab-btn,
+            .mode-option,
+            .action-card-2x2 {
+                -webkit-tap-highlight-color: rgba(108, 99, 255, 0.3);
+            }
+        }
+
+        /* Input oculto para archivos */
+        .file-input-hidden {
+            display: none;
+        }
+
+        /* Mejoras de rendimiento para móviles */
+        .glass-card, .action-btn, .mode-option, .action-card-2x2 {
+            will-change: transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+        /* Animaciones de entrada optimizadas */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-content > * {
+            animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Efectos de brillo adicionales */
+        @keyframes copyShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes actionShine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        /* Mejoras de accesibilidad táctil */
+        button, [role="button"] {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Prevenir zoom en inputs en iOS */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px;
+            }
+        }
+
+        /* Ajustes de alto contraste para accesibilidad */
+        @media (prefers-contrast: high) {
+            .glass-card {
+                border: 2px solid rgba(255, 255, 255, 0.2);
             }
             
             .action-btn {
-                padding: 12px 8px;
-                min-height: 65px;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        /* Ajustes para modo oscuro automático */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --light: #F8F9FF;
+                --dark: #1A1A2E;
+                --darker: #0F0F1E;
+            }
+        }
+
+        /* Ajustes para modo claro (si se requiere en el futuro) */
+        @media (prefers-color-scheme: light) {
+            :root {
+                --light: #1A1A2E;
+                --dark: #F8F9FF;
+                --darker: #E6E9FF;
             }
             
-            .action-btn span {
-                font-size: 9px;
+            body {
+                background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            }
+            
+            .glass-card {
+                background: rgba(26, 26, 46, 0.05);
+                border: 1px solid rgba(26, 26, 46, 0.1);
+            }
+            
+            .app-header,
+            .app-tabs,
+            .app-footer {
+                background: rgba(248, 249, 255, 0.95);
+            }
+            
+            .card-title,
+            .mode-content h3,
+            .progress-title,
+            .location-type h3,
+            .actions-title,
+            .empty-title,
+            .error-title,
+            .footer-title {
+                color: var(--light);
+            }
+            
+            .mode-content p,
+            .detail-text,
+            .location-type p,
+            .location-hint,
+            .action-sub-2x2,
+            .empty-text,
+            .error-text,
+            .footer-subtitle,
+            .stat {
+                color: rgba(26, 26, 46, 0.8);
             }
         }
     </style>
 </head>
 <body>
+    <div id="root"></div>
 
-<div class="background-grid"></div>
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
 
-<!-- MARCO REALISTA DEL IPHONE CON BOTONES FÍSICOS -->
-<div class="iphone-frame">
-    <!-- BOTONES FÍSICOS DEL IPHONE -->
-    <div class="iphone-buttons">
-        <div class="volume-up"></div>
-        <div class="volume-down"></div>
-        <div class="power-button"></div>
-        <div class="mute-switch"></div>
-    </div>
+        function App() {
+            const [preview, setPreview] = useState(null);
+            const [text, setText] = useState('');
+            const [coordinates, setCoordinates] = useState('');
+            const [address, setAddress] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [progress, setProgress] = useState(0);
+            const [copied, setCopied] = useState(false);
+            const [mode, setMode] = useState('upload');
+            const [error, setError] = useState('');
+            const [extractedLocation, setExtractedLocation] = useState('');
+            const [scanAnimation, setScanAnimation] = useState(false);
+            const [appHeight, setAppHeight] = useState(window.innerHeight);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [scanColor, setScanColor] = useState('#FF4D4D');
+            const fileInputRef = useRef(null);
+            const videoRef = useRef(null);
+            const canvasRef = useRef(null);
+            const [activeTab, setActiveTab] = useState('capture');
+            const contentRef = useRef(null);
+            const [hasAutoOpenedFilePicker, setHasAutoOpenedFilePicker] = useState(false);
 
-    <!-- PANTALLA DEL IPHONE -->
-    <div class="screen">
-        <!-- NOTCH REALISTA -->
-        <div class="notch">
-            <div class="notch-speaker"></div>
-            <div class="notch-camera"></div>
-        </div>
-
-        <!-- STATUS BAR -->
-        <div class="status-bar">
-            <span id="currentTime">9:41</span>
-            <div class="status-icons">
-                <div class="signal-bars">
-                    <div class="signal-bar"></div>
-                    <div class="signal-bar"></div>
-                    <div class="signal-bar"></div>
-                    <div class="signal-bar"></div>
-                </div>
-                <span>5G</span>
-                <span>🔋 <span id="batteryLevel">100%</span></span>
-            </div>
-        </div>
-
-        <!-- CONTENIDO DE LA APLICACIÓN -->
-        <div class="app-body">
-            <div class="date-display" id="fullDate">LOADING...</div>
-            <h1>UBERTRON PRO-VISION v4.1</h1>
-
-            <!-- PANEL DE CARGA -->
-            <div class="cyber-panel" id="uploadPanel">
-                <div class="panel-title">
-                    <i class="fas fa-file-upload"></i>
-                    SUBIR CAPTURA DE PANTALLA
-                </div>
-                <div class="file-upload-area" id="fileUploadArea">
-                    <div class="upload-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <div class="upload-text">TOCA PARA SELECCIONAR</div>
-                    <div class="upload-subtext">o arrastra la imagen aquí</div>
-                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
-                </div>
-                <div class="img-container" id="imgBox">
-                    <div class="scan-line"></div>
-                    <img class="preview-img" id="preview" alt="Vista previa">
-                </div>
-            </div>
-
-            <!-- BOTÓN DE ESCANEO CON PROGRESO -->
-            <div class="btn-scan-container">
-                <button class="btn-scan" id="analyzeBtn" disabled>
-                    <div class="btn-progress" id="btnProgress"></div>
-                    <div class="btn-scan-text">
-                        <i class="fas fa-play"></i>
-                        INICIAR ESCANEO 🤖
-                    </div>
-                </button>
-            </div>
-            
-            <!-- STATUS -->
-            <div class="status-container">
-                <div id="status" class="status-standby">[ STATUS: STANDBY ]</div>
-            </div>
-
-            <!-- PANEL DE RESULTADOS (SÓLO PARA ÉXITO) -->
-            <div class="cyber-panel" id="resultPanel" style="display:none;">
-                <div class="panel-title">
-                    <i class="fas fa-map-marker-alt"></i>
-                    COORDENADAS DETECTADAS
-                </div>
-                <div class="result-text" id="coordsText">0.0, 0.0</div>
-                
-                <!-- BOTONES DE ACCIÓN - 4 BOTONES DEL MISMO TAMAÑO -->
-                <div class="action-buttons" id="actionButtons" style="display: none;">
-                    <button class="action-btn btn-sygic" id="sygicBtn">
-                        <i class="fas fa-car"></i>
-                        <span>SYGIC</span>
-                    </button>
-                    <button class="action-btn btn-apple" id="appleBtn">
-                        <i class="fas fa-map-marked-alt"></i>
-                        <span>APPLE MAPS</span>
-                    </button>
-                    <button class="action-btn btn-google" id="googleBtn">
-                        <i class="fab fa-google"></i>
-                        <span>GOOGLE MAPS</span>
-                    </button>
-                    <button class="action-btn btn-reset-panel" id="resetBtnPanel">
-                        <i class="fas fa-redo"></i>
-                        <span>RESET</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- PANEL DE ERROR (SÓLO RESET) -->
-            <div class="cyber-panel" id="errorPanel" style="display:none;">
-                <div class="panel-title">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    NO SE DETECTARON COORDENADAS
-                </div>
-                <div class="error-message" id="errorText">
-                    No se encontraron coordenadas en la imagen
-                </div>
-                
-                <!-- BOTÓN RESET SOLITARIO -->
-                <div class="reset-solo-container" id="resetSoloContainer">
-                    <button class="reset-solo-btn" id="resetSoloBtn">
-                        <i class="fas fa-redo"></i>
-                        INTENTAR CON OTRA IMAGEN
-                    </button>
-                </div>
-            </div>
-
-            <span class="copyright-banner">@Copyright: Osiany2026</span>
-        </div>
-
-        <!-- HOME INDICATOR -->
-        <div class="home-indicator"></div>
-    </div>
-</div>
-
-<!-- NOTIFICACIONES TOAST -->
-<div class="toast" id="toast"></div>
-
-<script>
-    // ============ CONFIGURACIÓN ============
-    const CONFIG = {
-        TESSERACT_LANG: 'eng',
-        COORD_REGEX: /(-?\d{1,2}\.\d+)[,\s\n]+(-?\d{1,3}\.\d+)/g,
-        MAX_FILE_SIZE: 5 * 1024 * 1024,
-        SUPPORTED_FORMATS: ['image/jpeg', 'image/png', 'image/webp', 'image/bmp']
-    };
-    
-    // ============ ESTADO DE LA APLICACIÓN ============
-    const AppState = {
-        isProcessing: false,
-        coordsData: "",
-        latitude: 0,
-        longitude: 0,
-        currentImage: null,
-        originalFile: null,
-        sygicAppInstalled: false
-    };
-    
-    // ============ ELEMENTOS DEL DOM ============
-    const DOM = {
-        fileInput: document.getElementById('fileInput'),
-        fileUploadArea: document.getElementById('fileUploadArea'),
-        imgBox: document.getElementById('imgBox'),
-        preview: document.getElementById('preview'),
-        analyzeBtn: document.getElementById('analyzeBtn'),
-        btnProgress: document.getElementById('btnProgress'),
-        status: document.getElementById('status'),
-        resultPanel: document.getElementById('resultPanel'),
-        errorPanel: document.getElementById('errorPanel'),
-        coordsText: document.getElementById('coordsText'),
-        errorText: document.getElementById('errorText'),
-        actionButtons: document.getElementById('actionButtons'),
-        sygicBtn: document.getElementById('sygicBtn'),
-        appleBtn: document.getElementById('appleBtn'),
-        googleBtn: document.getElementById('googleBtn'),
-        resetBtnPanel: document.getElementById('resetBtnPanel'),
-        resetSoloContainer: document.getElementById('resetSoloContainer'),
-        resetSoloBtn: document.getElementById('resetSoloBtn'),
-        toast: document.getElementById('toast'),
-        currentTime: document.getElementById('currentTime'),
-        batteryLevel: document.getElementById('batteryLevel'),
-        fullDate: document.getElementById('fullDate')
-    };
-    
-    // ============ FUNCIONES DE VALIDACIÓN ============
-    function isValidCoordinate(lat, lon) {
-        if (isNaN(lat) || isNaN(lon)) return false;
-        if (lat < -90 || lat > 90) return false;
-        if (lon < -180 || lon > 180) return false;
-        return true;
-    }
-    
-    function formatCoordinate(value, type) {
-        const rounded = Math.abs(value).toFixed(6);
-        const direction = type === 'lat' 
-            ? (value >= 0 ? 'N' : 'S')
-            : (value >= 0 ? 'E' : 'W');
-        return `${rounded}° ${direction}`;
-    }
-    
-    // ============ COMPRESIÓN DE IMÁGENES ============
-    async function compressImage(file) {
-        return new Promise((resolve, reject) => {
-            console.log('Comprimiendo imagen... Tamaño original:', (file.size / 1024).toFixed(2), 'KB');
-            
-            const MAX_WIDTH = 1200;
-            const MAX_HEIGHT = 1200;
-            const QUALITY = 0.7;
-            
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
-                    
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    canvas.toBlob(
-                        (blob) => {
-                            console.log('Imagen comprimida. Tamaño final:', (blob.size / 1024).toFixed(2), 'KB');
-                            const compressedFile = new File([blob], file.name, {
-                                type: 'image/jpeg',
-                                lastModified: Date.now()
-                            });
-                            resolve(compressedFile);
-                        },
-                        'image/jpeg',
-                        QUALITY
-                    );
-                };
-                
-                img.onerror = reject;
-            };
-            
-            reader.onerror = reject;
-        });
-    }
-    
-    // ============ SYGIC MEJORADO ============
-    async function openInSygic() {
-        if (!AppState.coordsData) {
-            showToast('No hay coordenadas disponibles', 'error');
-            return;
-        }
-        
-        showToast('Copiando coordenadas...', 'info');
-        playSound(2000);
-        
-        // Copiar coordenadas al portapapeles
-        try {
-            await navigator.clipboard.writeText(AppState.coordsData);
-        } catch (err) {
-            // Fallback para navegadores antiguos
-            const textArea = document.createElement('textarea');
-            textArea.value = AppState.coordsData;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-        }
-        
-        // Múltiples métodos para abrir Sygic
-        const sygicScheme = `com.sygic.aura://coordinate|${AppState.longitude}|${AppState.latitude}|show`;
-        const sygicUniversal = `https://www.sygic.com/enter?longitude=${AppState.longitude}&latitude=${AppState.latitude}`;
-        const appStoreUrl = 'https://apps.apple.com/app/sygic-gps-navigation/id585193266';
-        
-        // Intentar abrir con URL Scheme
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = sygicScheme;
-        document.body.appendChild(iframe);
-        
-        // Verificar si se abrió
-        setTimeout(() => {
-            document.body.removeChild(iframe);
-            
-            // Si todavía estamos en la página después de 500ms, intentar Universal Link
-            setTimeout(() => {
-                if (document.hasFocus()) {
-                    showToast('Intentando método alternativo...', 'info');
-                    window.location.href = sygicUniversal;
-                    
-                    // Si después de 1 segundo sigue sin funcionar, ofrecer App Store
+            // Auto-cambiar a pestaña de resultados cuando termine el escaneo
+            useEffect(() => {
+                if (progress === 100 && !loading && extractedLocation) {
                     setTimeout(() => {
-                        if (document.hasFocus()) {
-                            const userConfirmed = confirm(
-                                'Sygic no está instalado en tu dispositivo.\n\n' +
-                                '¿Te gustaría instalar Sygic desde la App Store?\n\n' +
-                                'Coordenadas ya copiadas: ' + AppState.coordsData
-                            );
-                            
-                            if (userConfirmed) {
-                                window.open(appStoreUrl, '_blank');
-                                showToast('Redirigiendo a App Store...', 'info');
-                            } else {
-                                showToast('Coordenadas copiadas. Puedes pegarlas en cualquier app de mapas.', 'info');
+                        setActiveTab('results');
+                    }, 500);
+                }
+            }, [progress, loading, extractedLocation]);
+
+            // Actualizar altura de la app para móviles
+            useEffect(() => {
+                const updateHeight = () => {
+                    setAppHeight(window.innerHeight);
+                };
+
+                window.addEventListener('resize', updateHeight);
+                window.addEventListener('orientationchange', updateHeight);
+
+                return () => {
+                    window.removeEventListener('resize', updateHeight);
+                    window.removeEventListener('orientationchange', updateHeight);
+                };
+            }, []);
+
+            // Actualizar color del botón según progreso
+            useEffect(() => {
+                if (progress < 25) {
+                    setScanColor('#FF4D4D'); // Rojo
+                } else if (progress < 50) {
+                    setScanColor('#FFB74D'); // Naranja
+                } else if (progress < 75) {
+                    setScanColor('#FFD700'); // Amarillo
+                } else {
+                    setScanColor('#4CD964'); // Verde
+                }
+            }, [progress]);
+
+            // Inicializar cámara
+            useEffect(() => {
+                if (mode === 'camera') {
+                    startCamera();
+                } else {
+                    stopCamera();
+                }
+                
+                return () => {
+                    stopCamera();
+                };
+            }, [mode]);
+
+            // Ajustar altura del contenido para móviles
+            useEffect(() => {
+                if (contentRef.current) {
+                    const tabHeight = 65;
+                    const headerHeight = 80;
+                    const footerHeight = 55;
+                    const mainHeight = appHeight - tabHeight - headerHeight - footerHeight;
+                    contentRef.current.style.minHeight = `${mainHeight}px`;
+                }
+            }, [appHeight, activeTab]);
+
+            // Auto-abrir explorador de archivos cuando se selecciona modo upload
+            useEffect(() => {
+                if (mode === 'upload' && !hasAutoOpenedFilePicker) {
+                    const timer = setTimeout(() => {
+                        if (fileInputRef.current) {
+                            fileInputRef.current.click();
+                            setHasAutoOpenedFilePicker(true);
+                        }
+                    }, 300);
+                    
+                    return () => clearTimeout(timer);
+                }
+                
+                if (mode !== 'upload') {
+                    setHasAutoOpenedFilePicker(false);
+                }
+            }, [mode, hasAutoOpenedFilePicker]);
+
+            const startCamera = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        } 
+                    });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                } catch (err) {
+                    console.error('Error accessing camera:', err);
+                    setError('No se pudo acceder a la cámara. Asegúrate de permitir el acceso.');
+                }
+            };
+
+            const stopCamera = () => {
+                if (videoRef.current && videoRef.current.srcObject) {
+                    const stream = videoRef.current.srcObject;
+                    const tracks = stream.getTracks();
+                    tracks.forEach(track => track.stop());
+                    videoRef.current.srcObject = null;
+                }
+            };
+
+            const captureImage = () => {
+                if (!videoRef.current) return;
+                
+                const canvas = canvasRef.current;
+                const video = videoRef.current;
+                
+                if (!canvas || !video) return;
+                
+                const aspectRatio = video.videoWidth / video.videoHeight;
+                canvas.width = Math.min(video.videoWidth, 800);
+                canvas.height = canvas.width / aspectRatio;
+                
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = canvas.toDataURL('image/jpeg', 0.9);
+                setPreview(imageData);
+                setScanAnimation(true);
+                setIsProcessing(true);
+                processImage(imageData);
+            };
+
+            const triggerFileInput = () => {
+                if (fileInputRef.current) {
+                    fileInputRef.current.click();
+                }
+            };
+
+            const handleImageUpload = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                // Validar tipo de archivo
+                if (!file.type.match('image.*')) {
+                    setError('Por favor, selecciona un archivo de imagen válido');
+                    return;
+                }
+                
+                // Validar tamaño (5MB máximo)
+                if (file.size > 5 * 1024 * 1024) {
+                    setError('La imagen es demasiado grande. Máximo 5MB');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageData = e.target.result;
+                    setPreview(imageData);
+                    setScanAnimation(true);
+                    setIsProcessing(true);
+                    processImage(imageData);
+                };
+                reader.readAsDataURL(file);
+            };
+
+            const processImage = (imageData) => {
+                setLoading(true);
+                setProgress(0);
+                setError('');
+                setText('');
+                setCoordinates('');
+                setAddress('');
+                setExtractedLocation('');
+
+                Tesseract.recognize(
+                    imageData,
+                    'eng+spa',
+                    {
+                        logger: (m) => {
+                            if (m.status === 'recognizing text') {
+                                const newProgress = Math.round(m.progress * 100);
+                                setProgress(newProgress);
                             }
                         }
-                    }, 1000);
+                    }
+                ).then(({ data: { text } }) => {
+                    setText(text);
+                    extractLocationInfo(text);
+                    setLoading(false);
+                    setScanAnimation(false);
+                    setIsProcessing(false);
+                    
+                }).catch((err) => {
+                    console.error('OCR Error:', err);
+                    setError('Error procesando la imagen. Intenta con otra imagen.');
+                    setLoading(false);
+                    setScanAnimation(false);
+                    setIsProcessing(false);
+                });
+            };
+
+            const extractLocationInfo = (text) => {
+                // Buscar coordenadas GPS
+                const coordinateRegex = /[-+]?\d{1,3}\.\d+,\s*[-+]?\d{1,3}\.\d+/g;
+                const coordinatesMatch = text.match(coordinateRegex);
+                
+                if (coordinatesMatch) {
+                    const coords = coordinatesMatch[0];
+                    setCoordinates(coords);
+                    setExtractedLocation(coords);
+                    return;
+                }
+                
+                // Buscar dirección
+                const addressRegex = /([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\s)+(\d+)(\s*[A-Za-z0-9#\-\.]+)?/g;
+                const addressMatch = text.match(addressRegex);
+                
+                if (addressMatch) {
+                    const addr = addressMatch[0];
+                    setAddress(addr);
+                    setExtractedLocation(addr);
+                    return;
+                }
+                
+                // Si no encuentra ubicación específica, mostrar primeras líneas del texto
+                const lines = text.split('\n').filter(line => line.trim().length > 5);
+                if (lines.length > 0) {
+                    setExtractedLocation(lines[0].substring(0, 100) + (lines[0].length > 100 ? '...' : ''));
                 } else {
-                    showToast('Sygic abierto con las coordenadas', 'success');
+                    setExtractedLocation('Ubicación no encontrada en el texto');
                 }
-            }, 500);
-        }, 100);
-    }
-    
-    // ============ INICIALIZACIÓN ============
-    document.addEventListener('DOMContentLoaded', function() {
-        initApp();
-    });
-    
-    function initApp() {
-        updateClock();
-        setInterval(updateClock, 1000);
-        
-        updateBattery();
-        setInterval(updateBattery, 30000);
-        
-        setupEventListeners();
-        
-        showToast('Ubertron Pro-Vision v4.1 iniciado', 'info');
-    }
-    
-    function updateClock() {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false
-        });
-        DOM.currentTime.textContent = timeStr;
-        
-        const dateStr = now.toLocaleDateString('es-ES', { 
-            weekday: 'short', 
-            day: 'numeric', 
-            month: 'short', 
-            year: 'numeric'
-        }).toUpperCase();
-        DOM.fullDate.textContent = dateStr;
-    }
-    
-    function updateBattery() {
-        const level = Math.floor(Math.random() * 21) + 80;
-        DOM.batteryLevel.textContent = `${level}%`;
-    }
-    
-    function playSound(freq, duration = 0.1) {
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            
-            osc.frequency.setValueAtTime(freq, audioContext.currentTime);
-            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
-            
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            
-            osc.start();
-            osc.stop(audioContext.currentTime + duration);
-        } catch (e) {
-            // Silenciar error si AudioContext no está disponible
-        }
-    }
-    
-    // ============ MANEJO DE ARCHIVOS ============
-    function setupEventListeners() {
-        DOM.fileUploadArea.addEventListener('click', () => DOM.fileInput.click());
-        
-        DOM.fileUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            DOM.fileUploadArea.style.borderColor = 'var(--neon-green)';
-            DOM.fileUploadArea.style.background = 'rgba(0, 0, 0, 0.8)';
-        });
-        
-        DOM.fileUploadArea.addEventListener('dragleave', () => {
-            DOM.fileUploadArea.style.borderColor = 'var(--neon-blue)';
-            DOM.fileUploadArea.style.background = 'rgba(0, 0, 0, 0.6)';
-        });
-        
-        DOM.fileUploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            DOM.fileUploadArea.style.borderColor = 'var(--neon-blue)';
-            DOM.fileUploadArea.style.background = 'rgba(0, 0, 0, 0.6)';
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                processFile(files[0]);
-            }
-        });
-        
-        DOM.fileInput.addEventListener('change', (e) => {
-            const files = e.target.files;
-            if (files.length > 0) {
-                processFile(files[0]);
-            }
-        });
-        
-        DOM.analyzeBtn.addEventListener('click', analyzeImage);
-        DOM.sygicBtn.addEventListener('click', openInSygic);
-        DOM.appleBtn.addEventListener('click', openInAppleMaps);
-        DOM.googleBtn.addEventListener('click', openInGoogleMaps);
-        DOM.resetBtnPanel.addEventListener('click', resetApp);
-        DOM.resetSoloBtn.addEventListener('click', resetApp);
-    }
-    
-    async function processFile(file) {
-        if (!CONFIG.SUPPORTED_FORMATS.includes(file.type)) {
-            showToast('Formato no soportado. Usa JPG o PNG', 'error');
-            playSound(150);
-            return;
-        }
-        
-        if (file.size > CONFIG.MAX_FILE_SIZE) {
-            showToast('Archivo muy grande (máx. 5MB)', 'error');
-            playSound(150);
-            return;
-        }
-        
-        showToast('Procesando imagen...', 'info');
-        
-        try {
-            // Comprimir imagen
-            const compressedFile = await compressImage(file);
-            
-            const imageUrl = URL.createObjectURL(compressedFile);
-            DOM.preview.src = imageUrl;
-            DOM.imgBox.classList.add('active');
-            DOM.fileUploadArea.style.display = 'none';
-            DOM.analyzeBtn.disabled = false;
-            AppState.currentImage = imageUrl;
-            AppState.originalFile = compressedFile;
-            
-            playSound(440);
-            showToast('Imagen lista para escanear', 'success');
-            
-        } catch (error) {
-            console.error('Error procesando imagen:', error);
-            
-            // Fallback
-            const imageUrl = URL.createObjectURL(file);
-            DOM.preview.src = imageUrl;
-            DOM.imgBox.classList.add('active');
-            DOM.fileUploadArea.style.display = 'none';
-            DOM.analyzeBtn.disabled = false;
-            AppState.currentImage = imageUrl;
-            AppState.originalFile = file;
-            
-            showToast('Imagen cargada', 'info');
-            playSound(440);
-        }
-    }
-    
-    // ============ ANÁLISIS CON VALIDACIÓN ============
-    async function analyzeImage() {
-        if (AppState.isProcessing) return;
-        
-        if (!DOM.preview.src || DOM.preview.src === window.location.href) {
-            showToast('Primero carga una imagen', 'error');
-            return;
-        }
-        
-        AppState.isProcessing = true;
-        DOM.analyzeBtn.disabled = true;
-        DOM.analyzeBtn.querySelector('.btn-scan-text').innerHTML = '<div class="loader"></div> PROCESANDO...';
-        DOM.status.textContent = '[ STATUS: ANALYZING... ]';
-        DOM.status.className = 'status-processing';
-        
-        DOM.btnProgress.style.width = '0%';
-        DOM.btnProgress.style.backgroundPosition = '0% 0%';
-        
-        DOM.imgBox.classList.add('scanning');
-        playSound(880);
-        
-        try {
-            const imageToProcess = AppState.originalFile 
-                ? URL.createObjectURL(AppState.originalFile)
-                : DOM.preview.src;
-            
-            const result = await Tesseract.recognize(
-                imageToProcess, 
-                CONFIG.TESSERACT_LANG,
-                { logger: (m) => updateProgress(m) }
+            };
+
+            const copyToClipboard = (textToCopy) => {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                    })
+                    .catch(err => {
+                        console.error('Error copying:', err);
+                        setError('Error al copiar al portapapeles');
+                    });
+            };
+
+            const openInGoogleMaps = () => {
+                if (!coordinates && !address) return;
+                const query = coordinates || encodeURIComponent(address);
+                window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+            };
+
+            const openInAppleMaps = () => {
+                if (!coordinates && !address) return;
+                const query = coordinates || encodeURIComponent(address);
+                window.open(`https://maps.apple.com/?q=${query}`, '_blank');
+            };
+
+            const openInSygic = () => {
+                if (!coordinates && !address) return;
+                const query = coordinates || encodeURIComponent(address);
+                window.open(`https://www.sygic.com/plan?q=${query}`, '_blank');
+            };
+
+            const resetAll = () => {
+                setPreview(null);
+                setText('');
+                setCoordinates('');
+                setAddress('');
+                setLoading(false);
+                setProgress(0);
+                setCopied(false);
+                setError('');
+                setExtractedLocation('');
+                setScanAnimation(false);
+                setIsProcessing(false);
+                setActiveTab('capture');
+                setHasAutoOpenedFilePicker(false);
+                stopCamera();
+                
+                // Resetear input de archivo
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            };
+
+            return (
+                <div className="app-container" style={{ height: `${appHeight}px` }}>
+                    {/* Header Premium */}
+                    <header className="app-header">
+                        <div className="header-glow"></div>
+                        <div className="header-content">
+                            <h1 className="app-title">
+                                <span className="app-icon">🌍</span>
+                                <div className="title-text">
+                                    <div className="main-title">UBERTRON PRO</div>
+                                    <div className="sub-title">VISION v5.0</div>
+                                </div>
+                            </h1>
+                            <p className="app-subtitle">INTELIGENCIA ARTIFICIAL PARA UBICACIONES</p>
+                        </div>
+                        <div className="header-pulse">
+                            <div className="pulse-dot"></div>
+                            <div className="pulse-ring"></div>
+                        </div>
+                    </header>
+
+                    {/* Tabs de navegación optimizados para móviles */}
+                    <nav className="app-tabs">
+                        <button 
+                            className={`tab-btn ${activeTab === 'capture' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('capture')}
+                        >
+                            <div className="tab-icon-container">
+                                <span className="tab-icon">📸</span>
+                                <div className="tab-glow"></div>
+                            </div>
+                            <span className="tab-label">CAPTURAR</span>
+                            <div className="tab-indicator"></div>
+                        </button>
+                        
+                        <button 
+                            className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('results')}
+                            disabled={!extractedLocation && !loading}
+                        >
+                            <div className="tab-icon-container">
+                                <span className="tab-icon">📍</span>
+                                <div className="tab-glow"></div>
+                            </div>
+                            <span className="tab-label">RESULTADOS</span>
+                            <div className="tab-indicator"></div>
+                        </button>
+                        
+                        <button 
+                            className={`tab-btn ${activeTab === 'text' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('text')}
+                            disabled={!text}
+                        >
+                            <div className="tab-icon-container">
+                                <span className="tab-icon">🔤</span>
+                                <div className="tab-glow"></div>
+                            </div>
+                            <span className="tab-label">TEXTO</span>
+                            <div className="tab-indicator"></div>
+                        </button>
+                    </nav>
+
+                    {/* Contenido principal optimizado para móviles */}
+                    <main className="app-main" ref={contentRef}>
+                        {/* Pestaña de Captura - SOLO VISTA PREVIA */}
+                        {activeTab === 'capture' && (
+                            <div className="tab-content">
+                                {/* Input de archivo oculto que se abre automáticamente */}
+                                <input 
+                                    ref={fileInputRef}
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="file-input-hidden"
+                                />
+                                
+                                {/* Card de selección de modo */}
+                                {!preview && (
+                                    <div className="glass-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">⚙️</div>
+                                            <h2 className="card-title">SELECCIONA TU MODO</h2>
+                                        </div>
+                                        
+                                        <div className="mode-grid">
+                                            <button 
+                                                className={`mode-option ${mode === 'upload' ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setMode('upload');
+                                                    setHasAutoOpenedFilePicker(false);
+                                                    // Auto-abrir explorador después de cambiar modo
+                                                    setTimeout(() => {
+                                                        if (fileInputRef.current) {
+                                                            fileInputRef.current.click();
+                                                            setHasAutoOpenedFilePicker(true);
+                                                        }
+                                                    }, 100);
+                                                }}
+                                            >
+                                                <div className="mode-glow"></div>
+                                                <div className="mode-icon">📁</div>
+                                                <div className="mode-content">
+                                                    <h3>SUBIR ARCHIVO</h3>
+                                                    <p>Selecciona desde tu galería</p>
+                                                    <div className="mode-badge">RECOMENDADO</div>
+                                                </div>
+                                            </button>
+                                            
+                                            <button 
+                                                className={`mode-option ${mode === 'camera' ? 'active' : ''}`}
+                                                onClick={() => setMode('camera')}
+                                            >
+                                                <div className="mode-glow"></div>
+                                                <div className="mode-icon">📷</div>
+                                                <div className="mode-content">
+                                                    <h3>CAPTURA EN VIVO</h3>
+                                                    <p>Usa tu cámara en tiempo real</p>
+                                                    <div className="mode-badge">INSTANTÁNEO</div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Vista de cámara */}
+                                {mode === 'camera' && !preview && (
+                                    <div className="glass-card camera-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">🎥</div>
+                                            <h2 className="card-title">CÁMARA ACTIVA</h2>
+                                        </div>
+                                        
+                                        <div className="camera-preview">
+                                            <div className="camera-frame">
+                                                <video 
+                                                    ref={videoRef} 
+                                                    autoPlay 
+                                                    playsInline
+                                                    muted
+                                                    className="camera-view"
+                                                />
+                                                <canvas ref={canvasRef} style={{ display: 'none' }} />
+                                                <div className="camera-overlay">
+                                                    <div className="scan-grid"></div>
+                                                    <div className="focus-ring"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <button 
+                                                className="action-btn capture-btn"
+                                                onClick={captureImage}
+                                                disabled={isProcessing}
+                                                style={isProcessing ? {
+                                                    background: `linear-gradient(135deg, ${scanColor} 0%, ${scanColor}80 100%)`,
+                                                    boxShadow: `0 0 20px ${scanColor}40`
+                                                } : {}}
+                                            >
+                                                <div className="btn-glow"></div>
+                                                <span className="btn-icon">
+                                                    {isProcessing ? '🔍' : '📸'}
+                                                </span>
+                                                <span className="btn-text">
+                                                    {isProcessing ? `ESCANEANDO ${progress}%` : 'CAPTURAR IMAGEN'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Vista previa con escaneo - ÚNICO ELEMENTO QUE SE MUESTRA DESPUÉS DE SELECCIONAR IMAGEN */}
+                                {preview && (
+                                    <div className="glass-card preview-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">👁️</div>
+                                            <h2 className="card-title">VISTA PREVIA</h2>
+                                        </div>
+                                        
+                                        <div className="preview-container">
+                                            <div className="image-frame">
+                                                <img src={preview} alt="Preview" className="preview-image" />
+                                                
+                                                {/* Efecto de escaneo mejorado */}
+                                                {scanAnimation && (
+                                                    <div className="scan-animation">
+                                                        {/* Línea de escaneo que se mueve */}
+                                                        <div 
+                                                            className="scan-line" 
+                                                            style={{ 
+                                                                top: `${progress}%`,
+                                                                backgroundColor: scanColor,
+                                                                boxShadow: `0 0 20px ${scanColor}`
+                                                            }}
+                                                        ></div>
+                                                        
+                                                        {/* Puntos de escaneo */}
+                                                        <div className="scan-dots">
+                                                            <div 
+                                                                className="scan-dot" 
+                                                                style={{ 
+                                                                    animationDelay: '0s',
+                                                                    backgroundColor: scanColor,
+                                                                    left: '20%',
+                                                                    top: `${progress}%`
+                                                                }}
+                                                            ></div>
+                                                            <div 
+                                                                className="scan-dot" 
+                                                                style={{ 
+                                                                    animationDelay: '0.5s',
+                                                                    backgroundColor: scanColor,
+                                                                    left: '50%',
+                                                                    top: `${progress}%`
+                                                                }}
+                                                            ></div>
+                                                            <div 
+                                                                className="scan-dot" 
+                                                                style={{ 
+                                                                    animationDelay: '1s',
+                                                                    backgroundColor: scanColor,
+                                                                    left: '80%',
+                                                                    top: `${progress}%`
+                                                                }}
+                                                            ></div>
+                                                        </div>
+                                                        
+                                                        {/* Barra de progreso sobre la imagen */}
+                                                        <div className="progress-overlay">
+                                                            <div className="progress-header">
+                                                                <span className="progress-title">ESCANEANDO IMAGEN</span>
+                                                                <span className="progress-value" style={{ color: scanColor }}>
+                                                                    {progress}%
+                                                                </span>
+                                                            </div>
+                                                            
+                                                            <div className="progress-bar-container">
+                                                                <div className="progress-track">
+                                                                    <div 
+                                                                        className="progress-indicator" 
+                                                                        style={{ 
+                                                                            width: `${progress}%`,
+                                                                            background: scanColor
+                                                                        }}
+                                                                    ></div>
+                                                                    {/* Marcadores de color */}
+                                                                    <div className="color-markers">
+                                                                        <div className="color-marker red" style={{ left: '0%' }}></div>
+                                                                        <div className="color-marker orange" style={{ left: '25%' }}></div>
+                                                                        <div className="color-marker yellow" style={{ left: '50%' }}></div>
+                                                                        <div className="color-marker green" style={{ left: '75%' }}></div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div className="progress-labels">
+                                                                    <span className="progress-label" style={{ color: progress >= 0 ? scanColor : '#777' }}>ROJO</span>
+                                                                    <span className="progress-label" style={{ color: progress >= 25 ? scanColor : '#777' }}>NARANJA</span>
+                                                                    <span className="progress-label" style={{ color: progress >= 50 ? scanColor : '#777' }}>AMARILLO</span>
+                                                                    <span className="progress-label" style={{ color: progress >= 75 ? scanColor : '#777' }}>VERDE</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            {/* Botón que cambia de color según progreso */}
+                                            <button 
+                                                className="action-btn secondary"
+                                                onClick={isProcessing ? undefined : resetAll}
+                                                style={isProcessing ? {
+                                                    background: `linear-gradient(135deg, ${scanColor} 0%, ${scanColor}80 100%)`,
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    boxShadow: `0 0 20px ${scanColor}40`
+                                                } : {}}
+                                            >
+                                                <span className="btn-icon">
+                                                    {isProcessing ? '🔍' : '🔄'}
+                                                </span>
+                                                <span className="btn-text">
+                                                    {isProcessing ? `ESCANEANDO ${progress}%` : 'CAMBIAR IMAGEN'}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Estado de procesamiento */}
+                                {loading && (
+                                    <div className="glass-card processing-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">⚡</div>
+                                            <h2 className="card-title">PROCESANDO CON IA</h2>
+                                        </div>
+                                        
+                                        <div className="processing-content">
+                                            <div className="ai-loader">
+                                                <div className="loader-ring" style={{ borderTopColor: scanColor }}></div>
+                                                <div className="loader-core" style={{ background: `linear-gradient(135deg, ${scanColor} 0%, ${scanColor}80 100%)` }}></div>
+                                                <div className="loader-particle" style={{ backgroundColor: scanColor }}></div>
+                                            </div>
+                                            
+                                            <div className="processing-info">
+                                                <h3 className="processing-title">ANALIZANDO TU IMAGEN</h3>
+                                                
+                                                <div className="ai-progress">
+                                                    <div className="ai-progress-bar">
+                                                        <div 
+                                                            className="ai-progress-fill" 
+                                                            style={{ 
+                                                                width: `${progress}%`,
+                                                            }}
+                                                        ></div>
+                                                    </div>
+                                                    
+                                                    <div className="progress-labels">
+                                                        <span style={{ color: progress >= 0 ? scanColor : '#999' }}>0%</span>
+                                                        <span style={{ color: progress >= 25 ? scanColor : '#999' }}>25%</span>
+                                                        <span style={{ color: progress >= 50 ? scanColor : '#999' }}>50%</span>
+                                                        <span style={{ color: progress >= 75 ? scanColor : '#999' }}>75%</span>
+                                                        <span style={{ color: progress >= 100 ? scanColor : '#999' }}>100%</span>
+                                                    </div>
+                                                    
+                                                    <div className="progress-text" style={{ color: scanColor }}>
+                                                        {progress}% COMPLETADO
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="processing-details">
+                                                    <div className="detail">
+                                                        <span className="detail-icon">🔍</span>
+                                                        <span className="detail-text">Extrayendo texto con OCR avanzado</span>
+                                                    </div>
+                                                    <div className="detail">
+                                                        <span className="detail-icon">🧠</span>
+                                                        <span className="detail-text">Analizando patrones de ubicación</span>
+                                                    </div>
+                                                    <div className="detail">
+                                                        <span className="detail-icon">⚡</span>
+                                                        <span className="detail-text">Optimizando resultados con IA</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Pestaña de Resultados con GRID 2x2 FIJO */}
+                        {activeTab === 'results' && (
+                            <div className="tab-content">
+                                {extractedLocation ? (
+                                    <div className="glass-card result-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">🎯</div>
+                                            <h2 className="card-title">RESULTADOS ENCONTRADOS</h2>
+                                        </div>
+                                        
+                                        <div className="result-content">
+                                            <div className="location-header">
+                                                <div className="location-icon">
+                                                    {coordinates ? '📍' : '🏠'}
+                                                    <div className="icon-glow"></div>
+                                                </div>
+                                                <div className="location-type">
+                                                    <h3>{coordinates ? 'COORDENADAS GPS' : 'DIRECCIÓN'}</h3>
+                                                    <p>{coordinates ? 'Precisión máxima' : 'Extraída del texto'}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="location-display">
+                                                <div className="location-text">
+                                                    {coordinates || address || extractedLocation}
+                                                </div>
+                                                
+                                                <button 
+                                                    className={`copy-btn ${copied ? 'copied' : ''}`}
+                                                    onClick={() => copyToClipboard(coordinates || address || extractedLocation)}
+                                                >
+                                                    <div className="copy-glow"></div>
+                                                    <span className="copy-icon">{copied ? '✓' : '📋'}</span>
+                                                    <span className="copy-text">{copied ? 'COPIADO' : 'COPIAR'}</span>
+                                                </button>
+                                            </div>
+                                            
+                                            <p className="location-hint">
+                                                {copied ? '✅ ¡Texto copiado al portapapeles!' : '👆 Toca para copiar al portapapeles'}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="actions-section">
+                                            <h3 className="actions-title">ACCIONES DISPONIBLES</h3>
+                                            
+                                            {/* GRID 2x2 FIJO para móviles */}
+                                            <div className="actions-grid-2x2">
+                                                <button className="action-card-2x2 sygic" onClick={openInSygic}>
+                                                    <div className="action-glow-2x2"></div>
+                                                    <div className="action-icon-2x2">🗺️</div>
+                                                    <div className="action-label-2x2">SYGIC</div>
+                                                    <div className="action-sub-2x2">Abrir mapa</div>
+                                                </button>
+                                                
+                                                <button className="action-card-2x2 google" onClick={openInGoogleMaps}>
+                                                    <div className="action-glow-2x2"></div>
+                                                    <div className="action-icon-2x2">🌐</div>
+                                                    <div className="action-label-2x2">GOOGLE</div>
+                                                    <div className="action-sub-2x2">Maps</div>
+                                                </button>
+                                                
+                                                <button className="action-card-2x2 apple" onClick={openInAppleMaps}>
+                                                    <div className="action-glow-2x2"></div>
+                                                    <div className="action-icon-2x2">🍎</div>
+                                                    <div className="action-label-2x2">APPLE</div>
+                                                    <div className="action-sub-2x2">Maps</div>
+                                                </button>
+                                                
+                                                <button className="action-card-2x2 reset" onClick={resetAll}>
+                                                    <div className="action-glow-2x2"></div>
+                                                    <div className="action-icon-2x2">🔄</div>
+                                                    <div className="action-label-2x2">NUEVO</div>
+                                                    <div className="action-sub-2x2">Escanear</div>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="glass-card empty-card">
+                                        <div className="empty-content">
+                                            <div className="empty-icon">📷</div>
+                                            <h2 className="empty-title">SIN RESULTADOS</h2>
+                                            <p className="empty-text">
+                                                {loading 
+                                                    ? 'Analizando imagen con IA...' 
+                                                    : 'Sube o captura una imagen para comenzar'}
+                                            </p>
+                                            <button 
+                                                className="action-btn"
+                                                onClick={() => setActiveTab('capture')}
+                                            >
+                                                <span className="btn-icon">📸</span>
+                                                <span className="btn-text">CAPTURAR IMAGEN</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Mensaje de error */}
+                                {error && (
+                                    <div className="glass-card error-card">
+                                        <div className="error-content">
+                                            <div className="error-icon">⚠️</div>
+                                            <h2 className="error-title">ERROR</h2>
+                                            <p className="error-text">{error}</p>
+                                            <button className="action-btn secondary" onClick={resetAll}>
+                                                <span className="btn-icon">🔄</span>
+                                                <span className="btn-text">INTENTAR NUEVAMENTE</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Pestaña de Texto */}
+                        {activeTab === 'text' && (
+                            <div className="tab-content">
+                                {text ? (
+                                    <div className="glass-card text-card">
+                                        <div className="card-header">
+                                            <div className="card-icon">📄</div>
+                                            <h2 className="card-title">TEXTO EXTRAÍDO</h2>
+                                        </div>
+                                        
+                                        <div className="text-content">
+                                            <div className="text-display">
+                                                {text}
+                                            </div>
+                                            
+                                            <button 
+                                                className="action-btn"
+                                                onClick={() => copyToClipboard(text)}
+                                            >
+                                                <span className="btn-icon">📋</span>
+                                                <span className="btn-text">COPIAR TEXTO COMPLETO</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="glass-card empty-card">
+                                        <div className="empty-content">
+                                            <div className="empty-icon">🔤</div>
+                                            <h2 className="empty-title">NO HAY TEXTO</h2>
+                                            <p className="empty-text">
+                                                Procesa una imagen para extraer texto mediante OCR
+                                            </p>
+                                            <button 
+                                                className="action-btn"
+                                                onClick={() => setActiveTab('capture')}
+                                            >
+                                                <span className="btn-icon">📸</span>
+                                                <span className="btn-text">IR A CAPTURAR</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Footer optimizado para móviles */}
+                    <footer className="app-footer">
+                        <div className="footer-glow"></div>
+                        <div className="footer-content">
+                            <p className="footer-title">UBERTRON PRO VISION v5.0</p>
+                            <p className="footer-subtitle">Tecnología OCR • IA Avanzada • Geolocalización</p>
+                            <div className="footer-stats">
+                                <span className="stat">⚡ ALTO RENDIMIENTO</span>
+                                <span className="stat">🔒 SEGURO</span>
+                                <span className="stat">🌍 MULTI-IDIOMA</span>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
             );
-            
-            if (AppState.originalFile && imageToProcess !== DOM.preview.src) {
-                URL.revokeObjectURL(imageToProcess);
-            }
-            
-            const matches = result.data.text.match(CONFIG.COORD_REGEX);
-            
-            if (matches && matches.length > 0) {
-                const coords = matches[0].replace(/[,\s]+/, ',').split(',');
-                AppState.latitude = parseFloat(coords[0]);
-                AppState.longitude = parseFloat(coords[1]);
-                
-                // VALIDACIÓN DE COORDENADAS
-                if (!isValidCoordinate(AppState.latitude, AppState.longitude)) {
-                    throw new Error('Coordenadas inválidas detectadas');
-                }
-                
-                AppState.coordsData = `${AppState.latitude}, ${AppState.longitude}`;
-                
-                DOM.btnProgress.style.width = '100%';
-                DOM.btnProgress.style.backgroundPosition = '-200% 0%';
-                
-                displaySuccessResults();
-                playSound(1200);
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                showToast('✓ Coordenadas válidas detectadas', 'success');
-            } else {
-                throw new Error('No se encontraron coordenadas');
-            }
-            
-        } catch (error) {
-            DOM.status.textContent = '[ STATUS: ERROR ❌ ]';
-            DOM.status.className = 'status-error';
-            playSound(150);
-            
-            if (error.message.includes('inválidas')) {
-                showToast('Coordenadas inválidas. Verifica la imagen.', 'error');
-                displayErrorResults('Coordenadas inválidas detectadas');
-            } else {
-                showToast('No se detectaron coordenadas', 'error');
-                displayErrorResults('No se encontraron coordenadas en la imagen');
-            }
-        } finally {
-            DOM.imgBox.classList.remove('scanning');
-            DOM.analyzeBtn.disabled = false;
-            DOM.analyzeBtn.querySelector('.btn-scan-text').innerHTML = '<i class="fas fa-play"></i> INICIAR ESCANEO 🤖';
-            AppState.isProcessing = false;
         }
-    }
-    
-    function updateProgress(message) {
-        if (message.status === 'recognizing text') {
-            const progress = Math.round(message.progress * 100);
-            
-            // Actualizar ancho de la barra del botón
-            DOM.btnProgress.style.width = `${progress}%`;
-            
-            // Calcular posición del background para mostrar el color correcto
-            if (progress < 33) {
-                // Rojo al inicio (0-33%)
-                DOM.btnProgress.style.backgroundPosition = '0% 0%';
-            } else if (progress < 66) {
-                // Amarillo en la mitad (34-66%)
-                DOM.btnProgress.style.backgroundPosition = '-100% 0%';
-            } else {
-                // Verde al final (67-100%)
-                DOM.btnProgress.style.backgroundPosition = '-200% 0%';
-            }
-            
-            // Actualizar texto del estado
-            DOM.status.textContent = `[ STATUS: PROCESSING ${progress}% ]`;
-        }
-    }
-    
-    // ============ MOSTRAR RESULTADOS DE ÉXITO ============
-    function displaySuccessResults() {
-        const latFormatted = formatCoordinate(AppState.latitude, 'lat');
-        const lonFormatted = formatCoordinate(AppState.longitude, 'lon');
-        const formattedText = `${latFormatted}, ${lonFormatted}`;
-        
-        // Ocultar panel de error si está visible
-        DOM.errorPanel.style.display = 'none';
-        
-        // Mostrar panel de éxito
-        DOM.coordsText.textContent = formattedText;
-        DOM.coordsText.style.display = 'block';
-        DOM.resultPanel.style.display = 'block';
-        DOM.actionButtons.style.display = 'grid';
-        
-        DOM.status.textContent = '[ STATUS: SUCCESS ✅ ]';
-        DOM.status.className = 'status-success';
-    }
-    
-    // ============ MOSTRAR RESULTADOS DE ERROR ============
-    function displayErrorResults(errorMessage) {
-        // Ocultar panel de éxito si está visible
-        DOM.resultPanel.style.display = 'none';
-        
-        // Mostrar panel de error
-        DOM.errorText.textContent = errorMessage;
-        DOM.errorText.style.display = 'block';
-        DOM.errorPanel.style.display = 'block';
-        DOM.resetSoloContainer.style.display = 'block';
-        
-        DOM.status.textContent = '[ STATUS: ERROR ❌ ]';
-        DOM.status.className = 'status-error';
-    }
-    
-    // ============ FUNCIONES DE LOS BOTONES ============
-    
-    // BOTÓN APPLE MAPS
-    function openInAppleMaps() {
-        if (!AppState.coordsData) {
-            showToast('No hay coordenadas disponibles', 'error');
-            return;
-        }
-        
-        const appleMapsUrl = `http://maps.apple.com/?q=${AppState.latitude},${AppState.longitude}&ll=${AppState.latitude},${AppState.longitude}`;
-        
-        // Mostrar mensaje
-        showToast('Abriendo Apple Maps...', 'info');
-        playSound(1800);
-        
-        // Abrir Apple Maps
-        window.open(appleMapsUrl, '_blank');
-    }
-    
-    // BOTÓN GOOGLE MAPS
-    function openInGoogleMaps() {
-        if (!AppState.coordsData) {
-            showToast('No hay coordenadas disponibles', 'error');
-            return;
-        }
-        
-        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${AppState.latitude},${AppState.longitude}`;
-        
-        // Mostrar mensaje
-        showToast('Abriendo Google Maps...', 'info');
-        playSound(1800);
-        
-        // Abrir Google Maps
-        window.open(googleMapsUrl, '_blank');
-    }
-    
-    // ============ BOTÓN RESET (FUNCIONALIDAD COMPLETA) ============
-    function resetApp() {
-        // No pedir confirmación si no hay imagen cargada
-        if (AppState.currentImage || DOM.imgBox.classList.contains('active')) {
-            if (!confirm('¿Restablecer toda la aplicación?')) {
-                return;
-            }
-        }
-        
-        // Restablecer elementos visuales
-        DOM.preview.src = '';
-        DOM.imgBox.classList.remove('active');
-        DOM.fileUploadArea.style.display = 'flex';
-        DOM.resultPanel.style.display = 'none';
-        DOM.errorPanel.style.display = 'none';
-        DOM.actionButtons.style.display = 'none';
-        DOM.resetSoloContainer.style.display = 'none';
-        DOM.analyzeBtn.disabled = true;
-        
-        // Restablecer barra de progreso
-        DOM.btnProgress.style.width = '0%';
-        DOM.btnProgress.style.backgroundPosition = '0% 0%';
-        
-        // Limpiar input de archivo
-        DOM.fileInput.value = '';
-        DOM.status.textContent = '[ STATUS: STANDBY ]';
-        DOM.status.className = 'status-standby';
-        
-        // Liberar recursos de memoria
-        if (AppState.currentImage) {
-            URL.revokeObjectURL(AppState.currentImage);
-        }
-        
-        // Resetear estado
-        AppState.coordsData = "";
-        AppState.latitude = 0;
-        AppState.longitude = 0;
-        AppState.isProcessing = false;
-        AppState.currentImage = null;
-        AppState.originalFile = null;
-        
-        playSound(300);
-        showToast('Listo para cargar nueva imagen', 'info');
-    }
-    
-    // ============ NOTIFICACIONES TOAST ============
-    function showToast(message, type = 'info') {
-        let icon = 'info-circle';
-        if (type === 'success') icon = 'check-circle';
-        if (type === 'error') icon = 'exclamation-circle';
-        
-        DOM.toast.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
-        DOM.toast.className = `toast ${type}`;
-        DOM.toast.classList.add('show');
-        
-        setTimeout(() => {
-            DOM.toast.classList.remove('show');
-        }, 3000);
-    }
-</script>
+
+        // Renderizar la aplicación
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
-
