@@ -493,17 +493,19 @@ function App() {
             return;
         }
 
-        // PRUEBA DE AISLAMIENTO: NO LEER NADA
-        // Solo mostrar alerta con datos del archivo
-        try {
-            console.log("Archivo seleccionado:", file.name, file.size);
-            alert(`✅ ARCHIVO DETECTADO\nNombre: ${file.name}\nTamaño: ${(file.size / 1024 / 1024).toFixed(2)} MB\n\nSi ves esto, el selector NO está fallando. El problema era la memoria al leerlo.`);
-
-            // No seteamos preview para evitar renderizado
-            // setPreview(...) 
-        } catch (e) {
-            alert("Error: " + e.message);
-        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const imageData = e.target.result;
+            setPreview(imageData);
+            setScanAnimation(true);
+            setIsProcessing(true);
+            processImage(imageData);
+        };
+        reader.onerror = (err) => {
+            setError('Error al leer el archivo');
+            console.error(err);
+        };
+        reader.readAsDataURL(file);
     };
 
     /* DUPLICATED processImage REMOVED */
