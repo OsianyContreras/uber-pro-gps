@@ -623,15 +623,22 @@
           window.ReactNativeWebView.postMessage('OPEN_URL:' + url);
         } else {
           try {
-            // Safari en iOS a veces lanza SyntaxError con window.open y protocolos no-http.
-            // location.href es el metodo estandar y mas estable para deep links en la web.
-            if (url.startsWith('http')) {
-              window.open(url, '_blank');
+            // Creamos un link temporal para evitar restricciones de Safari con protocolos no-http
+            const link = document.createElement('a');
+            link.href = url;
+            // No usamos '_blank' para esquemas nativos para evitar dejar pestañas vacias
+            if (!url.startsWith('http')) {
+              link.target = '_self';
             } else {
-              window.location.href = url;
+              link.target = '_blank';
             }
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+              if (document.body.contains(link)) document.body.removeChild(link);
+            }, 100);
           } catch (e) {
-            console.error("Link redirect error:", e);
+            console.error("Navigation error:", e);
             window.location.href = url;
           }
         }
@@ -677,18 +684,16 @@
           if (parts && parts.length >= 2) {
             const lat = parts[0];
             const lng = parts[1];
-            // REGRESAMOS AL PROTOCOLO NATIVO QUE SIEMPRE FUNCIONO
-            // Sygic pide longitude primero: coordinate|long|lat|drive
-            const sygicNativeUrl = "com.sygic.aura://coordinate|" + lng + "|" + lat + "|drive";
-            console.log("Abriendo Sygic Nativo:", sygicNativeUrl);
-            openNativeUrl(sygicNativeUrl);
+            // FORMATO NATIVO ORIGINAL: coordinate|long|lat|drive
+            const sygicUrl = "com.sygic.aura://coordinate|" + lng + "|" + lat + "|drive";
+            console.log("Sygic link:", sygicUrl);
+            openNativeUrl(sygicUrl);
             return;
           }
         }
 
-        const encodedQuery = encodeURIComponent(query);
-        // Fallback nativo para búsqueda si no hay coordenadas exactas
-        openNativeUrl("com.sygic.aura://search|" + encodedQuery);
+        // Fallback nativo
+        openNativeUrl("com.sygic.aura://search|" + encodeURIComponent(query));
       };
       const resetAll = () => {
         setPreview(null);
