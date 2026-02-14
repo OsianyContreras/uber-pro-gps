@@ -174,6 +174,34 @@ function App() {
         }
     };
 
+    // ========== UTILIDADES DE IMAGEN ==========
+    const resizeImage = (base64Str, maxWidth = 1024) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64Str;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = (maxWidth / width) * height;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.onerror = (err) => {
+                console.error("Error cargando imagen para redimensionar", err);
+                resolve(base64Str); // Fallback al original
+            };
+        });
+    };
+
     // ========== FUNCIÓN DE PROCESAMIENTO OCR CON TESSERACT ==========
     // ========== FUNCIÓN DE PROCESAMIENTO OCR CON TESSERACT ==========
     const processImage = async (imageData) => {
@@ -426,6 +454,7 @@ function App() {
         window.handleNativeImageReceive = async (imageUri) => {
             try {
                 // RECIBIMOS BASE64 (Safe for rendering)
+                // Nota: El nativo ya debería haberla redimensionado, pero podemos asegurar aquí si queremos.
                 setPreview(imageUri);
 
                 // INICIAR PROCESAMIENTO AUTOMÁTICO
@@ -460,7 +489,7 @@ function App() {
             }
         }
     };
-    const captureImage = () => {
+    const captureImage = async () => {
         if (!videoRef.current) return;
 
         const canvas = canvasRef.current;
@@ -469,13 +498,13 @@ function App() {
         if (!canvas || !video) return;
 
         const aspectRatio = video.videoWidth / video.videoHeight;
-        canvas.width = Math.min(video.videoWidth, 800);
+        canvas.width = Math.min(video.videoWidth, 1024);
         canvas.height = canvas.width / aspectRatio;
 
         const context = canvas.getContext('2d');
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        const imageData = canvas.toDataURL('image/jpeg', 0.9);
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
         setPreview(imageData);
         setScanAnimation(true);
         setIsProcessing(true);
@@ -494,12 +523,16 @@ function App() {
         }
 
         const reader = new FileReader();
-        reader.onload = (e) => {
-            const imageData = e.target.result;
-            setPreview(imageData);
+        reader.onload = async (e) => {
+            const rawImageData = e.target.result;
+
+            // REDIMENSIONAR PARA EVITAR CRASH DE MEMORIA
+            const resizedImageData = await resizeImage(rawImageData, 1024);
+
+            setPreview(resizedImageData);
             setScanAnimation(true);
             setIsProcessing(true);
-            processImage(imageData);
+            processImage(resizedImageData);
         };
         reader.onerror = (err) => {
             setError('Error al leer el archivo');
