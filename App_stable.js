@@ -622,7 +622,18 @@
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage('OPEN_URL:' + url);
         } else {
-          window.open(url, '_blank');
+          try {
+            // Safari en iOS a veces lanza SyntaxError con window.open y protocolos no-http.
+            // location.href es el metodo estandar y mas estable para deep links en la web.
+            if (url.startsWith('http')) {
+              window.open(url, '_blank');
+            } else {
+              window.location.href = url;
+            }
+          } catch (e) {
+            console.error("Link redirect error:", e);
+            window.location.href = url;
+          }
         }
       };
       const openInGoogleMaps = () => {
@@ -660,18 +671,24 @@
       const openInSygic = () => {
         const query = coordinates || address || extractedLocation;
         if (!query) return;
+
         if (coordinates) {
           const parts = coordinates.match(/([-+]?\d+(\.\d+)?)/g);
           if (parts && parts.length >= 2) {
             const lat = parts[0];
             const lng = parts[1];
-            // Usamos el redirect web de Sygic que es compatible con Safari y abre la app nativa automáticamente
-            openNativeUrl(`https://go.sygic.com/travel/place?q=${lat},${lng}`);
+            // REGRESAMOS AL PROTOCOLO NATIVO QUE SIEMPRE FUNCIONO
+            // Sygic pide longitude primero: coordinate|long|lat|drive
+            const sygicNativeUrl = "com.sygic.aura://coordinate|" + lng + "|" + lat + "|drive";
+            console.log("Abriendo Sygic Nativo:", sygicNativeUrl);
+            openNativeUrl(sygicNativeUrl);
             return;
           }
         }
+
         const encodedQuery = encodeURIComponent(query);
-        openNativeUrl(`https://go.sygic.com/travel/place?q=${encodedQuery}`);
+        // Fallback nativo para búsqueda si no hay coordenadas exactas
+        openNativeUrl("com.sygic.aura://search|" + encodedQuery);
       };
       const resetAll = () => {
         setPreview(null);
