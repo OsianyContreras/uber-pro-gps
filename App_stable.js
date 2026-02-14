@@ -277,6 +277,8 @@ function App() {
         workerPath: 'libs/worker.min.js',
         corePath: 'libs/tesseract-core.wasm.js',
         langPath: 'libs/',
+        gzip: false,
+        // OBLIGATORIO: No buscar versión .gz en GitHub
         logger: m => {
           console.log("Tesseract:", m.status, m.progress);
           if (m.status === 'recognizing text') {
