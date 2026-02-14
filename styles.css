@@ -464,6 +464,20 @@
             opacity: 1;
         }
 
+        /* Efecto de pulso premium para el botón de PEGAR */
+        .mode-option.pulse-web {
+            animation: pulseWeb 2s infinite;
+            border-color: var(--accent) !important;
+            background: rgba(54, 209, 220, 0.15) !important;
+            box-shadow: 0 0 20px rgba(54, 209, 220, 0.4);
+        }
+
+        @keyframes pulseWeb {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); box-shadow: 0 0 30px rgba(54, 209, 220, 0.6); }
+            100% { transform: scale(1); }
+        }
+
         .mode-icon {
             font-size: clamp(2rem, 6vw, 3rem);
             width: clamp(50px, 15vw, 70px);

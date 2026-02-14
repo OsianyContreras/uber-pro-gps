@@ -960,7 +960,7 @@
       }, /*#__PURE__*/React.createElement("h3", null, "CAPTURA EN VIVO"), /*#__PURE__*/React.createElement("p", null, "Usa tu c\xE1mara en tiempo real"), /*#__PURE__*/React.createElement("div", {
         className: "mode-badge"
       }, "INSTANT\xC1NEO"))), /*#__PURE__*/React.createElement("button", {
-        className: "mode-option active",
+        className: "mode-option active " + (!preview ? 'pulse-web' : ''),
         onClick: pasteImage,
         style: {
           gridColumn: '1 / -1',
