@@ -628,61 +628,51 @@
       const openInGoogleMaps = () => {
         let query = coordinates || address || extractedLocation;
         if (!query) return;
-
         if (coordinates) {
           const parts = coordinates.match(/([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)/);
           if (parts && parts.length >= 3) {
             const lat = parts[1].trim();
             const lng = parts[2].trim();
             query = `${lat},${lng}`;
-            console.log("Coordenadas Google (Native Scheme):", query);
-            // Using native scheme comgooglemaps:// instead of https://
             openNativeUrl(`comgooglemaps://?q=${encodeURIComponent(query)}`);
             return;
           }
         }
-        const encodedQuery = encodeURIComponent(query);
-        openNativeUrl(`comgooglemaps://?q=${encodedQuery}`);
+        openNativeUrl(`comgooglemaps://?q=${encodeURIComponent(query)}`);
       };
+
       const openInAppleMaps = () => {
         let query = coordinates || address || extractedLocation;
         if (!query) return;
-
         if (coordinates) {
           const parts = coordinates.match(/([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)/);
           if (parts && parts.length >= 3) {
             const lat = parts[1].trim();
             const lng = parts[2].trim();
             query = `${lat},${lng}`;
-            console.log("Coordenadas Apple (Native Scheme):", query);
-            // Using native scheme maps:// instead of http://maps.apple.com/
             openNativeUrl(`maps://?ll=${lat},${lng}&q=${encodeURIComponent(query)}`);
             return;
           }
         }
-        const encodedQuery = encodeURIComponent(query);
-        openNativeUrl(`maps://?q=${encodedQuery}`);
+        openNativeUrl(`maps://?q=${encodeURIComponent(query)}`);
       };
+
       const openInSygic = () => {
         const query = coordinates || address || extractedLocation;
         if (!query) return;
-
         if (coordinates) {
           const parts = coordinates.match(/([-+]?\d+(\.\d+)?)/g);
           if (parts && parts.length >= 2) {
             const lat = parts[0];
             const lng = parts[1];
-            // REVERTED: Using literal pipes | instead of %7C as Sygic apps often require them raw
-            const sygicUrl = `com.sygic.aura://coordinate|${lng}|${lat}|drive`;
-            console.log("Abriendo Sygic (Raw Pipes):", sygicUrl);
-            openNativeUrl(sygicUrl);
+            // Exact working format from previous successful step
+            openNativeUrl(`com.sygic.aura://coordinate|${lng}|${lat}|drive`);
             return;
           }
         }
-
         const encodedQuery = encodeURIComponent(query);
-        // Fallback para búsqueda con pipe literal
-        openNativeUrl(`com.sygic.aura://search|${query}`);
+        // Restoring original working fallback
+        openNativeUrl(`https://go.sygic.com/travel/place?q=${encodedQuery}`);
       };
       const resetAll = () => {
         setPreview(null);
