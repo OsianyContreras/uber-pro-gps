@@ -618,14 +618,45 @@
           setError('Error al intentar compartir');
         });
       };
-      const getLastImage = () => {
-        if (window.ReactNativeWebView) {
+      const pasteImage = async () => {
+        try {
+          // Primero intentamos pedir permiso/acceso al portapapeles
+          if (!navigator.clipboard || !navigator.clipboard.read) {
+            alert('Tu navegador no soporta pegar imágenes directamente. Intenta "Pegar" (Ctrl+V) en el área de texto.');
+            return;
+          }
           setLoading(true);
           setProgress(0);
           setError('');
-          window.ReactNativeWebView.postMessage('GET_LAST_IMAGE');
-        } else {
-          alert('Esta función solo está disponible en la App nativa');
+          const items = await navigator.clipboard.read();
+          for (const item of items) {
+            for (const type of item.types) {
+              if (type.startsWith('image/')) {
+                const blob = await item.getType(type);
+                const reader = new FileReader();
+                reader.onload = async e => {
+                  const base64Str = e.target.result;
+                  const resized = await resizeImage(base64Str, 1024);
+                  setPreview(resized);
+                  setScanAnimation(true);
+                  setIsProcessing(true);
+                  processImage(resized);
+                };
+                reader.readAsDataURL(blob);
+                return;
+              }
+            }
+          }
+          alert('No se encontró ninguna imagen en tu portapapeles. Recuerda "Copiar" la captura primero.');
+          setLoading(false);
+        } catch (err) {
+          console.error('Clipboard Error:', err);
+          setLoading(false);
+          if (err.name === 'NotAllowedError') {
+            alert('Permiso denegado. Debes permitir el acceso al portapapeles cuando el navegador lo pregunte.');
+          } else {
+            alert('Error al pegar: Asegúrate de tener una imagen copiada.');
+          }
         }
       };
       const openNativeUrl = url => {
@@ -930,7 +961,7 @@
         className: "mode-badge"
       }, "INSTANT\xC1NEO"))), /*#__PURE__*/React.createElement("button", {
         className: "mode-option active",
-        onClick: getLastImage,
+        onClick: pasteImage,
         style: {
           gridColumn: '1 / -1',
           marginTop: '10px',
@@ -941,14 +972,14 @@
         className: "mode-glow"
       }), /*#__PURE__*/React.createElement("div", {
         className: "mode-icon"
-      }, "\u26A1"), /*#__PURE__*/React.createElement("div", {
+      }, "\uD83D\uDCCB"), /*#__PURE__*/React.createElement("div", {
         className: "mode-content"
-      }, /*#__PURE__*/React.createElement("h3", null, "AUTO-CARGAR \xDALTIMA"), /*#__PURE__*/React.createElement("p", null, "Detecta y procesa la \xFAltima captura"), /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/React.createElement("h3", null, "PEGAR CAPTURA"), /*#__PURE__*/React.createElement("p", null, "Inicia con la imagen copiada"), /*#__PURE__*/React.createElement("div", {
         className: "mode-badge",
         style: {
           background: 'var(--accent)'
         }
-      }, "M\xC1S R\xC1PIDO"))))), mode === 'camera' && !preview && /*#__PURE__*/React.createElement("div", {
+      }, "WEB SPEED"))))), mode === 'camera' && !preview && /*#__PURE__*/React.createElement("div", {
         className: "glass-card camera-card"
       }, /*#__PURE__*/React.createElement("div", {
         className: "card-header"
