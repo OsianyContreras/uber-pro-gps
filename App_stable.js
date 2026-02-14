@@ -665,13 +665,12 @@
           if (parts && parts.length >= 2) {
             const lat = parts[0];
             const lng = parts[1];
-            // Exact working format from previous successful step
-            openNativeUrl(`com.sygic.aura://coordinate|${lng}|${lat}|drive`);
+            // Usamos el redirect web de Sygic que es compatible con Safari y abre la app nativa automáticamente
+            openNativeUrl(`https://go.sygic.com/travel/place?q=${lat},${lng}`);
             return;
           }
         }
         const encodedQuery = encodeURIComponent(query);
-        // Restoring original working fallback
         openNativeUrl(`https://go.sygic.com/travel/place?q=${encodedQuery}`);
       };
       const resetAll = () => {
