@@ -28,7 +28,38 @@
         if (typeof React === 'undefined') throw new Error("React library not found in folder 'libs'");
         if (typeof ReactDOM === 'undefined') throw new Error("ReactDOM library not found");
         
-        console.log("[INIT] Libraries OK. Running App...");
+        console.log("[INIT] Libraries OK. Creating Error Boundary...");
+
+        class ErrorBoundary extends React.Component {
+          constructor(props) {
+            super(props);
+            this.state = { hasError: false, error: null };
+          }
+          static getDerivedStateFromError(error) {
+            return { hasError: true, error: error };
+          }
+          componentDidCatch(error, errorInfo) {
+            console.error("React Component Error:", error, errorInfo);
+          }
+          render() {
+            if (this.state.hasError) {
+              return React.createElement('div', {
+                style: { padding: '20px', background: '#000', color: '#f00', height: '100vh', overflow: 'auto' }
+              }, [
+                React.createElement('h1', null, 'ERROR DE RENDERIZADO'),
+                React.createElement('p', {style: {color:'#fff'}}, this.state.error.message),
+                React.createElement('pre', {style: {color:'#888', fontSize:'10px'}}, this.state.error.stack),
+                React.createElement('button', {
+                  onClick: () => location.reload(),
+                  style: {padding:'10px', marginTop:'20px'}
+                }, 'RECARGAR APP')
+              ]);
+            }
+            return this.props.children;
+          }
+        }
+
+        console.log("[INIT] Running App...");
 
         const {
   useState,
@@ -111,21 +142,34 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Cargar historial al iniciar
+  // Cargar historial al iniciar (CON SEGURIDAD)
   useEffect(() => {
-    const savedHistory = localStorage.getItem('ubertronHistory');
-    if (savedHistory) {
-      try {
+    try {
+      const savedHistory = localStorage.getItem('ubertronHistory');
+      if (savedHistory) {
         setHistory(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error("Error loading history", e);
       }
+    } catch (e) {
+      console.error("Error loading history", e);
+      setHistory([]);
     }
   }, []);
 
-  // Guardar historial cuando cambie
+  // Guardar historial cuando cambie (CON SEGURIDAD Y LIMPIEZA)
   useEffect(() => {
-    localStorage.setItem('ubertronHistory', JSON.stringify(history));
+    try {
+      // Solo guardar si hay algo para no gastar ciclos
+      if (history && history.length > 0) {
+        localStorage.setItem('ubertronHistory', JSON.stringify(history));
+      }
+    } catch (e) {
+      console.error("Critical Storage Error:", e);
+      // Si falla por espacio, intentamos limpiar la mitad mas vieja
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        console.warn("Storage full, trimming history...");
+        setHistory(prev => prev.slice(0, Math.floor(prev.length / 2)));
+      }
+    }
   }, [history]);
 
   // Inicializar cámara
@@ -303,13 +347,17 @@ function App() {
       extractLocationInfo(text);
 
       // AGREGAR AL HISTORIAL (Inyectado ahora que lo encontramos)
+      // IMPORTANTE: NO GUARDAMOS LA IMAGEN PARA EVITAR QUOTA EXCEEDED ERROR EN MOBILE
       const newHistoryItem = {
         id: Date.now(),
         date: new Date().toLocaleTimeString(),
-        text: text.substring(0, 50) + '...',
-        image: imageData.length < 500000 ? imageData : null // Solo guardar si no es gigante
+        text: text.substring(0, 80) + '...',
+        image: null // Seteado como null para seguridad de almacenamiento
       };
-      setHistory(prev => [newHistoryItem, ...prev.slice(0, 19)]);
+      setHistory(prev => {
+        const newHistory = [newHistoryItem, ...prev.slice(0, 14)]; // Max 15 items
+        return newHistory;
+      });
       setProgress(100);
 
       // Limpieza del worker post-procesamiento
@@ -1487,8 +1535,17 @@ function App() {
 ;
 
 // Renderizar la aplicación
-ReactDOM.render(/*#__PURE__*/React.createElement(App, null), document.getElementById('root'));
+// La renderización ahora la maneja el transpile_for_browser.js para envolver con ErrorBoundary
         
+        // MODIFICACION: Envolver renderizado con ErrorBoundary
+        const root = document.getElementById('root');
+        if (root) {
+            ReactDOM.render(
+                React.createElement(ErrorBoundary, null, React.createElement(App)),
+                root
+            );
+        }
+
         console.log("[INIT] Setup complete.");
     } catch (e) {
         console.error("[CRITICAL ERROR]", e);
