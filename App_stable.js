@@ -618,6 +618,16 @@
           setError('Error al intentar compartir');
         });
       };
+      const getLastImage = () => {
+        if (window.ReactNativeWebView) {
+          setLoading(true);
+          setProgress(0);
+          setError('');
+          window.ReactNativeWebView.postMessage('GET_LAST_IMAGE');
+        } else {
+          alert('Esta función solo está disponible en la App nativa');
+        }
+      };
       const openNativeUrl = url => {
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage('OPEN_URL:' + url);
@@ -918,7 +928,27 @@
         className: "mode-content"
       }, /*#__PURE__*/React.createElement("h3", null, "CAPTURA EN VIVO"), /*#__PURE__*/React.createElement("p", null, "Usa tu c\xE1mara en tiempo real"), /*#__PURE__*/React.createElement("div", {
         className: "mode-badge"
-      }, "INSTANT\xC1NEO"))))), mode === 'camera' && !preview && /*#__PURE__*/React.createElement("div", {
+      }, "INSTANT\xC1NEO"))), /*#__PURE__*/React.createElement("button", {
+        className: "mode-option active",
+        onClick: getLastImage,
+        style: {
+          gridColumn: '1 / -1',
+          marginTop: '10px',
+          border: '1px solid var(--accent)',
+          background: 'rgba(108, 99, 255, 0.1)'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "mode-glow"
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "mode-icon"
+      }, "\u26A1"), /*#__PURE__*/React.createElement("div", {
+        className: "mode-content"
+      }, /*#__PURE__*/React.createElement("h3", null, "AUTO-CARGAR \xDALTIMA"), /*#__PURE__*/React.createElement("p", null, "Detecta y procesa la \xFAltima captura"), /*#__PURE__*/React.createElement("div", {
+        className: "mode-badge",
+        style: {
+          background: 'var(--accent)'
+        }
+      }, "M\xC1S R\xC1PIDO"))))), mode === 'camera' && !preview && /*#__PURE__*/React.createElement("div", {
         className: "glass-card camera-card"
       }, /*#__PURE__*/React.createElement("div", {
         className: "card-header"
