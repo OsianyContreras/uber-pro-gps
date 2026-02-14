@@ -688,17 +688,17 @@
           if (parts && parts.length >= 2) {
             const lat = parts[0];
             const lng = parts[1];
-            // Sygic URL scheme with percent-encoded pipes (%7C)
-            const sygicUrl = `com.sygic.aura://coordinate%7C${lng}%7C${lat}%7Cdrive`;
-            console.log("Abriendo Sygic con coords:", sygicUrl);
+            // REVERTED: Using literal pipes | instead of %7C as Sygic apps often require them raw
+            const sygicUrl = `com.sygic.aura://coordinate|${lng}|${lat}|drive`;
+            console.log("Abriendo Sygic (Raw Pipes):", sygicUrl);
             openNativeUrl(sygicUrl);
             return;
           }
         }
 
         const encodedQuery = encodeURIComponent(query);
-        // Fallback para búsqueda
-        openNativeUrl(`com.sygic.aura://search%7C${encodedQuery}`);
+        // Fallback para búsqueda con pipe literal
+        openNativeUrl(`com.sygic.aura://search|${query}`);
       };
       const resetAll = () => {
         setPreview(null);
