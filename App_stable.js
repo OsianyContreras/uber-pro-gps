@@ -629,55 +629,39 @@
         let query = coordinates || address || extractedLocation;
         if (!query) return;
 
-        // Limpieza y formateo para Google Maps
-        if (coordinates) {
-          // Intentar extraer lat y lng decimales
-          // Regex busca: (numero) (separador) (numero)
-          const parts = coordinates.match(/([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)/);
-          if (parts && parts.length >= 3) {
-            // Asumimos que el OCR devuelve "Lat, Lng". 
-            // Si el OCR devuelve "Lng, Lat" (poco común pero posible en algunos formatos), esto estaría invertido.
-            // Sin embargo, Google Maps espera "Lat,Lng".
-
-            const lat = parts[1];
-            const lng = parts[2];
-
-            // Limpieza extra: asegurar que son números válidos y formatear
-            query = `${lat.trim()},${lng.trim()}`;
-            console.log("Coordenadas Google formateadas:", query);
-
-            // Usamos 'api=1&query=' con las coordenadas limpias
-            openNativeUrl(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`);
-            return;
-          }
-        }
-        const encodedQuery = encodeURIComponent(query);
-        openNativeUrl(`https://www.google.com/maps/search/?api=1&query=${encodedQuery}`);
-      };
-      const openInAppleMaps = () => {
-        let query = coordinates || address || extractedLocation;
-        if (!query) return;
-
-        // Limpieza para Apple Maps
         if (coordinates) {
           const parts = coordinates.match(/([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)/);
           if (parts && parts.length >= 3) {
             const lat = parts[1].trim();
             const lng = parts[2].trim();
             query = `${lat},${lng}`;
-            console.log("Coordenadas Apple formateadas:", query);
-
-            // Apple Maps: 'll' es para centrar el mapa, 'q' es para el marcador.
-            // IMPORTANTE: Apple Maps es muy sensible a espacios.
-            const encodedQ = encodeURIComponent(query);
-            // Usamos 'http://maps.apple.com/' que redirige a la app nativa.
-            // Forzamos "ll" Y "q" para asegurar marcador y centro.
-            openNativeUrl(`http://maps.apple.com/?ll=${lat},${lng}&q=${encodedQ}`);
+            console.log("Coordenadas Google (Native Scheme):", query);
+            // Using native scheme comgooglemaps:// instead of https://
+            openNativeUrl(`comgooglemaps://?q=${encodeURIComponent(query)}`);
             return;
           }
         }
         const encodedQuery = encodeURIComponent(query);
-        openNativeUrl(`http://maps.apple.com/?q=${encodedQuery}`);
+        openNativeUrl(`comgooglemaps://?q=${encodedQuery}`);
+      };
+      const openInAppleMaps = () => {
+        let query = coordinates || address || extractedLocation;
+        if (!query) return;
+
+        if (coordinates) {
+          const parts = coordinates.match(/([-+]?\d+(?:\.\d+)?)[,\s]+([-+]?\d+(?:\.\d+)?)/);
+          if (parts && parts.length >= 3) {
+            const lat = parts[1].trim();
+            const lng = parts[2].trim();
+            query = `${lat},${lng}`;
+            console.log("Coordenadas Apple (Native Scheme):", query);
+            // Using native scheme maps:// instead of http://maps.apple.com/
+            openNativeUrl(`maps://?ll=${lat},${lng}&q=${encodeURIComponent(query)}`);
+            return;
+          }
+        }
+        const encodedQuery = encodeURIComponent(query);
+        openNativeUrl(`maps://?q=${encodedQuery}`);
       };
       const openInSygic = () => {
         const query = coordinates || address || extractedLocation;
