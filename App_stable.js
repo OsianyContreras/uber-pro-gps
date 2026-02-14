@@ -1,25 +1,34 @@
 
 (function() {
-    console.log("🚀 App_stable.js: Iniciando carga...");
+    console.log("[INIT] App_stable.js loading...");
     
-    function showFatalError(msg, stack) {
-        var div = document.createElement('div');
-        div.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:#1a0000;color:#ff4444;padding:20px;z-index:100000;font-family:sans-serif;overflow:auto;";
-        div.innerHTML = "<h1>❌ ERROR DE INICIALIZACIÓN</h1>" +
-                        "<p style='color:white'>Hubo un problema al cargar el sistema en este dispositivo.</p>" +
-                        "<div style='background:#000;padding:10px;border-radius:5px;border:1px solid #444'>" +
-                        "<p><b>Error:</b> " + msg + "</p>" +
-                        "<pre style='font-size:12px;color:#888'>" + (stack || "") + "</pre>" +
-                        "</div>" +
-                        "<p style='margin-top:20px;color:#aaa'>Sugerencia: Abre este link en <b>Incógnito</b> o limpia el caché.</p>";
-        document.body.appendChild(div);
+    // Consola de depuracion visible opcional (se activa con error)
+    function showDebug(title, msg, stack) {
+        var d = document.getElementById('debug-overlay');
+        if (!d) {
+            d = document.createElement('div');
+            d.id = 'debug-overlay';
+            d.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:#000;color:#f00;padding:20px;z-index:999999;font-family:monospace;overflow:auto;display:block;";
+            document.body.appendChild(d);
+        }
+        d.innerHTML = "<h1>" + title + "</h1>" +
+                      "<p style='color:#fff'>" + msg + "</p>" +
+                      "<pre style='color:#888;font-size:10px;'>" + (stack || "") + "</pre>" +
+                      "<button onclick='location.reload()' style='padding:10px;margin-top:20px;'>REINTENTAR</button>";
     }
 
+    // Capturar errores no manejados
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+        console.error("[GLOBAL ERROR]", msg, url, lineNo);
+        showDebug("ERROR GLOBAL", msg + " (Linea: " + lineNo + ")", (error ? error.stack : ""));
+        return false;
+    };
+
     try {
-        if (typeof React === 'undefined') throw new Error("La librería 'React' no se encontró. Verifica que folder 'libs' esté en GitHub.");
-        if (typeof ReactDOM === 'undefined') throw new Error("La librería 'ReactDOM' no se encontró.");
+        if (typeof React === 'undefined') throw new Error("React library not found in folder 'libs'");
+        if (typeof ReactDOM === 'undefined') throw new Error("ReactDOM library not found");
         
-        console.log("✅ Librerías detectadas.");
+        console.log("[INIT] Libraries OK. Running App...");
 
         const {
   useState,
@@ -55,11 +64,15 @@ function App() {
 
   // Auto-cambiar a pestaña de resultados cuando termine el escaneo
   useEffect(() => {
-    // MODIFICADO: Cambiar siempre si progres es 100, incluso si extraedLocation es débil
     if (progress === 100 && !loading) {
+      console.log("Scan 100% complete. Transitioning to results...");
       const timer = setTimeout(() => {
-        setActiveTab('results');
-      }, 800); // Un poco más de tiempo para que se vea el 100%
+        try {
+          setActiveTab('results');
+        } catch (e) {
+          console.error("Error switching to results tab:", e);
+        }
+      }, 1000); // 1 segundo de pausa para estabilizar memoria
       return () => clearTimeout(timer);
     }
   }, [progress, loading]);
@@ -202,8 +215,7 @@ function App() {
   };
 
   // ========== UTILIDADES DE IMAGEN (OPTIMIZADAS PARA MEMORIA) ==========
-  const resizeImage = function (base64Str) {
-    let maxWidth = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 800;
+  const resizeImage = (base64Str, maxWidth = 800) => {
     return new Promise(resolve => {
       const img = new Image();
       img.src = base64Str;
@@ -282,18 +294,34 @@ function App() {
           text
         }
       } = result;
-      console.log("Texto extraído longitud:", text ? text.length : 0);
-      await worker.terminate();
+      console.log("Texto extraido OK.");
+
+      // ACTUALIZAR ESTADOS
       setText(text);
       extractLocationInfo(text);
+
+      // AGREGAR AL HISTORIAL (Inyectado ahora que lo encontramos)
+      const newHistoryItem = {
+        id: Date.now(),
+        date: new Date().toLocaleTimeString(),
+        text: text.substring(0, 50) + '...',
+        image: imageData.length < 500000 ? imageData : null // Solo guardar si no es gigante
+      };
+      setHistory(prev => [newHistoryItem, ...prev.slice(0, 19)]);
       setProgress(100);
+
+      // Limpieza del worker post-procesamiento
+      await worker.terminate();
     } catch (error) {
       console.error('Error en OCR:', error);
       setError('Error al procesar: ' + (error.message || 'Error desconocido'));
     } finally {
-      setLoading(false);
-      setIsProcessing(false);
-      setScanAnimation(false);
+      // No quitamos el loading de inmediato para evitar flashes de UI
+      setTimeout(() => {
+        setLoading(false);
+        setIsProcessing(false);
+        setScanAnimation(false);
+      }, 500);
       console.log("=== FIN PROCESO DE IMAGEN ===");
     }
   };
@@ -1459,9 +1487,9 @@ function App() {
 // Renderizar la aplicación
 ReactDOM.render(/*#__PURE__*/React.createElement(App, null), document.getElementById('root'));
         
-        console.log("✅ App renderizada.");
+        console.log("[INIT] Setup complete.");
     } catch (e) {
-        console.error("❌ ERROR CRITICO:", e);
-        showFatalError(e.message, e.stack);
+        console.error("[CRITICAL ERROR]", e);
+        showDebug("ERROR CRITICO", e.message, e.stack);
     }
 })();
