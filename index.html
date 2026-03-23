@@ -12,16 +12,12 @@
         .spinner { border-top-color: #3b82f6; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Input invisible pero con tamaño para forzar el menú de pegar */
-        #pasteHelper {
+        /* Área invisible para forzar el menú "Pegar" de Safari */
+        #safariHelper {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 1px;
-            height: 1px;
+            top: 0; left: 0; width: 100%; height: 100%;
             opacity: 0;
-            pointer-events: none;
+            z-index: 10;
         }
 
         .attention-pulse {
@@ -37,17 +33,17 @@
 </head>
 <body class="flex flex-col items-center p-6 space-y-10">
 
-    <!-- Elemento para forzar el foco y el evento paste -->
-    <div id="pasteTarget" contenteditable="true" style="position:fixed; top:-100px; left:0; opacity:0;"></div>
-
     <header class="text-center pt-12">
         <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 uppercase tracking-tighter italic">Sygic Auto-Link</h1>
-        <p class="text-gray-500 text-[10px] mt-2 uppercase tracking-[0.3em]">Corrección de Activación</p>
+        <p class="text-gray-500 text-[10px] mt-2 uppercase tracking-[0.3em]">Optimizado para Safari iOS</p>
     </header>
 
     <main class="w-full max-w-sm space-y-6 text-center">
-        <div id="mainBox" class="ios-card rounded-[3rem] p-10 shadow-2xl relative">
+        <div id="mainBox" class="ios-card rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
             
+            <!-- Elemento oculto que Safari permite "pegar" -->
+            <div id="safariHelper" contenteditable="true" inputmode="none"></div>
+
             <!-- Estado 1: Esperando -->
             <div id="idleState" class="space-y-6">
                 <div class="w-20 h-20 bg-blue-500/10 rounded-full mx-auto flex items-center justify-center border border-blue-500/20">
@@ -57,71 +53,73 @@
                 </div>
                 <div>
                     <h2 class="text-xl font-bold uppercase tracking-tight">Captura Lista</h2>
-                    <p id="statusText" class="text-gray-400 text-xs mt-2">1. Toca el botón azul.<br>2. Selecciona <b>"Pegar"</b> cuando aparezca.</p>
+                    <p class="text-gray-400 text-xs mt-2 leading-relaxed">
+                        1. Toca el botón azul.<br>
+                        2. Selecciona <b>"Pegar"</b> en el menú negro.
+                    </p>
                 </div>
                 
                 <button id="triggerBtn" class="w-full bg-blue-600 text-white py-6 rounded-2xl font-black text-lg shadow-lg attention-pulse uppercase transition-all active:scale-95">
-                    ACTIVAR PEGADO
+                    PEGAR CAPTURA
                 </button>
             </div>
 
             <!-- Estado 2: Procesando -->
             <div id="processingState" class="hidden py-6 space-y-6">
                 <div class="spinner w-16 h-16 border-4 border-white/10 rounded-full mx-auto"></div>
-                <p class="text-blue-400 font-black tracking-widest animate-pulse uppercase">Analizando Imagen...</p>
+                <p class="text-blue-400 font-black tracking-widest animate-pulse uppercase">Extrayendo coordenadas...</p>
             </div>
 
             <!-- Estado 3: Éxito -->
             <div id="successState" class="hidden py-4 space-y-8">
                 <div class="space-y-1">
-                    <p class="text-[10px] text-emerald-400 font-bold tracking-[0.2em] uppercase">Coordenadas OK</p>
+                    <p class="text-[10px] text-emerald-400 font-bold tracking-[0.2em] uppercase">Ruta Detectada</p>
                     <p id="coordsDisplay" class="text-2xl font-mono text-white"></p>
                 </div>
                 <button onclick="launchSygic()" class="w-full bg-gradient-to-tr from-emerald-400 to-green-600 py-6 rounded-[2rem] font-black text-xl shadow-lg active:scale-95 transition-all uppercase">
-                    ABRIR SYGIC
+                    ABRIR EN SYGIC
                 </button>
             </div>
         </div>
 
-        <button onclick="document.getElementById('fileInput').click()" class="text-gray-600 text-[10px] uppercase tracking-widest opacity-40">
-            Usar archivo manualmente
-        </button>
-        <input type="file" id="fileInput" accept="image/*" class="hidden">
+        <p class="text-[10px] text-gray-700 uppercase tracking-widest px-4 leading-normal">
+            Asegúrate de tener instalada la app Sygic original.
+        </p>
     </main>
 
     <script>
         let lat = "", lon = "";
         const triggerBtn = document.getElementById('triggerBtn');
-        const pasteTarget = document.getElementById('pasteTarget');
+        const helper = document.getElementById('safariHelper');
         const idleState = document.getElementById('idleState');
         const processingState = document.getElementById('processingState');
         const successState = document.getElementById('successState');
         const coordsDisplay = document.getElementById('coordsDisplay');
 
-        // Al tocar el botón, forzamos el foco en un elemento editable
-        // Esto hace que iOS muestre la opción de "Pegar"
-        triggerBtn.addEventListener('click', () => {
-            pasteTarget.focus();
-            // Intentamos ejecutar el comando nativo
-            document.execCommand('paste');
+        // Acción al tocar el botón: forzar foco para que Safari muestre "Pegar"
+        triggerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            helper.focus();
+            // En Safari, a veces el menú no sale al primer toque, esto ayuda a forzarlo
+            setTimeout(() => { helper.focus(); }, 50);
         });
 
-        // Capturamos el evento de pegado en el documento
-        document.addEventListener('paste', (e) => {
+        // Capturamos el evento de pegado
+        helper.addEventListener('paste', (e) => {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            let imageFound = false;
+            let found = false;
 
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf('image') !== -1) {
                     const blob = items[i].getAsFile();
                     processImage(blob);
-                    imageFound = true;
+                    found = true;
                     break;
                 }
             }
             
-            if (!imageFound) {
-                alert("No se encontró una imagen en el portapapeles. Asegúrate de que el Atajo copió la captura.");
+            if (!found) {
+                alert("No se detectó una imagen en el portapapeles.");
             }
         });
 
@@ -130,6 +128,7 @@
             processingState.classList.remove('hidden');
 
             try {
+                // Usamos Tesseract con configuración rápida
                 const worker = await Tesseract.createWorker('eng');
                 await worker.setParameters({ tessedit_char_whitelist: '0123456789.,- ' });
                 const { data: { text } } = await worker.recognize(file);
@@ -143,31 +142,29 @@
                     coordsDisplay.innerText = `${lat}, ${lon}`;
                     processingState.classList.add('hidden');
                     successState.classList.remove('hidden');
-                    if (navigator.vibrate) navigator.vibrate(50);
+                    // Salto automático tras 0.5s si todo está listo
+                    setTimeout(launchSygic, 500);
                 } else {
-                    alert("No se detectaron coordenadas legibles. Asegúrate de que la captura no sea borrosa.");
+                    alert("No se leyeron coordenadas. Intenta otra captura.");
                     resetUI();
                 }
             } catch (err) {
-                alert("Error de procesamiento: " + err.message);
+                alert("Error: " + err.message);
                 resetUI();
             }
         }
 
         function launchSygic() {
             window.location.href = `com.sygic.aura://coordinate|${lon}|${lat}|drive`;
-            setTimeout(resetUI, 3000);
+            setTimeout(resetUI, 4000);
         }
 
         function resetUI() {
             idleState.classList.remove('hidden');
             processingState.classList.add('hidden');
             successState.classList.add('hidden');
+            helper.innerHTML = "";
         }
-
-        document.getElementById('fileInput').addEventListener('change', (e) => {
-            if (e.target.files[0]) processImage(e.target.files[0]);
-        });
     </script>
 </body>
 </html>
