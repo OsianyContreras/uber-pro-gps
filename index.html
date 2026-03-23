@@ -7,15 +7,23 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.3/dist/tesseract.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        
         body { 
             background-color: #000; 
             color: #fff; 
-            font-family: -apple-system, system-ui, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
+        
         #pasteInput {
             background: #2563eb;
             color: white;
@@ -29,17 +37,23 @@
             border: none;
             outline: none;
             -webkit-appearance: none;
+            touch-action: manipulation;
         }
+        
         .spinner { 
             border: 4px solid rgba(255, 255, 255, 0.1);
             border-top: 4px solid #3b82f6; 
             border-radius: 50%;
-            width: 50px; height: 50px;
+            width: 50px; 
+            height: 50px;
             animation: spin 1s linear infinite; 
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Overlay para capturar el primer toque necesario en iOS */
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        
         #interactionOverlay {
             position: fixed;
             top: 0;
@@ -47,30 +61,53 @@
             width: 100%;
             height: 100%;
             z-index: 100;
-            background: transparent;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        button, label {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
 <body class="p-6 bg-gradient-to-b from-gray-900 to-black">
 
-    <!-- Este overlay captura el toque obligatorio que pide Safari para leer el clipboard -->
-    <div id="interactionOverlay"></div>
+    <!-- Overlay inicial para activar lectura de clipboard -->
+    <div id="interactionOverlay">
+        <div class="text-center px-8">
+            <div class="mb-6">
+                <svg class="w-20 h-20 mx-auto text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-black mb-3 uppercase italic">Toca para Iniciar</h2>
+            <p class="text-sm text-blue-400">La captura se detectará automáticamente</p>
+        </div>
+    </div>
 
-    <header class="text-center mb-10 mt-4">
+    <header class="text-center mb-8 mt-4">
         <h1 class="text-3xl font-black italic bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent uppercase tracking-tighter">Uber Navigator</h1>
-        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Sygic Bridge v5.1 AUTO-FIX</p>
+        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Sygic Bridge v5.2 AUTO</p>
     </header>
 
     <main class="flex-1 flex flex-col items-center justify-start space-y-8 w-full max-w-sm mx-auto relative z-10">
         
         <!-- ESTADO INICIAL -->
-        <div id="idleState" class="w-full space-y-6">
+        <div id="idleState" class="w-full space-y-6 hidden">
             <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 text-center">
-                <p id="mainInstruction" class="text-blue-400 font-bold text-sm mb-6 animate-pulse uppercase italic">Toca cualquier parte para iniciar</p>
+                <p id="mainInstruction" class="text-blue-400 font-bold text-sm mb-6 animate-pulse uppercase italic">Esperando imagen...</p>
                 
                 <div class="space-y-3">
-                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">O pega manualmente aquí:</p>
-                    <input type="text" id="pasteInput" placeholder="PEGAR CAPTURA" readonly>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Pega manualmente:</p>
+                    <input type="text" id="pasteInput" placeholder="PEGAR CAPTURA">
                 </div>
 
                 <div class="relative my-8">
@@ -79,8 +116,8 @@
                 </div>
 
                 <div class="space-y-3">
-                    <label for="fileInput" class="block w-full bg-white/10 text-white py-4 rounded-2xl font-bold transition-all cursor-pointer text-xs uppercase">
-                        Seleccionar de la Galería
+                    <label for="fileInput" class="block w-full bg-white/10 text-white py-4 rounded-2xl font-bold transition-all cursor-pointer text-xs uppercase active:scale-95">
+                        Seleccionar de Galería
                     </label>
                     <input type="file" id="fileInput" accept="image/*" class="hidden">
                 </div>
@@ -97,11 +134,26 @@
         <!-- ESTADO ÉXITO -->
         <div id="successState" class="hidden w-full space-y-4">
             <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 text-center">
-                <p class="text-xs text-emerald-400 font-bold uppercase mb-2">Coordenadas Listas</p>
-                <p id="coordsDisplay" class="text-3xl font-mono text-white tracking-tighter"></p>
+                <p class="text-xs text-emerald-400 font-bold uppercase mb-2">✓ Coordenadas Detectadas</p>
+                <p id="coordsDisplay" class="text-2xl font-mono text-white tracking-tight break-all px-2"></p>
             </div>
-            <button onclick="launchSygic()" class="w-full bg-emerald-600 text-white py-6 rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-transform uppercase italic">
-                Navegar ahora
+            <button id="navButton" class="w-full bg-emerald-600 text-white py-6 rounded-3xl font-black text-xl shadow-2xl active:scale-95 transition-transform uppercase italic">
+                🧭 Navegar Ahora
+            </button>
+            <button id="retryButton" class="w-full bg-white/10 text-white py-4 rounded-2xl font-bold text-sm uppercase">
+                Intentar Otra Vez
+            </button>
+        </div>
+
+        <!-- ESTADO ERROR -->
+        <div id="errorState" class="hidden w-full space-y-4">
+            <div class="bg-red-500/10 border border-red-500/20 rounded-3xl p-6 text-center">
+                <p class="text-4xl mb-4">⚠️</p>
+                <p class="text-sm text-red-400 font-bold uppercase mb-2">Error al Procesar</p>
+                <p id="errorMessage" class="text-xs text-gray-400"></p>
+            </div>
+            <button id="retryButton2" class="w-full bg-blue-600 text-white py-6 rounded-3xl font-black text-xl shadow-2xl active:scale-95 transition-transform uppercase">
+                Reintentar
             </button>
         </div>
 
@@ -113,106 +165,253 @@
         const idleState = document.getElementById('idleState');
         const processingState = document.getElementById('processingState');
         const successState = document.getElementById('successState');
+        const errorState = document.getElementById('errorState');
         const coordsDisplay = document.getElementById('coordsDisplay');
         const progressTxt = document.getElementById('progressTxt');
         const mainInstruction = document.getElementById('mainInstruction');
         const interactionOverlay = document.getElementById('interactionOverlay');
+        const errorMessage = document.getElementById('errorMessage');
+        const navButton = document.getElementById('navButton');
+        const retryButton = document.getElementById('retryButton');
+        const retryButton2 = document.getElementById('retryButton2');
         
-        let lat = "", lon = "";
+        let extractedLat = "";
+        let extractedLon = "";
+        let hasInteracted = false;
 
-        // Función para leer el portapapeles tras una interacción del usuario
-        async function tryAutoPaste() {
+        // Función para cambiar estados
+        function showState(state) {
+            idleState.classList.add('hidden');
+            processingState.classList.add('hidden');
+            successState.classList.add('hidden');
+            errorState.classList.add('hidden');
+            
+            if (state === 'idle') idleState.classList.remove('hidden');
+            if (state === 'processing') processingState.classList.remove('hidden');
+            if (state === 'success') successState.classList.remove('hidden');
+            if (state === 'error') errorState.classList.remove('hidden');
+        }
+
+        // Función para intentar leer el portapapeles
+        async function tryReadClipboard() {
             try {
+                const permission = await navigator.permissions.query({ name: 'clipboard-read' });
+                
+                if (permission.state === 'denied') {
+                    console.log('Permiso de clipboard denegado');
+                    return false;
+                }
+
                 const clipboardItems = await navigator.clipboard.read();
+                
                 for (const item of clipboardItems) {
                     for (const type of item.types) {
                         if (type.startsWith('image/')) {
                             const blob = await item.getType(type);
+                            console.log('Imagen encontrada en clipboard:', blob.type, blob.size);
                             processImage(blob);
-                            interactionOverlay.style.display = 'none';
                             return true;
                         }
                     }
                 }
+                
+                console.log('No se encontró imagen en clipboard');
+                return false;
+                
             } catch (err) {
                 console.error("Error al leer clipboard:", err);
+                return false;
             }
-            return false;
         }
 
-        // En iOS, el primer toque desbloquea el permiso de lectura del portapapeles
+        // Primer toque para activar permisos
         interactionOverlay.addEventListener('click', async () => {
-            mainInstruction.innerText = "Buscando captura...";
-            const success = await tryAutoPaste();
+            if (hasInteracted) return;
+            hasInteracted = true;
+            
+            interactionOverlay.classList.add('hidden');
+            showState('processing');
+            progressTxt.innerText = 'BUSCANDO IMAGEN...';
+
+            // Pequeño delay para dar tiempo al sistema
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            const success = await tryReadClipboard();
+            
             if (!success) {
-                mainInstruction.innerText = "Copia la foto y toca de nuevo";
-            } else {
-                interactionOverlay.style.display = 'none';
+                showState('idle');
+                mainInstruction.innerText = 'No se detectó imagen. Pega o selecciona manualmente.';
             }
         });
 
-        // Fallback manual
+        // Pegado manual
         pasteInput.addEventListener('click', () => {
-            pasteInput.readOnly = false;
+            pasteInput.removeAttribute('readonly');
             pasteInput.focus();
-            setTimeout(() => { pasteInput.readOnly = true; }, 100);
         });
 
-        pasteInput.addEventListener('paste', (e) => {
+        pasteInput.addEventListener('paste', async (e) => {
             e.preventDefault();
-            const item = Array.from((e.clipboardData || e.originalEvent.clipboardData).items).find(x => x.type.indexOf('image') !== -1);
-            if (item) {
-                interactionOverlay.style.display = 'none';
-                processImage(item.getAsFile());
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const blob = item.getAsFile();
+                    console.log('Imagen pegada manualmente:', blob.type, blob.size);
+                    processImage(blob);
+                    return;
+                }
             }
+            
+            showError('No se detectó ninguna imagen en el portapapeles');
         });
 
+        // Selección de archivo
         fileInput.addEventListener('change', (e) => {
-            if (e.target.files[0]) {
-                interactionOverlay.style.display = 'none';
+            if (e.target.files && e.target.files[0]) {
+                console.log('Archivo seleccionado:', e.target.files[0].name);
                 processImage(e.target.files[0]);
             }
         });
 
+        // Procesar imagen con OCR
         async function processImage(file) {
-            idleState.style.display = 'none';
-            processingState.style.display = 'block';
+            showState('processing');
+            progressTxt.innerText = 'INICIALIZANDO OCR...';
 
             try {
+                // Crear worker de Tesseract
                 const worker = await Tesseract.createWorker('eng', 1, {
-                    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.3/dist/worker.min.js',
-                    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.3/tesseract-core.wasm.js',
                     logger: m => {
-                        if(m.status === 'recognizing text') progressTxt.innerText = `${Math.round(m.progress * 100)}%`;
+                        if (m.status === 'recognizing text') {
+                            const percent = Math.round(m.progress * 100);
+                            progressTxt.innerText = `RECONOCIENDO TEXTO: ${percent}%`;
+                        }
                     }
                 });
 
-                await worker.setParameters({ tessedit_char_whitelist: '0123456789.,- ' });
+                // Configurar solo para números y caracteres de coordenadas
+                await worker.setParameters({ 
+                    tessedit_char_whitelist: '0123456789.,- ',
+                    tessedit_pageseg_mode: Tesseract.PSM.AUTO
+                });
+
+                progressTxt.innerText = 'EXTRAYENDO TEXTO...';
                 const { data: { text } } = await worker.recognize(file);
                 await worker.terminate();
 
-                const match = text.match(/(-?\d+\.\d+)\s*[,|\s]\s*(-?\d+\.\d+)/);
-                if (match) {
-                    lat = match[1]; lon = match[2];
-                    coordsDisplay.innerText = `${lat}, ${lon}`;
-                    processingState.style.display = 'none';
-                    successState.style.display = 'block';
-                    if (navigator.vibrate) navigator.vibrate([40, 100, 40]);
-                    
-                    setTimeout(launchSygic, 800);
-                } else {
-                    alert("No se detectaron coordenadas en la imagen.");
-                    location.reload();
+                console.log('Texto extraído:', text);
+
+                // Buscar coordenadas en diferentes formatos
+                const patterns = [
+                    /(-?\d+\.\d+)\s*[,|]\s*(-?\d+\.\d+)/,  // Formato: 21.160038,-86.810660
+                    /(-?\d+\.\d+)\s+(-?\d+\.\d+)/,          // Formato: 21.160038 -86.810660
+                    /Lat[:\s]*(-?\d+\.\d+).*Lon[:\s]*(-?\d+\.\d+)/i,
+                    /(-?\d{1,3}\.\d{4,})/g  // Buscar cualquier número decimal
+                ];
+
+                let match = null;
+                let coords = [];
+
+                // Probar patrones
+                for (let pattern of patterns) {
+                    if (pattern.global) {
+                        coords = text.match(pattern) || [];
+                        if (coords.length >= 2) {
+                            match = [null, coords[0], coords[1]];
+                            break;
+                        }
+                    } else {
+                        match = text.match(pattern);
+                        if (match) break;
+                    }
                 }
+
+                if (match && match[1] && match[2]) {
+                    extractedLat = match[1].trim();
+                    extractedLon = match[2].trim();
+                    
+                    // Validar que sean coordenadas válidas
+                    const lat = parseFloat(extractedLat);
+                    const lon = parseFloat(extractedLon);
+                    
+                    if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                        throw new Error('Coordenadas inválidas detectadas');
+                    }
+
+                    coordsDisplay.innerText = `${extractedLat}, ${extractedLon}`;
+                    showState('success');
+                    
+                    // Vibración de éxito
+                    if (navigator.vibrate) {
+                        navigator.vibrate([40, 80, 40]);
+                    }
+                    
+                    // Auto-navegar después de 1.5 segundos
+                    setTimeout(() => {
+                        launchSygic();
+                    }, 1500);
+                    
+                } else {
+                    throw new Error('No se detectaron coordenadas en la imagen');
+                }
+                
             } catch (err) {
-                alert("Error de procesamiento. Reintenta.");
-                location.reload();
+                console.error('Error en OCR:', err);
+                showError(err.message || 'Error al procesar la imagen');
             }
         }
 
-        function launchSygic() {
-            if (lat && lon) window.location.replace(`com.sygic.aura://coordinate|${lon}|${lat}|drive`);
+        // Mostrar error
+        function showError(message) {
+            errorMessage.innerText = message;
+            showState('error');
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
         }
+
+        // Lanzar Sygic
+        function launchSygic() {
+            if (!extractedLat || !extractedLon) {
+                showError('Coordenadas no disponibles');
+                return;
+            }
+
+            const sygicURL = `com.sygic.aura://coordinate|${extractedLon}|${extractedLat}|drive`;
+            console.log('Abriendo Sygic:', sygicURL);
+            
+            // Intentar abrir Sygic
+            window.location.href = sygicURL;
+            
+            // Fallback: si Sygic no abre en 3 segundos, ofrecer Google Maps
+            setTimeout(() => {
+                if (confirm('¿No se abrió Sygic? ¿Abrir en Google Maps?')) {
+                    window.location.href = `https://www.google.com/maps/search/?api=1&query=${extractedLat},${extractedLon}`;
+                }
+            }, 3000);
+        }
+
+        // Botones de navegación y reinicio
+        navButton.addEventListener('click', launchSygic);
+        retryButton.addEventListener('click', () => location.reload());
+        retryButton2.addEventListener('click', () => location.reload());
+
+        // Auto-inicio cuando la página carga (para flujo de Shortcuts)
+        window.addEventListener('load', async () => {
+            // Esperar un poco para que el sistema se estabilice
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Si hay interacción previa del sistema, intentar leer clipboard automáticamente
+            if (document.hasFocus()) {
+                console.log('Página tiene foco, intentando lectura automática...');
+                const success = await tryReadClipboard();
+                if (success) {
+                    interactionOverlay.classList.add('hidden');
+                    hasInteracted = true;
+                }
+            }
+        });
     </script>
 </body>
 </html>
