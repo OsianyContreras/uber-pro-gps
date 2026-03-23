@@ -16,7 +16,6 @@
             flex-direction: column;
             overflow: hidden;
         }
-        /* Campo de texto real para que iOS muestre el menú Pegar */
         #pasteInput {
             background: #2563eb;
             color: white;
@@ -31,9 +30,6 @@
             outline: none;
             -webkit-appearance: none;
         }
-        #pasteInput:focus {
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5);
-        }
         .spinner { 
             border: 4px solid rgba(255, 255, 255, 0.1);
             border-top: 4px solid #3b82f6; 
@@ -42,38 +38,49 @@
             animation: spin 1s linear infinite; 
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Overlay para capturar el primer toque necesario en iOS */
+        #interactionOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            background: transparent;
+        }
     </style>
 </head>
 <body class="p-6 bg-gradient-to-b from-gray-900 to-black">
 
+    <!-- Este overlay captura el toque obligatorio que pide Safari para leer el clipboard -->
+    <div id="interactionOverlay"></div>
+
     <header class="text-center mb-10 mt-4">
         <h1 class="text-3xl font-black italic bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent uppercase tracking-tighter">Uber Navigator</h1>
-        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Sygic Bridge v4.0</p>
+        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Sygic Bridge v5.1 AUTO-FIX</p>
     </header>
 
-    <main class="flex-1 flex flex-col items-center justify-start space-y-8 w-full max-w-sm mx-auto">
+    <main class="flex-1 flex flex-col items-center justify-start space-y-8 w-full max-w-sm mx-auto relative z-10">
         
         <!-- ESTADO INICIAL -->
         <div id="idleState" class="w-full space-y-6">
             <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 text-center">
-                <p class="text-gray-400 text-sm mb-6">Copia la captura de pantalla en tu Galería y luego:</p>
+                <p id="mainInstruction" class="text-blue-400 font-bold text-sm mb-6 animate-pulse uppercase italic">Toca cualquier parte para iniciar</p>
                 
-                <!-- MÉTODO 1: PEGAR (EL MÁS RÁPIDO) -->
                 <div class="space-y-3">
-                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Opción A: Pegar</p>
-                    <input type="text" id="pasteInput" placeholder="TOCA AQUÍ Y PEGA" readonly>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">O pega manualmente aquí:</p>
+                    <input type="text" id="pasteInput" placeholder="PEGAR CAPTURA" readonly>
                 </div>
 
                 <div class="relative my-8">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
-                    <div class="relative flex justify-center text-[10px] uppercase"><span class="bg-black px-2 text-gray-600 font-bold">o también</span></div>
+                    <div class="relative flex justify-center text-[10px] uppercase"><span class="bg-black px-2 text-gray-600 font-bold">o</span></div>
                 </div>
 
-                <!-- MÉTODO 2: SUBIR ARCHIVO (EL MÁS SEGURO) -->
                 <div class="space-y-3">
-                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Opción B: Seleccionar</p>
-                    <label for="fileInput" class="block w-full bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl font-bold transition-all cursor-pointer">
-                        SELECCIONAR FOTO
+                    <label for="fileInput" class="block w-full bg-white/10 text-white py-4 rounded-2xl font-bold transition-all cursor-pointer text-xs uppercase">
+                        Seleccionar de la Galería
                     </label>
                     <input type="file" id="fileInput" accept="image/*" class="hidden">
                 </div>
@@ -83,18 +90,18 @@
         <!-- ESTADO PROCESANDO -->
         <div id="processingState" class="hidden text-center py-12">
             <div class="spinner mx-auto mb-6"></div>
-            <p class="text-blue-400 font-black animate-pulse text-lg uppercase italic">Leyendo captura...</p>
-            <p id="progressTxt" class="text-gray-500 text-xs mt-2 tracking-widest">0%</p>
+            <p class="text-blue-400 font-black animate-pulse text-lg uppercase italic">Procesando...</p>
+            <p id="progressTxt" class="text-gray-500 text-xs mt-2 tracking-widest">ESPERE UN MOMENTO</p>
         </div>
 
         <!-- ESTADO ÉXITO -->
         <div id="successState" class="hidden w-full space-y-4">
             <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 text-center">
-                <p class="text-xs text-emerald-400 font-bold uppercase mb-2">Destino Encontrado</p>
+                <p class="text-xs text-emerald-400 font-bold uppercase mb-2">Coordenadas Listas</p>
                 <p id="coordsDisplay" class="text-3xl font-mono text-white tracking-tighter"></p>
             </div>
             <button onclick="launchSygic()" class="w-full bg-emerald-600 text-white py-6 rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-transform uppercase italic">
-                Abrir Sygic
+                Navegar ahora
             </button>
         </div>
 
@@ -108,28 +115,63 @@
         const successState = document.getElementById('successState');
         const coordsDisplay = document.getElementById('coordsDisplay');
         const progressTxt = document.getElementById('progressTxt');
+        const mainInstruction = document.getElementById('mainInstruction');
+        const interactionOverlay = document.getElementById('interactionOverlay');
         
         let lat = "", lon = "";
 
-        // Al tocar el input, forzamos que sea editable un momento para que iOS de la opción de pegar
+        // Función para leer el portapapeles tras una interacción del usuario
+        async function tryAutoPaste() {
+            try {
+                const clipboardItems = await navigator.clipboard.read();
+                for (const item of clipboardItems) {
+                    for (const type of item.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await item.getType(type);
+                            processImage(blob);
+                            interactionOverlay.style.display = 'none';
+                            return true;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error al leer clipboard:", err);
+            }
+            return false;
+        }
+
+        // En iOS, el primer toque desbloquea el permiso de lectura del portapapeles
+        interactionOverlay.addEventListener('click', async () => {
+            mainInstruction.innerText = "Buscando captura...";
+            const success = await tryAutoPaste();
+            if (!success) {
+                mainInstruction.innerText = "Copia la foto y toca de nuevo";
+            } else {
+                interactionOverlay.style.display = 'none';
+            }
+        });
+
+        // Fallback manual
         pasteInput.addEventListener('click', () => {
             pasteInput.readOnly = false;
             pasteInput.focus();
-            // Lo volvemos a poner readonly para que no se abra el teclado de letras, solo el menú de Pegar
             setTimeout(() => { pasteInput.readOnly = true; }, 100);
         });
 
-        // Captura de pegado
         pasteInput.addEventListener('paste', (e) => {
             e.preventDefault();
             const item = Array.from((e.clipboardData || e.originalEvent.clipboardData).items).find(x => x.type.indexOf('image') !== -1);
-            if (item) processImage(item.getAsFile());
-            else alert("No hay una imagen en el portapapeles. Copia la foto primero.");
+            if (item) {
+                interactionOverlay.style.display = 'none';
+                processImage(item.getAsFile());
+            }
         });
 
-        // Captura de archivo directo
         fileInput.addEventListener('change', (e) => {
-            if (e.target.files[0]) processImage(e.target.files[0]);
+            if (e.target.files[0]) {
+                interactionOverlay.style.display = 'none';
+                processImage(e.target.files[0]);
+            }
         });
 
         async function processImage(file) {
@@ -156,13 +198,14 @@
                     processingState.style.display = 'none';
                     successState.style.display = 'block';
                     if (navigator.vibrate) navigator.vibrate([40, 100, 40]);
-                    setTimeout(launchSygic, 500);
+                    
+                    setTimeout(launchSygic, 800);
                 } else {
-                    alert("No leí coordenadas. Asegúrate de que los números se vean claros.");
+                    alert("No se detectaron coordenadas en la imagen.");
                     location.reload();
                 }
             } catch (err) {
-                alert("Error: " + err.message);
+                alert("Error de procesamiento. Reintenta.");
                 location.reload();
             }
         }
