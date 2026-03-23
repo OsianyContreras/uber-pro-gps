@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Uber to Sygic PRO</title>
-    <!-- Cargamos Tesseract desde un mirror estable y compatible con Safari iOS -->
-    <script src="https://unpkg.com/tesseract.js@v5.0.3/dist/tesseract.min.js"></script>
+    <!-- Cargamos Tesseract desde un mirror con soporte CORS completo para Safari -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.3/dist/tesseract.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { 
@@ -33,7 +33,6 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Area especial para Safari: Input invisible que ocupa todo el botón */
         .safari-hack {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -58,7 +57,7 @@
 
     <header class="text-center mb-8">
         <div class="inline-block px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-3">
-            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Sygic Bridge v3.0</span>
+            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Sygic Bridge v3.1</span>
         </div>
         <h1 class="text-3xl font-black tracking-tighter italic bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent uppercase">Uber Navigator</h1>
     </header>
@@ -66,7 +65,6 @@
     <main class="w-full max-w-sm relative">
         <div id="mainBox" class="ios-card rounded-[2.5rem] p-8 text-center transition-all duration-500">
             
-            <!-- ESTADO 1: INICIO -->
             <div id="idleState" class="space-y-6">
                 <div class="relative w-20 h-20 mx-auto">
                     <div class="absolute inset-0 bg-blue-500 blur-2xl opacity-20 animate-pulse"></div>
@@ -79,29 +77,25 @@
 
                 <div class="space-y-2">
                     <h2 class="text-xl font-bold uppercase">Pegar Captura</h2>
-                    <p class="text-gray-500 text-xs">Toca el botón y selecciona <b>"Pegar"</b> cuando aparezca el menú de Safari.</p>
+                    <p class="text-gray-500 text-xs">Toca el botón y selecciona <b>"Pegar"</b> para procesar la captura de Uber.</p>
                 </div>
 
                 <div class="relative h-16 w-full">
-                    <!-- El botón visual -->
                     <div class="absolute inset-0 bg-blue-600 rounded-2xl flex items-center justify-center font-bold text-lg pulse uppercase tracking-widest">
                         Pegar Ahora
                     </div>
-                    <!-- El "Hack" para Safari: Un div editable invisible -->
                     <div id="pasteArea" contenteditable="true" class="safari-hack" role="textbox" inputmode="none"></div>
                 </div>
             </div>
 
-            <!-- ESTADO 2: PROCESANDO -->
             <div id="processingState" class="hidden py-8 space-y-6">
                 <div class="spinner mx-auto"></div>
                 <div class="space-y-1">
                     <p class="text-blue-400 font-bold tracking-widest animate-pulse uppercase text-sm">Escaneando...</p>
-                    <p class="text-gray-500 text-[10px]">Leyendo datos de la imagen</p>
+                    <p class="text-gray-500 text-[10px]">Procesando imagen con OCR</p>
                 </div>
             </div>
 
-            <!-- ESTADO 3: ÉXITO -->
             <div id="successState" class="hidden py-4 space-y-6">
                 <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
                     <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-1">Destino Detectado</p>
@@ -114,11 +108,18 @@
         </div>
     </main>
 
-    <footer class="mt-10 opacity-30">
-        <p class="text-[9px] uppercase tracking-[0.3em]">GitHub Pages Secured • index.html</p>
+    <footer class="mt-10 opacity-30 text-center">
+        <p class="text-[9px] uppercase tracking-[0.3em] mb-1">GitHub Pages Secured</p>
+        <p id="sslWarning" class="text-[8px] text-red-500 font-bold hidden uppercase">Requiere HTTPS para funcionar</p>
     </footer>
 
     <script>
+        // Forzar HTTPS en Safari
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+            document.getElementById('sslWarning').classList.remove('hidden');
+            location.replace(`https:${location.href.substring(location.protocol.length)}`);
+        }
+
         let lat = "", lon = "";
         const pasteArea = document.getElementById('pasteArea');
         const idleState = document.getElementById('idleState');
@@ -126,15 +127,12 @@
         const successState = document.getElementById('successState');
         const coordsDisplay = document.getElementById('coordsDisplay');
 
-        // Función para enfocar el área de pegado y forzar el menú contextual en Safari
         pasteArea.addEventListener('click', (e) => {
             e.preventDefault();
             pasteArea.focus();
-            // Pequeño delay para asegurar que el sistema operativo responda al foco
             setTimeout(() => { pasteArea.focus(); }, 50);
         });
 
-        // Evento principal de pegado
         pasteArea.addEventListener('paste', (e) => {
             e.preventDefault();
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -150,7 +148,7 @@
             }
             
             if (!imageFound) {
-                alert("No se detectó una imagen en el portapapeles. Asegúrate de copiar la captura primero.");
+                alert("Por favor, copia una captura de pantalla antes de intentar pegar.");
             }
         });
 
@@ -159,8 +157,13 @@
             processingState.classList.remove('hidden');
 
             try {
-                // Inicializar Tesseract
-                const worker = await Tesseract.createWorker('eng');
+                // Configuración de Worker optimizada para Safari y GitHub Pages
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.3/dist/worker.min.js',
+                    langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+                    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.3/tesseract-core.wasm.js',
+                });
+
                 await worker.setParameters({
                     tessedit_char_whitelist: '0123456789.,- '
                 });
@@ -168,7 +171,6 @@
                 const { data: { text } } = await worker.recognize(file);
                 await worker.terminate();
 
-                // Regex para extraer coordenadas: Latitud, Longitud
                 const regex = /(-?\d+\.\d+)\s*[,|\s]\s*(-?\d+\.\d+)/;
                 const match = text.match(regex);
 
@@ -180,35 +182,30 @@
                     successState.classList.remove('hidden');
                     
                     if (navigator.vibrate) navigator.vibrate([20, 50, 20]);
-                    
-                    // Auto-lanzamiento en 0.8s
                     setTimeout(launchSygic, 800);
                 } else {
-                    alert("No se encontraron coordenadas claras en la imagen. Intenta otra captura.");
+                    alert("No se detectaron coordenadas en la imagen. Intenta con otra captura de pantalla.");
                     window.location.reload();
                 }
             } catch (err) {
-                alert("Error al procesar: " + err.message);
+                console.error(err);
+                alert("Error de Safari: El navegador bloqueó el proceso. Intenta recargar la página.");
                 window.location.reload();
             }
         }
 
         function launchSygic() {
             if (!lat || !lon) return;
-            // Sygic usa: longitud|latitud
             const url = `com.sygic.aura://coordinate|${lon}|${lat}|drive`;
             window.location.replace(url);
             
-            // Fallback por si la app no abre
             setTimeout(() => {
                 if (!document.hidden) {
-                    alert("Sygic no abrió. Verifica que la app esté instalada.");
-                    window.location.reload();
+                    alert("Sygic no respondió. Asegúrate de tener la aplicación instalada.");
                 }
             }, 3000);
         }
 
-        // Ayuda a Safari a reconocer el área interactiva al cargar
         window.onload = () => {
             setTimeout(() => { pasteArea.focus(); }, 1000);
         };
