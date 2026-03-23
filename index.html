@@ -11,188 +11,164 @@
             background-color: #000; 
             color: #fff; 
             font-family: -apple-system, system-ui, sans-serif; 
-            min-height: 100vh; 
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-        .ios-card { 
-            backdrop-filter: blur(30px); 
-            background: rgba(255,255,255,0.05); 
-            border: 1px solid rgba(255,255,255,0.1); 
-        }
-        /* Este es el truco para Safari: un input real oculto */
-        #hiddenInput {
-            position: absolute;
-            top: 0;
-            left: 0;
+        /* Campo de texto real para que iOS muestre el menú Pegar */
+        #pasteInput {
+            background: #2563eb;
+            color: white;
+            border-radius: 1.5rem;
             width: 100%;
-            height: 100%;
-            opacity: 0;
-            font-size: 16px; /* Evita zoom en iOS */
-            z-index: 50;
+            height: 80px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            border: none;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        #pasteInput:focus {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5);
         }
         .spinner { 
-            border: 3px solid rgba(59, 130, 246, 0.1);
-            border-top: 3px solid #3b82f6; 
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #3b82f6; 
             border-radius: 50%;
-            width: 40px; height: 40px;
-            animation: spin 0.8s linear infinite; 
+            width: 50px; height: 50px;
+            animation: spin 1s linear infinite; 
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .pulse-animation {
-            animation: pulse-blue 2s infinite;
-        }
-        @keyframes pulse-blue {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
-            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-        }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center p-6 bg-gradient-to-b from-gray-900 to-black">
+<body class="p-6 bg-gradient-to-b from-gray-900 to-black">
 
-    <header class="text-center mb-8">
-        <div class="inline-block px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-3">
-            <span class="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Sygic Bridge v3.3</span>
-        </div>
-        <h1 class="text-3xl font-black italic bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent uppercase">Uber Navigator</h1>
+    <header class="text-center mb-10 mt-4">
+        <h1 class="text-3xl font-black italic bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent uppercase tracking-tighter">Uber Navigator</h1>
+        <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">Sygic Bridge v4.0</p>
     </header>
 
-    <main class="w-full max-w-sm relative">
-        <div id="mainBox" class="ios-card rounded-[2.5rem] p-8 text-center transition-all duration-500 relative overflow-hidden">
-            
-            <!-- ESTADO INICIAL -->
-            <div id="idleState" class="space-y-6">
-                <div class="bg-blue-600 w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                </div>
-
-                <div class="space-y-2">
-                    <h2 class="text-xl font-bold uppercase italic">Pegar Captura</h2>
-                    <p class="text-gray-400 text-xs px-4">Toca el botón azul, espera a que salga el menú negro y dale a <b>"Pegar"</b>.</p>
-                </div>
-
-                <div class="relative h-16 w-full mt-4">
-                    <!-- El botón visual -->
-                    <div class="absolute inset-0 bg-blue-600 rounded-2xl flex items-center justify-center font-bold text-lg pulse-animation pointer-events-none uppercase tracking-tighter">
-                        Toca aquí para Pegar
-                    </div>
-                    <!-- El input que Safari SI reconoce -->
-                    <div id="pasteContainer" class="absolute inset-0 z-50">
-                        <input type="text" id="hiddenInput" readonly placeholder="Pegar aquí">
-                    </div>
-                </div>
+    <main class="flex-1 flex flex-col items-center justify-start space-y-8 w-full max-w-sm mx-auto">
+        
+        <!-- ESTADO INICIAL -->
+        <div id="idleState" class="w-full space-y-6">
+            <div class="bg-white/5 border border-white/10 rounded-[2.5rem] p-8 text-center">
+                <p class="text-gray-400 text-sm mb-6">Copia la captura de pantalla en tu Galería y luego:</p>
                 
-                <p class="text-[10px] text-gray-600 uppercase tracking-widest pt-2">Asegúrate de haber copiado la foto primero</p>
-            </div>
-
-            <!-- ESTADO PROCESANDO -->
-            <div id="processingState" class="hidden py-8 space-y-6">
-                <div class="spinner mx-auto"></div>
-                <div class="space-y-1">
-                    <p class="text-blue-400 font-bold tracking-widest animate-pulse uppercase text-sm">Escaneando Imagen...</p>
-                    <p class="text-gray-500 text-[10px]">Utilizando Tesseract OCR Engine</p>
+                <!-- MÉTODO 1: PEGAR (EL MÁS RÁPIDO) -->
+                <div class="space-y-3">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Opción A: Pegar</p>
+                    <input type="text" id="pasteInput" placeholder="TOCA AQUÍ Y PEGA" readonly>
                 </div>
-            </div>
 
-            <!-- ESTADO ÉXITO -->
-            <div id="successState" class="hidden py-4 space-y-6">
-                <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4">
-                    <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-1 italic">Ubicación Lista</p>
-                    <p id="coordsDisplay" class="text-2xl font-mono text-white tracking-tighter"></p>
+                <div class="relative my-8">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+                    <div class="relative flex justify-center text-[10px] uppercase"><span class="bg-black px-2 text-gray-600 font-bold">o también</span></div>
                 </div>
-                <button onclick="launchSygic()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all uppercase italic">
-                    Iniciar Navegación
-                </button>
+
+                <!-- MÉTODO 2: SUBIR ARCHIVO (EL MÁS SEGURO) -->
+                <div class="space-y-3">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Opción B: Seleccionar</p>
+                    <label for="fileInput" class="block w-full bg-white/10 hover:bg-white/20 text-white py-4 rounded-2xl font-bold transition-all cursor-pointer">
+                        SELECCIONAR FOTO
+                    </label>
+                    <input type="file" id="fileInput" accept="image/*" class="hidden">
+                </div>
             </div>
         </div>
+
+        <!-- ESTADO PROCESANDO -->
+        <div id="processingState" class="hidden text-center py-12">
+            <div class="spinner mx-auto mb-6"></div>
+            <p class="text-blue-400 font-black animate-pulse text-lg uppercase italic">Leyendo captura...</p>
+            <p id="progressTxt" class="text-gray-500 text-xs mt-2 tracking-widest">0%</p>
+        </div>
+
+        <!-- ESTADO ÉXITO -->
+        <div id="successState" class="hidden w-full space-y-4">
+            <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 text-center">
+                <p class="text-xs text-emerald-400 font-bold uppercase mb-2">Destino Encontrado</p>
+                <p id="coordsDisplay" class="text-3xl font-mono text-white tracking-tighter"></p>
+            </div>
+            <button onclick="launchSygic()" class="w-full bg-emerald-600 text-white py-6 rounded-3xl font-black text-2xl shadow-2xl active:scale-95 transition-transform uppercase italic">
+                Abrir Sygic
+            </button>
+        </div>
+
     </main>
 
-    <footer class="mt-8 text-center">
-        <button onclick="location.reload()" class="text-[10px] text-gray-500 border border-gray-800 px-4 py-2 rounded-full uppercase tracking-widest">Reiniciar</button>
-    </footer>
-
     <script>
-        const hiddenInput = document.getElementById('hiddenInput');
+        const pasteInput = document.getElementById('pasteInput');
+        const fileInput = document.getElementById('fileInput');
         const idleState = document.getElementById('idleState');
         const processingState = document.getElementById('processingState');
         const successState = document.getElementById('successState');
         const coordsDisplay = document.getElementById('coordsDisplay');
+        const progressTxt = document.getElementById('progressTxt');
+        
         let lat = "", lon = "";
 
-        // Al tocar el botón, forzamos el foco. En iOS esto debería abrir el menú de Pegar.
-        hiddenInput.addEventListener('click', (e) => {
-            hiddenInput.focus();
+        // Al tocar el input, forzamos que sea editable un momento para que iOS de la opción de pegar
+        pasteInput.addEventListener('click', () => {
+            pasteInput.readOnly = false;
+            pasteInput.focus();
+            // Lo volvemos a poner readonly para que no se abra el teclado de letras, solo el menú de Pegar
+            setTimeout(() => { pasteInput.readOnly = true; }, 100);
         });
 
-        // Escuchamos el evento de pegado específicamente
-        hiddenInput.addEventListener('paste', async (e) => {
+        // Captura de pegado
+        pasteInput.addEventListener('paste', (e) => {
             e.preventDefault();
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            let found = false;
+            const item = Array.from((e.clipboardData || e.originalEvent.clipboardData).items).find(x => x.type.indexOf('image') !== -1);
+            if (item) processImage(item.getAsFile());
+            else alert("No hay una imagen en el portapapeles. Copia la foto primero.");
+        });
 
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    const blob = items[i].getAsFile();
-                    processImage(blob);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                alert("No hay una imagen en el portapapeles. Ve a la foto y dale a 'Copiar'.");
-            }
+        // Captura de archivo directo
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) processImage(e.target.files[0]);
         });
 
         async function processImage(file) {
-            idleState.classList.add('hidden');
-            processingState.classList.remove('hidden');
+            idleState.style.display = 'none';
+            processingState.style.display = 'block';
 
             try {
-                // Inicialización ultra-compatible para Safari
                 const worker = await Tesseract.createWorker('eng', 1, {
                     workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.3/dist/worker.min.js',
                     corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.0.3/tesseract-core.wasm.js',
+                    logger: m => {
+                        if(m.status === 'recognizing text') progressTxt.innerText = `${Math.round(m.progress * 100)}%`;
+                    }
                 });
 
-                await worker.setParameters({
-                    tessedit_char_whitelist: '0123456789.,- '
-                });
-                
+                await worker.setParameters({ tessedit_char_whitelist: '0123456789.,- ' });
                 const { data: { text } } = await worker.recognize(file);
                 await worker.terminate();
 
-                // Regex para Lat, Lon
-                const regex = /(-?\d+\.\d+)\s*[,|\s]\s*(-?\d+\.\d+)/;
-                const match = text.match(regex);
-
+                const match = text.match(/(-?\d+\.\d+)\s*[,|\s]\s*(-?\d+\.\d+)/);
                 if (match) {
-                    lat = match[1];
-                    lon = match[2];
+                    lat = match[1]; lon = match[2];
                     coordsDisplay.innerText = `${lat}, ${lon}`;
-                    processingState.classList.add('hidden');
-                    successState.classList.remove('hidden');
-                    
-                    if (navigator.vibrate) navigator.vibrate([30, 100, 30]);
-                    setTimeout(launchSygic, 1000);
+                    processingState.style.display = 'none';
+                    successState.style.display = 'block';
+                    if (navigator.vibrate) navigator.vibrate([40, 100, 40]);
+                    setTimeout(launchSygic, 500);
                 } else {
-                    alert("No se pudieron leer las coordenadas. Asegúrate de que los números se vean bien.");
+                    alert("No leí coordenadas. Asegúrate de que los números se vean claros.");
                     location.reload();
                 }
             } catch (err) {
-                alert("Error en Safari: " + err.message);
+                alert("Error: " + err.message);
                 location.reload();
             }
         }
 
         function launchSygic() {
-            if (!lat || !lon) return;
-            // Sygic URL: longitud|latitud
-            window.location.replace(`com.sygic.aura://coordinate|${lon}|${lat}|drive`);
+            if (lat && lon) window.location.replace(`com.sygic.aura://coordinate|${lon}|${lat}|drive`);
         }
     </script>
 </body>
